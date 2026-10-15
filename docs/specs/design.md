@@ -1,0 +1,1251 @@
+# 安卓平板项目2：Windows SMB 共享资源管理器 技术设计文档
+
+> 本文档基于 `spec.md` 需求规格与 PAD2-M0 只读技术审查结论生成，将五项核心需求（REQ-01 ~ REQ-05）、WPS 保存关键技术裁定、大规模使用架构保障、风险缓解措施及阶段验收门禁转化为可落地的增量架构设计。存量功能基线来自旧仓库 `wujupeng/andriodpad`（React + TypeScript + Capacitor 8 + Android Java 插件 + SMBJ）的 M0 审查输出。
+
+---
+
+# 一、需求与存量功能关系分析
+
+## 1.1 需求功能与存量功能对比
+
+存量功能基线为旧仓库 `wujupeng/andriodpad`，其技术栈为 React + TypeScript + Capacitor 8 + Android Java 原生插件 + SMBJ。M0 只读技术审查已对该仓库进行差距分析，本节基于审查结论对新需求（REQ-01 ~ REQ-05 及关键技术裁定）与存量代码进行逐项匹配。
+
+### 1.1.1 已实现功能
+
+已实现功能是指需求与存量代码完全匹配或高度相似、可直接复用或仅需少量适配的部分。
+
+| 需求功能 | 存量功能 | 代码位置 | 匹配度 |
+|---------|---------|---------|--------|
+| REQ-01 共享连接配置管理（添加/编辑/删除/测试） | 旧仓库已实现多组 SMB 连接配置的增删改查与连接测试 | 旧仓库 Capacitor 插件 SMB 连接模块（Java 原生层 + TS 桥接层） | 75% |
+| REQ-01 SMB 会话建立与认证 | 基于 SMBJ 的会话建立、NTLM/SPNEGO 认证已实现 | 旧仓库 SMBJ 封装层（Java） | 100% |
+| REQ-01 多共享入口切换 | 已支持多组连接配置列表与切换浏览 | 旧仓库连接配置 UI + 状态管理（React/TS） | 75% |
+| REQ-01 目录枚举与属性展示 | 已实现 SMB 目录枚举、文件属性（名称/大小/修改时间）展示 | 旧仓库目录浏览模块 | 75% |
+| REQ-01 搜索与排序 | 已实现按名称搜索与基本排序 | 旧仓库目录浏览 UI 层 | 50% |
+| REQ-01 文件收藏 | 已实现收藏列表与快速访问 | 旧仓库收藏模块 | 50% |
+| REQ-04 本地↔共享复制/移动 | 已实现本地文件上传到共享与共享文件下载到本地 | 旧仓库传输模块（Java + TS） | 50% |
+| REQ-04 重命名/删除 | 已实现 SMB 文件重命名与删除 | 旧仓库 SMB 操作封装层 | 75% |
+| REQ-04 传输进度显示 | 已实现传输进度条与基本状态显示 | 旧仓库传输 UI 层 | 50% |
+| Android SAF 访问经验 | 已积累 Android SAF/ContentProvider 文件访问经验 | 旧仓库 Android 原生插件 | 75% |
+
+**匹配度判定依据**：
+- **100%**：存量实现完全满足需求验收条件，可直接复用。
+- **75%**：核心逻辑满足，但交互模型、数据流或约束条件需适配（如交互从"选择上传"改为"直接打开"）。
+- **50%**：基础能力存在但关键约束未满足（如缺少流式处理、完整性校验、冲突保护），需较大改造。
+
+### 1.1.2 需要扩展的功能
+
+需要扩展的功能是指需求与存量代码部分匹配，需在现有基础上改造的部分。
+
+| 需求功能 | 存量功能 | 差异说明 | 扩展方向 |
+|---------|---------|---------|---------|
+| REQ-01 凭据安全存储（Keystore 加密） | 旧仓库凭据以明文/简单编码存储于 SharedPreferences | 存量为明文存储，不满足 RISK-04 与安全性 DFX 约束；需升级为 Android Keystore 加密 | 新增 Keystore 加密层，重构凭据读写路径，迁移存量凭据；禁止明文落盘 |
+| REQ-01 目录浏览响应与分页 | 旧仓库一次性枚举全部条目 | 大目录（万级文件）一次性枚举存在响应超时与内存压力；spec 要求 M1 冻结响应上限并分页 | 改为分页/延迟加载枚举，增加分页游标与首屏优先策略 |
+| REQ-01 搜索范围与性能 | 旧仓库仅当前目录名称搜索 | 需支持当前共享范围内搜索，且需考虑深层目录搜索性能 | 扩展为共享范围搜索，引入异步搜索与结果分页 |
+| REQ-04 传输任务状态管理 | 旧仓库任务状态为内存态，无持久化 | 不满足 RISK-05 与可靠性 DFX（应用被杀后任务丢失）；spec 要求持久化任务队列与断点续传 | 新增任务持久化层（Room/SQLite），重构任务状态机为持久化驱动 |
+| REQ-04 覆盖写入安全策略 | 旧仓库直接覆盖写入目标文件 | 不满足 RISK-02；写入中途失败会破坏原文件；spec 要求安全写入（临时文件+原子替换或带校验覆盖） | 重构写入路径为"写临时文件→校验→原子替换"，失败时原文件不被破坏 |
+| REQ-04 同名冲突处理 | 旧仓库覆盖写入无冲突提示 | 不满足 spec 禁止静默覆盖要求；需提示覆盖/跳过/重命名 | 新增冲突检测与用户决策交互层 |
+| REQ-04 批量操作与部分失败恢复 | 旧仓库批量操作无逐文件结果记录与断点恢复 | 不满足大量小文件恢复策略；需逐文件校验清单与恢复 | 扩展批量任务为子任务粒度，记录已校验文件清单 |
+| REQ-05 网络中断自动处理 | 旧仓库网络中断需用户手动重连 | 不满足 REQ-05 自动处理短暂断网/Wi-Fi切换/会话失效 | 新增网络状态监听 + 自动会话重建 + 可恢复任务自动续传 |
+| REQ-05 重试退避策略 | 旧仓库无系统化退避重试 | 不满足连接超时与会话失效的退避重试要求 | 新增指数退避重试框架，配置上限与策略 |
+| 交互模型重构 | 旧仓库以"选择本地文件→上传"为中心 | 不宜沿用；新需求以"浏览共享→直接打开→编辑→回写"为中心 | 重构主交互流为资源管理器模型，上传/下载降为文件操作子能力 |
+
+### 1.1.3 需要新增的功能或接口
+
+需要新增的功能是指需求在存量代码中完全没有对应实现的部分，按业务模块分组。
+
+**模块 A：WPS 编辑与可靠回写（REQ-03，关键技术门禁）**
+- **A1 编辑会话管理**：建立/跟踪/销毁编辑会话，管理本地缓存副本、版本基线、回写状态。输入：共享文件路径；输出：编辑会话句柄。核心逻辑：会话生命周期状态机（已打开→编辑中→已保存待回写→回写中→回写成功/失败/冲突/已放弃）。依赖：文件缓存模块、SMB 读写模块。
+- **A2 文件版本基线**：编辑会话开始时计算共享文件 SHA-256 与修改时间作为基线。输入：共享文件路径；输出：版本基线（SHA-256 + mtime）。核心逻辑：流式 SHA-256 计算 + SMB 属性查询。依赖：SMB 读取模块。
+- **A3 WPS 文件交付**：通过 Android 标准文件访问接口（URI/ContentProvider/临时文件）向 WPS 提供可编辑文件入口。输入：本地缓存副本；输出：WPS 可访问的文件入口。核心逻辑：选择并验证最优交付方式。依赖：Android SAF/ContentProvider。
+- **A4 WPS 保存变更检测**：检测 WPS 保存完成与本地副本变更。输入：编辑会话；输出：变更事件（含目标 URI、变更时间、内容指纹）。核心逻辑：文件监听 + ContentProvider 回调 + 指纹比对。依赖：编辑会话管理。
+- **A5 可靠回写引擎**：将本地变更写回共享原位置并校验。输入：编辑会话 + 本地变更；输出：回写结果（成功/失败/冲突）。核心逻辑：版本基线冲突检测→流式回写→SHA-256 校验→状态更新。依赖：SMB 写入模块、版本基线。
+- **A6 WPS 另存为/临时文件识别**：识别 WPS 另存为新文件与临时文件，正确判定最终结果文件。输入：WPS 保存事件；输出：最终结果文件判定。核心逻辑：文件名/路径模式匹配 + 临时文件过滤。依赖：编辑会话管理。
+- **A7 编辑冲突防护**：回写前检测共享文件版本基线是否已变，防止静默覆盖。输入：编辑会话；输出：冲突检测结果。核心逻辑：查询共享当前版本→与基线比对→冲突时提示用户决策。依赖：版本基线、SMB 属性查询。
+
+**模块 B：无感打开（REQ-02）**
+- **B1 直接打开调度**：用户点击共享文件后自动选择合适应用（优先 WPS）打开。输入：共享文件路径；输出：打开结果。核心逻辑：文件类型→应用选择→缓存→交付→建立编辑会话。依赖：编辑会话管理、WPS 文件交付、文件缓存。
+- **B2 大文件流式缓存**：大文件打开时采用流式/分块缓存，避免整体载入内存。输入：共享文件；输出：本地缓存副本。核心逻辑：分块读取→流式写入本地→内存受限。依赖：SMB 读取模块。
+- **B3 状态及时更新**：编辑保存返回资源管理器后更新文件状态与修改时间。输入：编辑会话回写结果；输出：目录列表状态刷新。依赖：目录浏览模块。
+
+**模块 C：可靠传输队列（REQ-04 + REQ-05）**
+- **C1 持久化传输队列**：传输任务持久化存储，应用重启后恢复。输入：传输任务；输出：持久化任务记录。核心逻辑：Room/SQLite 持久化 + 状态机驱动。依赖：数据持久化层。
+- **C2 流式传输引擎**：大文件流式/分块传输，不整体载入内存。输入：源/目标位置；输出：传输结果 + 进度。核心逻辑：分块读写 + 进度上报 + 断点偏移。依赖：SMB 读写模块。
+- **C3 断点续传**：传输中断后从已传输字节偏移安全续传。输入：持久化任务 + 偏移；输出：续传结果。核心逻辑：读取偏移→定位读写位置→续传→校验。依赖：持久化传输队列。
+- **C4 完整性校验引擎**：传输/回写前后 SHA-256 校验。输入：源/目标文件；输出：校验结果。核心逻辑：流式 SHA-256 计算 + 比对。依赖：流式读写。
+- **C5 网络状态监听与自动恢复**：监听网络状态，自动重建会话与续传可恢复任务。输入：网络状态事件；输出：恢复动作。核心逻辑：广播接收→会话重建→任务续传。依赖：SMB 连接模块、传输队列。
+- **C6 重试退避框架**：失败任务按指数退避策略自动重试，超限标记失败。输入：失败任务；输出：重试调度。依赖：传输队列。
+
+**模块 D：安全与审计**
+- **D1 Keystore 凭据加密**：SMB 账号密码以 Android Keystore 加密存储。输入：明文凭据；输出：加密密文。核心逻辑：Keystore 生成密钥→AES 加密→密文存储。依赖：Android Keystore。
+- **D2 日志脱敏**：所有日志输出前脱敏（密码、凭据、文件敏感内容）。输入：原始日志；输出：脱敏日志。核心逻辑：脱敏规则匹配 + 替换。
+- **D3 审计日志**：关键操作（连接/写入/删除/重命名/回写）记录可追溯审计日志。输入：操作事件；输出：审计记录。依赖：日志脱敏。
+- **D4 诊断信息导出**：用户触发导出脱敏诊断信息。输入：导出请求；输出：诊断包（操作日志+错误分类+环境信息）。依赖：审计日志。
+
+**模块 E：对外接口（第三方应用访问）**
+- **E1 ContentProvider 共享文件访问**：向第三方应用提供共享文件访问接口。输入：第三方请求；输出：文件访问句柄/拒绝。核心逻辑：权限校验→URI 授权→文件访问。依赖：SMB 读写模块。
+- **E2 Intent 接口**：响应第三方应用打开共享文件的 Intent。依赖：ContentProvider。
+
+**模块 F：部署与编译**
+- **F1 远程编译流程**：通过远程编译服务器（192.168.2.3）编译 Android APK。输入：源码；输出：APK 产物。核心逻辑：SMB 挂载远程路径→Gradle 编译→产物回传。依赖：远程编译服务器。
+- **F2 新仓库管理**：基于新仓库 `wujupeng/andriodpad2` 进行版本管理与发布。依赖：Git/GitHub。
+
+## 1.2 存量功能详细分析
+
+本节对 1.1.1 中匹配度 ≥ 50% 的存量功能进行深入解读，识别其接口契约、业务规则、扩展点与约束，为增量设计提供落地基础。
+
+### 1.2.1 SMBJ 连接认证（匹配度 100%）
+
+- **接口契约**：输入服务器地址、共享名、账号、密码、端口、协议版本；输出 SMB 会话句柄；异常包括认证失败、网络不可达、协议不支持。
+- **业务规则**：基于 SMBJ 建立 SMB 会话，支持 NTLM/SPNEGO 认证；会话建立后可用于目录枚举与文件读写。
+- **扩展点**：SMBJ 支持自定义认证器与传输配置，可扩展加密与超时策略。
+- **约束**：SMBJ 为 Java 库，须在 Android 原生层（Capacitor 插件）中使用；会话非线程安全，并发访问须加锁或会话池化；协议版本须在 M1 冻结范围内。
+
+### 1.2.2 多组连接配置管理（匹配度 75%）
+
+- **接口契约**：输入连接配置项；输出配置列表与持久化结果；异常包括配置校验失败。
+- **业务规则**：支持多组配置增删改查，每条配置独立持久化；连接测试复用 SMBJ 认证。
+- **扩展点**：配置存储层可替换（当前为 SharedPreferences，需替换为 Keystore 加密）。
+- **约束**：当前凭据明文存储，**必须重构**为 Keystore 加密（RISK-04）；配置 UI 须适配新交互模型（资源管理器入口而非上传入口）。
+
+### 1.2.3 目录枚举与属性展示（匹配度 75%）
+
+- **接口契约**：输入共享会话 + 目录路径；输出文件/子目录条目列表（含名称、大小、修改时间、类型）；异常包括枚举超时、权限不足。
+- **业务规则**：通过 SMBJ 枚举目录，一次性返回全部条目。
+- **约束**：**一次性枚举**在大目录（万级文件）下存在响应超时与内存压力，须改为分页/延迟加载（spec 4.1.3）；枚举须在后台线程执行，避免阻塞 UI。
+
+### 1.2.4 本地↔共享文件传输（匹配度 50%）
+
+- **接口契约**：输入源路径、目标路径；输出传输结果；异常包括网络中断、空间不足、权限不足。
+- **业务规则**：当前实现为**一次性 byte[] 读取→写入**，无流式处理、无完整性校验、无冲突保护、无持久化任务状态。
+- **约束**：
+  - **RISK-01**：一次性 byte[] 将文件整体载入内存，大文件（1 GiB）会 OOM，**必须重构**为流式/分块。
+  - **RISK-02**：直接覆盖写入，中途失败破坏原文件，**必须重构**为安全写入策略。
+  - **RISK-05**：任务状态为内存态，应用被杀后丢失，**必须新增**持久化任务队列。
+  - 交互模型以"选择本地文件→上传"为中心，**不宜沿用**，须重构为资源管理器直接操作模型。
+
+### 1.2.5 Android SAF 访问经验（匹配度 75%）
+
+- **接口契约**：通过 Android SAF/ContentProvider 访问文件；输入 URI/Intent；输出文件句柄。
+- **业务规则**：已积累 SAF 权限申请、URI 授权、ContentProvider 文件访问经验。
+- **扩展点**：可扩展为向 WPS 交付文件入口（REQ-03 的 WPS 文件交付）。
+- **约束**：SAF 权限为持久化授权，须妥善管理；不同 Android 版本 SAF 行为有差异，须在 M1 冻结版本范围内验证。
+
+### 1.2.6 重命名/删除（匹配度 75%）
+
+- **接口契约**：输入共享会话 + 文件路径 + 新名称（重命名）；输出操作结果；异常包括权限不足、文件不存在、文件被占用。
+- **业务规则**：通过 SMBJ 调用 SMB 重命名/删除操作。
+- **约束**：删除为不可逆操作，须记录审计日志；文件被占用时须提示而非静默失败。
+
+---
+
+# 二、增量设计方案
+
+## 2.1 实现模型
+
+### 2.1.1 上下文视图
+
+本组件部署于安卓平板，上游访问 Windows SMB 服务器，下游交付文件给 WPS Office，并通过 Android 系统服务（SAF/ContentProvider/Keystore）完成文件访问与凭据加密。编译产物（APK）通过远程编译服务器生成。
+
+```plantuml
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+actor "普通成员" as Member
+actor "共享管理员" as Admin
+
+rectangle "Android SMB 共享资源管理器\n(APK)" as App {
+}
+
+cloud "Windows SMB 服务器\n192.168.x.x" as SMB
+rectangle "WPS Office\n(已安装应用)" as WPS
+rectangle "Android 系统\nSAF / ContentProvider / Keystore / NetworkInfo" as AndroidSys
+rectangle "第三方应用\n(Intent / ContentProvider)" as ThirdParty
+rectangle "远程编译服务器\n192.168.2.3\n/home/debian/android" as BuildServer
+rectangle "GitHub 新仓库\nwujupeng/andriodpad2" as Repo
+
+Member --> App : 浏览/打开/编辑/复制/移动/删除
+Admin --> App : 共享配置管理
+
+App --> SMB : SMB2/3 会话/枚举/流式读写
+App --> WPS : 交付文件入口(URI/ContentProvider/缓存)
+WPS --> App : 保存完成/变更通知
+App --> AndroidSys : 凭据加密/文件访问/网络监听
+ThirdParty --> App : 请求访问共享文件
+App --> ThirdParty : 授予/拒绝访问
+
+Repo --> BuildServer : 源码(SMB共享)
+BuildServer --> Repo : APK产物
+BuildServer --> App : 编译产物部署
+
+@enduml
+```
+
+**通信协议与调用频率**：
+- App ↔ SMB：SMB2/3 协议，TCP 445；高频（目录枚举、文件读写），须会话池化与并发限制。
+- App ↔ WPS：Android Intent/URI/ContentProvider；中频（用户触发编辑），须文件变更监听。
+- App ↔ AndroidSys：Android 系统 API；高频（凭据读写、文件访问、网络广播）。
+- App ↔ ThirdParty：Android Intent/ContentProvider；低频（外部请求）。
+- Repo ↔ BuildServer：SMB 文件共享 + Gradle 构建；低频（编译时）。
+
+### 2.1.2 服务/组件总体架构
+
+本组件采用分层架构，自上而下分为表现层、业务编排层、核心能力层、基础设施层。各层职责清晰、相互解耦，可独立测试与演进（满足 spec 5.7.1 客户端分层设计要求）。
+
+```plantuml
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+package "表现层 (UI Layer)" {
+    [共享管理 UI] as UI_Conn
+    [资源管理器 UI] as UI_Explorer
+    [传输队列 UI] as UI_Queue
+    [编辑会话 UI] as UI_Edit
+    [设置与诊断 UI] as UI_Settings
+}
+
+package "业务编排层 (Domain Orchestration)" {
+    [共享管理编排] as Orch_Conn
+    [文件操作编排] as Orch_File
+    [编辑会话编排] as Orch_Edit
+    [传输编排] as Orch_Transfer
+    [无感打开编排] as Orch_Open
+}
+
+package "核心能力层 (Core Capabilities)" {
+    [SMB 连接管理] as Core_SMBConn
+    [SMB 目录枚举] as Core_Enum
+    [流式读写引擎] as Core_Stream
+    [传输队列引擎] as Core_Queue
+    [完整性校验引擎] as Core_Checksum
+    [编辑会话管理] as Core_EditSession
+    [WPS 交付与回写] as Core_WPS
+    [版本基线与冲突检测] as Core_Conflict
+    [网络状态监听] as Core_NetMonitor
+    [重试退避框架] as Core_Retry
+}
+
+package "基础设施层 (Infrastructure)" {
+    [SMBJ 封装] as Infra_SMBJ
+    [Keystore 凭据加密] as Infra_Keystore
+    [Room/SQLite 持久化] as Infra_DB
+    [文件缓存管理] as Infra_Cache
+    [日志与脱敏] as Infra_Logger
+    [审计日志] as Infra_Audit
+    [ContentProvider 对外接口] as Infra_CP
+    [SAF/URI 文件访问] as Infra_SAF
+}
+
+UI_Conn --> Orch_Conn
+UI_Explorer --> Orch_File
+UI_Explorer --> Orch_Open
+UI_Queue --> Orch_Transfer
+UI_Edit --> Orch_Edit
+UI_Settings --> Orch_Conn
+
+Orch_Conn --> Core_SMBConn
+Orch_File --> Core_Queue
+Orch_Edit --> Core_EditSession
+Orch_Transfer --> Core_Queue
+Orch_Open --> Core_EditSession
+
+Core_SMBConn --> Infra_SMBJ
+Core_SMBConn --> Infra_Keystore
+Core_Enum --> Infra_SMBJ
+Core_Stream --> Infra_SMBJ
+Core_Queue --> Infra_DB
+Core_Queue --> Core_Stream
+Core_Queue --> Core_Checksum
+Core_Queue --> Core_Retry
+Core_Queue --> Core_NetMonitor
+Core_Checksum --> Core_Stream
+Core_EditSession --> Infra_Cache
+Core_EditSession --> Core_Conflict
+Core_WPS --> Infra_SAF
+Core_WPS --> Core_Stream
+Core_WPS --> Core_Checksum
+Core_Conflict --> Core_Stream
+Core_NetMonitor --> Core_SMBConn
+Infra_Logger --> Infra_Audit
+Infra_CP --> Core_Stream
+
+@enduml
+```
+
+**模块职责说明**：
+
+| 层 | 模块 | 职责 | 并发/资源约束 |
+|---|------|------|--------------|
+| 表现层 | 共享管理 UI | 共享配置增删改查、连接测试交互 | UI 线程 |
+| 表现层 | 资源管理器 UI | 目录浏览、搜索、排序、文件操作交互 | UI 线程，分页加载 |
+| 表现层 | 传输队列 UI | 传输进度、暂停/取消/重试交互 | UI 线程 |
+| 表现层 | 编辑会话 UI | 编辑状态、冲突提示、回写结果展示 | UI 线程 |
+| 业务编排层 | 共享管理编排 | 协调配置管理、凭据加密、连接测试 | — |
+| 业务编排层 | 文件操作编排 | 协调复制/移动/重命名/删除入队与执行 | — |
+| 业务编排层 | 编辑会话编排 | 协调打开→交付→保存检测→回写全流程 | 单会话串行 |
+| 业务编排层 | 传输编排 | 协调任务入队、进度上报、结果核对 | — |
+| 业务编排层 | 无感打开编排 | 协调文件类型识别、应用选择、缓存、交付 | — |
+| 核心能力层 | SMB 连接管理 | 会话建立/池化/重建/失效检测 | 并发会话上限（M1 冻结） |
+| 核心能力层 | 流式读写引擎 | 分块读写，不整体载入内存 | 单任务内存上限 |
+| 核心能力层 | 传输队列引擎 | 持久化任务队列、状态机、进度、断点续传 | 并发任务上限（M1 冻结） |
+| 核心能力层 | 完整性校验引擎 | 流式 SHA-256 计算与比对 | 流式，内存受限 |
+| 核心能力层 | 编辑会话管理 | 会话生命周期状态机、缓存副本管理 | 单会话串行 |
+| 核心能力层 | WPS 交付与回写 | 文件入口交付、变更检测、回写、另存为识别 | 单会话串行 |
+| 核心能力层 | 版本基线与冲突检测 | SHA-256 基线、共享当前版本查询、冲突判定 | — |
+| 核心能力层 | 网络状态监听 | 网络广播、会话失效检测、自动恢复触发 | 后台服务 |
+| 核心能力层 | 重试退避框架 | 指数退避、重试上限、重复操作防护 | — |
+| 基础设施层 | SMBJ 封装 | SMBJ API 封装、协议版本适配 | 线程安全封装 |
+| 基础设施层 | Keystore 凭据加密 | AES 加密、密钥管理、明文禁止 | 设备锁屏依赖 |
+| 基础设施层 | Room/SQLite 持久化 | 任务/会话/配置持久化 | 单实例 |
+| 基础设施层 | 文件缓存管理 | 本地缓存副本、空间检查、清理 | 空间上限 |
+| 基础设施层 | 日志与脱敏 | 结构化日志、脱敏规则、错误分类 | — |
+| 基础设施层 | 审计日志 | 关键操作审计记录 | — |
+| 基础设施层 | ContentProvider 对外接口 | 第三方应用访问授权与文件交付 | 权限校验 |
+| 基础设施层 | SAF/URI 文件访问 | Android 文件访问机制封装 | Android 版本适配 |
+
+**配置项及取值策略**（M1 阶段冻结）：
+
+| 配置项 | 取值策略 | 冻结阶段 |
+|--------|---------|---------|
+| 支持 Android 版本范围 | M1 冻结（建议 Android 8.0+ / API 26+） | M1 |
+| 支持 SMB 协议版本 | M1 冻结（建议 SMB2/3，不支持 SMB1） | M1 |
+| 支持 WPS 版本范围 | M1 冻结（须实测验证） | M1 |
+| 并发 SMB 会话上限 | M1 冻结（建议 4-8） | M1 |
+| 并发传输任务上限 | M1 冻结（建议 2-4） | M1 |
+| 单文件内存上限 | 流式分块，不整体载入（分块建议 64KB-1MB） | M1 |
+| 目录枚举响应上限 | M1 冻结（建议首屏 2s，分页加载） | M1 |
+| 重试退避上限 | M1 冻结（建议指数退避，上限 5 次） | M1 |
+| 目标并发用户数 | PM 明确（M1 冻结） | M1 |
+| 大文件基线 | 1 GiB | 已定 |
+| 批量文件基线 | 10,000 个 | 已定 |
+### 2.1.3 实现设计文档
+
+本节对核心逻辑进行设计说明，涵盖状态机设计、流程分支设计、扩展点设计与事务设计。
+
+#### 2.1.3.1 编辑会话状态机（REQ-03 核心路径）
+
+编辑会话是 WPS"打开—编辑—保存回写"的关键生命周期，其状态流转直接决定回写可靠性与冲突防护行为。
+
+```plantuml
+@startuml
+title 编辑会话状态机
+
+state "已打开(Opened)" as Opened
+state "编辑中(Editing)" as Editing
+state "已保存待回写(SavedPending)" as SavedPending
+state "回写中(WritingBack)" as WritingBack
+state "回写成功(WriteSuccess)" as WriteSuccess
+state "回写失败(WriteFailed)" as WriteFailed
+state "冲突(Conflict)" as Conflict
+state "已放弃(Abandoned)" as Abandoned
+
+[*] --> Opened : 建立会话(计算版本基线+缓存副本+交付WPS)
+
+Opened --> Editing : WPS开始编辑
+Editing --> Editing : 继续编辑
+Editing --> SavedPending : WPS保存完成(检测到本地变更)
+Editing --> Abandoned : 用户放弃/关闭未保存
+SavedPending --> WritingBack : 版本基线未变(触发回写)
+SavedPending --> Conflict : 版本基线已变(共享文件被他人修改)
+WritingBack --> WriteSuccess : 回写完成且SHA-256校验通过
+WritingBack --> WriteFailed : 回写失败或校验不通过
+WritingBack --> WritingBack : 网络中断→恢复后续传
+WriteFailed --> WritingBack : 用户重试
+Conflict --> WritingBack : 用户选择覆盖
+Conflict --> Abandoned : 用户选择放弃
+Conflict --> Opened : 用户选择合并(重新打开基线)
+WriteSuccess --> [*]
+Abandoned --> [*]
+
+@enduml
+```
+
+**状态触发条件与处理策略**：
+
+| 状态迁移 | 触发条件 | 处理策略 |
+|---------|---------|---------|
+| → 已打开 | 用户点击共享文件 | 流式缓存→计算版本基线(SHA-256+mtime)→交付WPS→建立会话 |
+| 已打开→编辑中 | WPS 开始编辑 | 启动文件变更监听 |
+| 编辑中→已保存待回写 | WPS 保存完成且检测到本地变更 | 暂停变更监听，准备回写 |
+| 已保存待回写→回写中 | 共享当前版本 == 版本基线 | 流式回写→SHA-256 校验 |
+| 已保存待回写→冲突 | 共享当前版本 ≠ 版本基线 | **禁止静默覆盖**，提示用户选择合并/覆盖/放弃 |
+| 回写中→回写成功 | 回写完成且校验通过 | 显示"已保存到共享"，更新目录状态 |
+| 回写中→回写失败 | 回写失败或校验不通过 | **不显示成功**，保留本地副本供重试，原文件未被破坏 |
+| 回写中→回写中 | 网络中断后恢复 | 从断点续传，不从头开始 |
+
+#### 2.1.3.2 传输任务状态机（REQ-04 + REQ-05）
+
+```plantuml
+@startuml
+title 传输任务状态机
+
+state "排队(Queued)" as Queued
+state "进行中(Running)" as Running
+state "暂停(Paused)" as Paused
+state "已完成(Done)" as Done
+state "失败(Failed)" as Failed
+state "已取消(Cancelled)" as Cancelled
+
+[*] --> Queued : 入队(持久化)
+Queued --> Running : 调度执行
+Running --> Running : 传输中(进度上报)
+Running --> Paused : 用户暂停/网络中断
+Paused --> Running : 用户恢复/网络恢复(断点续传)
+Running --> Done : 传输完成且SHA-256校验通过
+Running --> Failed : 传输失败或校验不通过(退避重试耗尽)
+Paused --> Cancelled : 用户取消
+Failed --> Queued : 用户手动重试
+Done --> [*]
+Cancelled --> [*]
+Failed --> [*]
+
+@enduml
+```
+
+**关键策略**：
+- **持久化驱动**：每次状态迁移与进度更新均持久化，应用被杀后重启可恢复队列。
+- **断点续传**：暂停/失败恢复时从"已传输字节偏移"续传，不从头开始。
+- **重复操作防护**：入队前检查是否有相同源→目标任务正在进行，避免重复。
+- **退避重试**：失败后按指数退避自动重试，超限标记 Failed 供用户手动重试。
+
+#### 2.1.3.3 WPS 保存回写流程分支（关键技术门禁核心）
+
+```plantuml
+@startuml
+title WPS 保存回写流程分支设计
+
+start
+:WPS 保存完成通知;
+:检测本地副本变更(指纹比对);
+if (本地未变更?) then (是)
+    :无需回写,更新状态;
+    stop
+else (否)
+    :识别最终结果文件(过滤临时文件/另存为);
+    if (另存为新文件?) then (是)
+        :提示用户选择回写为新文件或覆盖原文件;
+        if (用户选择?) then (新文件)
+            :回写到新位置;
+        else (覆盖原文件)
+            :回写到原位置;
+        endif
+    else (否)
+        :确定回写目标=原位置;
+    endif
+    :查询共享文件当前版本(SHA-256+mtime);
+    if (当前版本 == 版本基线?) then (是)
+        :流式回写(临时文件→校验→原子替换);
+        :回写后读取并计算SHA-256;
+        if (校验通过?) then (是)
+            :显示"已保存到共享";
+            :更新目录状态;
+        else (否)
+            :显示保存失败,原文件未被破坏;
+            :保留本地副本供重试;
+        endif
+    else (否,冲突)
+        :提示编辑冲突;
+        :提供合并/覆盖/放弃选项;
+    endif
+endif
+stop
+
+@enduml
+```
+
+#### 2.1.3.4 安全写入事务设计（RISK-02 缓解）
+
+覆盖写入中途失败会破坏原文件。本设计采用"临时文件→校验→原子替换"事务策略，保证失败时原文件完好。
+
+```plantuml
+@startuml
+title 安全写入事务设计
+
+start
+:开始写入事务;
+:在目标目录创建临时文件(.tmp+UUID);
+:流式写入临时文件(分块);
+if (写入完成?) then (是)
+    :计算临时文件SHA-256;
+    if (校验通过?) then (是)
+        :SMB 原子重命名(临时文件→目标文件);
+        if (重命名成功?) then (是)
+            :提交事务,标记成功;
+        else (否)
+            :回滚:保留临时文件,原文件未被破坏;
+            :标记失败,可重试;
+        endif
+    else (否)
+        :回滚:删除临时文件,原文件未被破坏;
+        :标记校验失败;
+    endif
+else (否,写入中途失败)
+    :回滚:删除临时文件,原文件未被破坏;
+    :标记失败,可重试;
+endif
+stop
+
+@enduml
+```
+
+**事务保证**：
+- **原子性**：通过 SMB 原子重命名实现"全有或全无"，要么完全成功要么原文件不变。
+- **一致性**：临时文件完整写入且校验通过后才替换，目标文件始终处于一致状态。
+- **可恢复**：失败时临时文件可保留供重试，原文件不被破坏。
+
+#### 2.1.3.5 网络恢复与自动续传流程（REQ-05）
+
+```plantuml
+@startuml
+title 网络恢复与自动续传流程
+
+start
+:网络状态监听(后台服务);
+:接收网络状态事件;
+if (网络可用?) then (是)
+    :检查挂起的可恢复任务队列;
+    while (存在挂起任务?) is (是)
+        :重建SMB会话(如已失效);
+        if (会话重建成功?) then (是)
+            :从持久化偏移续传任务;
+            :完成后SHA-256校验;
+        else (否)
+            :按退避策略重试会话重建;
+        endif
+    endwhile (否)
+    :所有挂起任务处理完毕;
+else (否,网络不可用)
+    :暂停所有进行中任务(持久化状态);
+    :显示"网络不可用,任务已保存";
+    :等待网络恢复;
+endif
+stop
+
+@enduml
+```
+
+#### 2.1.3.6 扩展点设计
+
+| 扩展点 | 扩展接口 | 默认实现 | 扩展场景 |
+|--------|---------|---------|---------|
+| SMB 协议版本适配 | SmbTransportAdapter | SMBJ 适配器（SMB2/3） | 未来支持其他协议版本 |
+| 文件类型→打开应用选择 | FileAppResolver | 默认优先 WPS，回退系统选择 | 支持更多文件类型或应用 |
+| WPS 文件交付方式 | WpsDeliveryStrategy | 优先 ContentProvider/URI，回退临时文件 | 适配不同 WPS 版本 |
+| 传输加密策略 | TransportEncryptionPolicy | SMB 协议层加密（M1 评估） | 未来支持应用层加密 |
+| 冲突解决策略 | ConflictResolver | 提示用户选择（合并/覆盖/放弃） | 未来支持自动合并 |
+| 日志脱敏规则 | LogSanitizer | 密码/凭据/文件内容脱敏 | 扩展脱敏规则 |
+| 重试退避策略 | RetryBackoffPolicy | 指数退避，上限 5 次 | 调整退避参数 |
+## 2.2 接口设计
+
+### 2.2.1 总体设计
+
+本组件接口分为三大类：内部模块间接口（Java/Kotlin 层）、对外 Android 接口（ContentProvider/Intent）、以及 Capacitor 插件桥接接口（TS↔Java，如沿用 Capacitor 架构）。
+
+**接口分类依据**：
+- **内部接口**：核心能力层与基础设施层之间的契约，面向模块解耦与可测试性。
+- **对外 Android 接口**：面向第三方应用与 WPS 的标准 Android 接口，面向互操作性。
+- **桥接接口**：表现层（React/TS）与原生层（Java/Kotlin）之间的桥接，面向跨层调用。
+
+**接口变更兼容策略**：
+- 对外 ContentProvider/Intent 接口采用版本化 URI（如 `content://com.smbexplorer.v1/...`），变更时提供新版本 URI 并保留旧版本迁移说明。
+- 内部接口采用接口抽象（Java Interface），变更通过新增方法而非修改现有方法实现兼容。
+- 桥接接口采用 Capacitor 插件方法签名版本化，新增参数使用可选默认值。
+
+| 接口分类 | 接口名称 | 稳定性等级 | 说明 |
+|---------|---------|-----------|------|
+| 内部接口 | SmbConnectionManager | 稳定 | SMB 会话管理 |
+| 内部接口 | SmbDirectoryEnumerator | 稳定 | 目录枚举（分页） |
+| 内部接口 | StreamTransferEngine | 稳定 | 流式传输 |
+| 内部接口 | TransferQueueManager | 稳定 | 持久化传输队列 |
+| 内部接口 | IntegrityChecker | 稳定 | SHA-256 完整性校验 |
+| 内部接口 | EditSessionManager | 稳定 | 编辑会话生命周期 |
+| 内部接口 | WpsDeliveryHandler | 实验 | WPS 文件交付（M2 验证后稳定） |
+| 内部接口 | WriteBackEngine | 稳定 | 可靠回写 |
+| 内部接口 | ConflictDetector | 稳定 | 版本基线冲突检测 |
+| 内部接口 | NetworkRecoveryService | 稳定 | 网络恢复与续传 |
+| 内部接口 | CredentialVault | 稳定 | Keystore 凭据加密 |
+| 对外接口 | SmbFileContentProvider | 稳定 | 第三方应用文件访问 |
+| 对外接口 | SmbFileOpenIntent | 稳定 | Intent 打开共享文件 |
+| 桥接接口 | SmbExplorerPlugin | 稳定 | Capacitor 插件桥接 |
+
+### 2.2.2 接口清单
+
+#### SmbConnectionManager（SMB 连接管理）
+
+**接口签名**：
+```
+interface SmbConnectionManager {
+    // 建立会话（凭据从 CredentialVault 读取，不传入明文）
+    fun connect(configId: String): SmbSession
+    // 测试连接（不持久化会话）
+    fun testConnection(config: SmbConnectionConfig): ConnectionTestResult
+    // 断开会话
+    fun disconnect(sessionId: String): Unit
+    // 重建失效会话（REQ-05 自动恢复）
+    fun reconnect(sessionId: String): SmbSession
+    // 获取活跃会话
+    fun getActiveSession(configId: String): SmbSession?
+}
+```
+
+**业务说明**：管理 SMB 会话的建立、测试、断开与重建，支持会话池化与失效自动重建。
+**前置条件**：凭据已通过 CredentialVault 加密存储；配置已持久化。
+**后置条件**：成功时返回可用会话句柄；失败时抛出分类异常，不持久化无效会话。
+**异常映射**：网络不可达→`NetworkUnreachableException`；认证失败→`AuthFailedException`；协议不支持→`ProtocolUnsupportedException`；超时→`ConnectionTimeoutException`。
+
+#### SmbDirectoryEnumerator（目录枚举，分页）
+
+**接口签名**：
+```
+interface SmbDirectoryEnumerator {
+    // 分页枚举（首屏优先）
+    fun enumerate(session: SmbSession, path: String, pageSize: Int, cursor: PageCursor?): DirectoryPage
+    // 搜索（共享范围内）
+    fun search(session: SmbSession, basePath: String, keyword: String, pageSize: Int, cursor: PageCursor?): SearchPage
+    // 排序
+    fun sort(entries: List<DirEntry>, sortBy: SortBy, order: SortOrder): List<DirEntry>
+}
+```
+
+**业务说明**：分页枚举目录条目，支持搜索与排序，避免一次性枚举大目录。
+**前置条件**：会话有效。
+**后置条件**：返回分页结果与下一页游标；首屏在响应上限内返回。
+**异常映射**：枚举超时→`EnumerateTimeoutException`；权限不足→`PermissionDeniedException`。
+
+#### StreamTransferEngine（流式传输引擎）
+
+**接口签名**：
+```
+interface StreamTransferEngine {
+    // 流式复制（分块读写，进度回调）
+    fun copy(source: FileLocation, target: FileLocation, options: TransferOptions, progress: ProgressCallback): TransferResult
+    // 流式移动
+    fun move(source: FileLocation, target: FileLocation, options: TransferOptions, progress: ProgressCallback): TransferResult
+    // 断点续传（从偏移继续）
+    fun resume(taskId: String, offset: Long, progress: ProgressCallback): TransferResult
+}
+```
+
+**业务说明**：流式/分块传输，不整体载入内存，支持断点续传与进度回调。
+**前置条件**：源可读、目标可写、本地空间充足。
+**后置条件**：传输完成后触发完整性校验；失败时原文件不被破坏（安全写入事务）。
+**异常映射**：空间不足→`InsufficientSpaceException`；网络中断→`NetworkInterruptedException`（可恢复）；校验失败→`ChecksumMismatchException`。
+
+#### TransferQueueManager（持久化传输队列）
+
+**接口签名**：
+```
+interface TransferQueueManager {
+    // 入队（持久化）
+    fun enqueue(task: TransferTask): String  // 返回 taskId
+    // 暂停
+    fun pause(taskId: String): Unit
+    // 恢复
+    fun resume(taskId: String): Unit
+    // 取消
+    fun cancel(taskId: String): Unit
+    // 重试
+    fun retry(taskId: String): Unit
+    // 获取队列状态
+    fun getQueueStatus(): QueueStatus
+    // 应用重启后恢复未完成任务
+    fun restorePendingTasks(): Unit
+}
+```
+
+**业务说明**：持久化传输队列管理，支持暂停/恢复/取消/重试与应用重启恢复。
+**前置条件**：任务已持久化。
+**后置条件**：状态迁移持久化；应用被杀后重启可恢复队列。
+**异常映射**：任务不存在→`TaskNotFoundException`；重复操作→`DuplicateOperationException`（防护）。
+
+#### IntegrityChecker（完整性校验）
+
+**接口签名**：
+```
+interface IntegrityChecker {
+    // 流式计算 SHA-256
+    fun computeSha256(location: FileLocation): String
+    // 校验源与目标一致
+    fun verify(source: FileLocation, target: FileLocation): Boolean
+}
+```
+
+**业务说明**：流式 SHA-256 计算与比对，确认文件内容逐字节一致。
+**前置条件**：文件可读。
+**后置条件**：返回指纹或比对结果。
+
+#### EditSessionManager（编辑会话管理）
+
+**接口签名**：
+```
+interface EditSessionManager {
+    // 建立编辑会话（缓存+版本基线+交付WPS）
+    fun openSession(sharedPath: String, session: SmbSession): EditSession
+    // 获取会话状态
+    fun getSessionState(sessionId: String): EditSessionState
+    // 检测本地变更
+    fun detectChange(sessionId: String): ChangeDetectionResult
+    // 放弃会话
+    fun abandon(sessionId: String): Unit
+    // 获取所有活跃会话
+    fun getActiveSessions(): List<EditSession>
+}
+```
+
+**业务说明**：管理编辑会话生命周期，含缓存副本、版本基线、变更检测。
+**前置条件**：共享文件可读、本地缓存空间充足。
+**后置条件**：会话状态按状态机迁移并持久化。
+
+#### WpsDeliveryHandler（WPS 文件交付，M2 验证后稳定）
+
+**接口签名**：
+```
+interface WpsDeliveryHandler {
+    // 交付文件给 WPS（选择最优方式）
+    fun deliver(localCopy: LocalFile, fileType: FileType): WpsDeliveryResult
+    // 识别 WPS 保存的最终结果文件（过滤临时文件/另存为）
+    fun resolveResultFile(saveEvent: WpsSaveEvent): ResultFileResolution
+}
+```
+
+**业务说明**：通过 Android 标准文件访问接口向 WPS 交付文件，并识别 WPS 保存的最终结果文件。
+**前置条件**：WPS 已安装；本地副本可读。
+**后置条件**：WPS 可编辑保存；保存事件可被检测。
+**异常映射**：WPS 未安装→`WpsNotInstalledException`；交付方式不可用→`DeliveryUnavailableException`。
+**注意**：此接口在 PAD2-M2 技术验证门禁通过后方可标记为稳定。
+
+#### WriteBackEngine（可靠回写引擎）
+
+**接口签名**：
+```
+interface WriteBackEngine {
+    // 可靠回写（版本基线检测→流式回写→校验）
+    fun writeBack(sessionId: String): WriteBackResult
+}
+```
+
+**业务说明**：将本地变更可靠回写到共享原位置，含冲突检测、安全写入、完整性校验。
+**前置条件**：编辑会话处于"已保存待回写"状态。
+**后置条件**：回写成功且校验通过→显示"已保存到共享"；失败→原文件未被破坏，保留本地副本。
+**异常映射**：冲突→`EditConflictException`（提示用户决策）；回写失败→`WriteBackFailedException`；校验失败→`ChecksumMismatchException`。
+
+#### ConflictDetector（冲突检测）
+
+**接口签名**：
+```
+interface ConflictDetector {
+    // 检测共享文件版本是否已变（与基线比对）
+    fun detect(session: SmbSession, sharedPath: String, baseline: VersionBaseline): ConflictDetectionResult
+}
+```
+
+**业务说明**：回写前检测共享文件当前版本是否与编辑会话开始时的基线一致，防止静默覆盖。
+**前置条件**：版本基线已记录。
+**后置条件**：返回冲突/无冲突判定。
+
+#### NetworkRecoveryService（网络恢复与续传）
+
+**接口签名**：
+```
+interface NetworkRecoveryService {
+    // 启动网络监听（后台服务）
+    fun startMonitoring(): Unit
+    // 停止监听
+    fun stopMonitoring(): Unit
+    // 注册可恢复任务
+    fun registerRecoverable(taskId: String): Unit
+}
+```
+
+**业务说明**：监听网络状态，自动重建会话与续传可恢复任务。
+**前置条件**：后台服务已启动。
+**后置条件**：网络恢复后自动续传挂起任务。
+
+#### CredentialVault（Keystore 凭据加密）
+
+**接口签名**：
+```
+interface CredentialVault {
+    // 加密存储凭据
+    fun store(configId: String, credential: SmbCredential): Unit
+    // 读取凭据（解密）
+    fun retrieve(configId: String): SmbCredential
+    // 删除凭据
+    fun remove(configId: String): Unit
+    // 检查 Keystore 可用性
+    fun isAvailable(): Boolean
+}
+```
+
+**业务说明**：以 Android Keystore 保护的 AES 加密方式存储 SMB 凭据，禁止明文。
+**前置条件**：Android Keystore 可用（设备已设置锁屏）。
+**后置条件**：凭据以加密密文存储，任何位置无明文。
+**异常映射**：Keystore 不可用→`KeystoreUnavailableException`（提示启用设备锁屏）。
+
+#### SmbFileContentProvider（对外 ContentProvider）
+
+**接口签名**：Android 标准 ContentProvider，URI 格式 `content://com.smbexplorer.v1/shared/<configId>/<path>`。
+
+**业务说明**：向第三方应用提供共享文件访问，支持 `openFile`、`query`、`cursor` 等标准操作。
+**前置条件**：第三方应用已获 URI 授权（`grantUriPermission`）。
+**后置条件**：授权后可访问；未授权拒绝。
+**异常映射**：未授权→`SecurityException`；文件不存在→`FileNotFoundException`。
+
+## 2.3 数据模型
+
+### 2.3.1 设计目标
+
+数据模型须支持以下业务场景与目标：
+
+1. **业务场景**：多共享配置管理、目录浏览与搜索、文件操作与传输、编辑会话与回写、凭据安全存储、审计与诊断。
+2. **性能目标**：传输任务持久化读写低延迟（< 50ms）；目录枚举分页首屏快速响应；大文件流式处理内存受限。
+3. **容量目标**：支持 10,000 个文件批量任务记录；支持多共享多会话并发。
+4. **扩展性目标**：数据模型可独立演进；支持未来新增任务类型与文件访问方式。
+5. **兼容策略**：存量凭据须从明文迁移为 Keystore 加密；任务持久化采用 Room/SQLite，支持 schema 版本迁移。
+
+### 2.3.2 模型实现
+
+核心领域对象类图如下，对象关系遵循领域术语定义（spec 第 2 章），关注对象生命周期与状态流转。
+
+```plantuml
+@startuml
+title 核心领域对象类图
+
+class SmbConnectionConfig {
+    +configId: String
+    +serverAddress: String
+    +shareName: String
+    +account: String
+    +port: Int
+    +protocolVersion: SmbProtocolVersion
+    +displayName: String?
+    +createdAt: Long
+    +lastConnectionStatus: ConnectionStatus
+}
+
+class SmbCredential {
+    +configId: String
+    +encryptedCredential: ByteArray
+    +encryptedAt: Long
+}
+
+class SmbSession {
+    +sessionId: String
+    +configId: String
+    +state: SessionState
+    +createdAt: Long
+}
+
+class DirEntry {
+    +name: String
+    +path: String
+    +size: Long
+    +modifiedAt: Long
+    +type: EntryType
+    +isDirectory: Boolean
+}
+
+class DirectoryPage {
+    +entries: List<DirEntry>
+    +nextCursor: PageCursor?
+    +hasMore: Boolean
+}
+
+class TransferTask {
+    +taskId: String
+    +type: TransferType
+    +source: FileLocation
+    +target: FileLocation
+    +state: TransferState
+    +progressBytes: Long
+    +totalBytes: Long
+    +resumeOffset: Long
+    +verifiedFiles: List<String>
+    +sourceSha256: String
+    +targetSha256: String
+    +retryCount: Int
+    +createdAt: Long
+    +updatedAt: Long
+    +failureReason: FailureReason?
+}
+
+class FileLocation {
+    +locationType: LocationType
+    +configId: String?
+    +relativePath: String
+}
+
+class EditSession {
+    +sessionId: String
+    +sharedPath: String
+    +localCopyPath: String
+    +versionBaseline: VersionBaseline
+    +deliveryMethod: WpsDeliveryMethod
+    +state: EditSessionState
+    +startedAt: Long
+    +updatedAt: Long
+}
+
+class VersionBaseline {
+    +sha256: String
+    +modifiedAt: Long
+}
+
+class FileCacheEntry {
+    +sharedPath: String
+    +localCachePath: String
+    +versionBaseline: VersionBaseline
+    +cachedAt: Long
+    +size: Long
+    +isDirty: Boolean
+}
+
+class AuditLog {
+    +logId: String
+    +operationType: AuditOperationType
+    +target: String
+    +timestamp: Long
+    +result: AuditResult
+    +sanitizedDetail: String
+}
+
+SmbConnectionConfig "1" --> "1" SmbCredential : 加密凭据
+SmbConnectionConfig "1" --> "0..*" SmbSession : 会话
+TransferTask --> FileLocation : 源
+TransferTask --> FileLocation : 目标
+EditSession --> VersionBaseline : 版本基线
+EditSession --> FileCacheEntry : 缓存副本
+FileCacheEntry --> VersionBaseline : 版本基线
+
+@enduml
+```
+
+**对象关系说明**：
+- `SmbConnectionConfig` ↔ `SmbCredential`：一对一，凭据独立加密存储，配置不持有明文。
+- `SmbConnectionConfig` ↔ `SmbSession`：一对多，一个配置可建立多个会话（池化）。
+- `TransferTask` → `FileLocation`：关联源与目标位置，`FileLocation` 统一抽象本地路径与共享路径。
+- `EditSession` → `VersionBaseline`：持有编辑开始时的版本基线，用于冲突检测。
+- `EditSession` → `FileCacheEntry`：关联本地缓存副本。
+
+**对象生命周期与创建/销毁策略**：
+- `SmbConnectionConfig`：由管理员创建，持久化存储，删除时级联清理凭据与会话。
+- `SmbSession`：按需创建（连接时），池化管理，超时或失效时销毁。
+- `TransferTask`：入队时创建并持久化，完成/取消后保留记录（审计），定期清理历史。
+- `EditSession`：打开文件时创建，回写成功或放弃后销毁，缓存副本按空间策略清理。
+- `FileCacheEntry`：随编辑会话创建，会话结束后按 LRU + 空间上限清理。
+
+**持久化策略**（不包含表结构）：
+- `SmbConnectionConfig`：Room/SQLite 持久化（不含凭据明文）。
+- `SmbCredential`：Keystore 加密密文存储于独立安全存储区。
+- `TransferTask`：Room/SQLite 持久化，支持状态机驱动与断点续传。
+- `EditSession`：Room/SQLite 持久化（活跃会话），完成后归档。
+- `FileCacheEntry`：本地文件系统 + 元数据 Room/SQLite。
+- `AuditLog`：Room/SQLite 持久化，定期轮转与导出。
+---
+
+## 2.4 WPS 集成方案（REQ-02 + REQ-03 关键技术门禁）
+
+WPS 集成是本项目成败点（RISK-03），须在 PAD2-M2 阶段作为独立技术验证门禁通过后方可进入开发。
+
+### 2.4.1 文件交付方式选型
+
+本组件须通过 Android 标准文件访问机制向 WPS 交付文件。候选方式及选型理由：
+
+| 交付方式 | 原理 | 优势 | 风险 | 选型决策 |
+|---------|------|------|------|---------|
+| ContentProvider + URI | 本组件实现 ContentProvider，向 WPS 授予 URI 权限，WPS 通过 URI 读写 | 可控性强，可拦截读写操作，支持回写检测 | 须 WPS 支持 ContentProvider URI 读写 | **首选**（M2 验证） |
+| 临时文件 + Intent | 将共享文件缓存为本地临时文件，通过 Intent ACTION_VIEW/EDIT 交给 WPS | 兼容性最好，几乎所有 WPS 版本支持 | 回写须靠文件变更监听，另存为识别复杂 | **回退方案** |
+| SAF DocumentFile | 通过 SAF 获取文件 URI 交给 WPS | Android 标准 | SAF 权限模型复杂，WPS 支持度不确定 | 备选（M2 验证） |
+
+**选型决策**：优先 ContentProvider + URI 方式（可控回写），M2 验证不通过则回退临时文件 + Intent 方式。最终方式在 M2 门禁通过后冻结。
+
+### 2.4.2 WPS 保存行为识别策略
+
+WPS 保存行为存在三种可能，须逐一识别：
+
+| 保存行为 | 识别特征 | 处理策略 |
+|---------|---------|---------|
+| 直接写入原文件 | 原文件 mtime 更新，内容指纹变化 | 触发回写到共享原位置 |
+| 另存为新文件 | 出现新文件名，原文件未变 | 提示用户选择回写为新文件或覆盖原文件 |
+| 生成临时文件 | 出现 `~$` 前缀或 `.tmp` 后缀临时文件，原文件最终更新 | 过滤临时文件，识别最终结果文件后触发回写 |
+
+**识别实现**：通过文件变更监听（`FileObserver`）+ ContentProvider 回调 + 文件名/路径模式匹配综合判定。
+
+### 2.4.3 回写校验链路
+
+回写校验是"禁止伪报成功"的核心保障：
+
+```plantuml
+@startuml
+title 回写校验链路
+
+start
+:本地变更已确认;
+:查询共享当前版本(SHA-256+mtime);
+if (当前版本 == 版本基线?) then (是)
+    :流式回写(安全写入事务);
+    :回写后读取共享文件计算SHA-256;
+    if (回写后SHA-256 == 本地副本SHA-256?) then (是)
+        :校验通过,显示"已保存到共享";
+    else (否)
+        :校验失败,显示保存失败;
+        :原文件未被破坏(安全写入事务保证);
+    endif
+else (否)
+    :编辑冲突,提示用户决策;
+endif
+stop
+
+@enduml
+```
+
+### 2.4.4 M2 技术验证门禁清单
+
+PAD2-M2 须在真实平板、实际 WPS 版本、真实 SMB 服务器上验证以下全部项：
+
+| 验证项 | 验证内容 | 通过标准 |
+|--------|---------|---------|
+| V1 WPS 可打开 | 通过选定接口交付文件，WPS 可正常打开编辑 | WPS 成功打开且可编辑 |
+| V2 WPS 可保存 | WPS 保存操作可被本组件检测 | 本组件检测到保存事件 |
+| V3 保存行为识别 | 正确识别直接写入/另存为/临时文件 | 最终结果文件判定正确 |
+| V4 回写成功 | 保存后回写共享且 SHA-256 校验通过 | 共享文件内容确实发生预期变化 |
+| V5 回写失败不破坏 | 回写失败时原文件未被破坏 | 原文件内容与基线一致 |
+| V6 并发冲突 | 两台设备同时编辑不静默覆盖 | 提示冲突，不丢失任一方更新 |
+| V7 断网恢复 | 编辑期间断网后恢复，回写可完成 | 网络恢复后回写成功且校验通过 |
+
+**门禁底线**：不能仅凭 WPS 成功启动就判定通过，必须验证共享文件内容确实发生预期变化且失败时原文件不被静默破坏。全部 V1-V7 通过方可进入 PAD2-M3 开发。
+
+## 2.5 安全方案
+
+### 2.5.1 凭据安全存储（RISK-04 缓解）
+
+```plantuml
+@startuml
+title 凭据加密存储流程
+
+start
+:用户输入SMB账号密码;
+:检查Android Keystore可用性;
+if (Keystore可用?) then (是)
+    :生成/获取AES密钥(Keystore保护);
+    :AES加密凭据→密文;
+    :密文存储于独立安全存储区;
+    :明文从内存清除;
+else (否)
+    :拒绝存储,提示启用设备锁屏;
+endif
+stop
+
+@enduml
+```
+
+**安全保证**：
+- 密钥由 Android Keystore 生成与管理，密钥不出 Keystore。
+- 存储区仅存密文，任何位置无明文密码。
+- 读取时临时解密到内存，使用后立即清除。
+- 日志脱敏确保密码不出现在任何日志条目。
+
+### 2.5.2 日志脱敏与审计
+
+- **脱敏规则**：密码、完整凭据、文件敏感内容在日志输出前替换为 `***`。
+- **结构化日志**：含错误分类码、操作上下文、时间戳，便于故障诊断。
+- **审计日志**：连接建立、文件写入、删除、重命名、回写记录审计日志（操作类型、目标、时间、结果，脱敏）。
+- **诊断导出**：用户可导出脱敏诊断包（操作日志 + 错误分类 + 环境信息），不含敏感数据。
+
+### 2.5.3 最小权限
+
+| 权限 | 用途 | 必要性 |
+|------|------|--------|
+| INTERNET | SMB 网络通信 | 必需 |
+| ACCESS_NETWORK_STATE | 网络状态监听 | 必需 |
+| ACCESS_WIFI_STATE | Wi-Fi 切换检测 | 必需 |
+| READ/WRITE_EXTERNAL_STORAGE | 本地缓存文件读写 | 必需（Android 10+ 采用分区存储） |
+| FOREGROUND_SERVICE | 传输队列后台服务 | 必需 |
+| 无额外冗余权限 | — | 每项权限均有对应功能用途 |
+
+### 2.5.4 SMB 协议安全评估
+
+M1 阶段须评估并冻结 SMB 协议版本与传输加密要求：
+- **协议版本**：建议 SMB2/3，不支持存在已知安全漏洞的 SMB1。
+- **传输加密**：评估 SMB3 加密支持（SMB 3.1.1 支持端到端加密），优先启用。
+- **认证**：NTLMv2 或 Kerberos，禁用 NTLMv1。
+
+## 2.6 可靠性方案
+
+### 2.6.1 大文件内存压力缓解（RISK-01）
+
+- **流式/分块读写**：所有文件读写采用分块流式处理（建议分块 64KB-1MB），禁止一次性 `byte[]` 读取整体文件。
+- **内存上限**：单任务内存占用不超过单实例上限，1 GiB 文件传输内存占用与分块大小相关而非文件大小。
+- **SHA-256 流式计算**：完整性校验采用流式 SHA-256，不将文件整体载入内存。
+
+### 2.6.2 覆盖写入安全（RISK-02）
+
+- **安全写入事务**：采用"临时文件→校验→原子替换"策略（见 2.1.3.4），失败时原文件不被破坏。
+- **冲突保护**：写入前检测同名文件，提示覆盖/跳过/重命名，禁止静默覆盖。
+
+### 2.6.3 持久化任务队列与断点续传（RISK-05）
+
+- **持久化驱动**：传输任务状态与进度持久化至 Room/SQLite，每次状态迁移与进度更新均落盘。
+- **应用重启恢复**：应用启动时检查并恢复未完成任务队列。
+- **断点续传**：从"已传输字节偏移"续传，已校验文件不重复传输。
+- **网络恢复自动续传**：网络恢复后自动重建会话并续传挂起任务。
+
+### 2.6.4 禁止伪报成功
+
+- 所有传输/回写须 SHA-256 校验通过方可标记成功。
+- 网络不可用、回写失败、校验不通过时显示等待或失败，不显示成功。
+- 回写校验未通过时不显示"已保存到共享"。
+
+## 2.7 部署与编译方案
+
+### 2.7.1 远程编译服务器使用方案
+
+本项目使用远程编译服务器进行 Android APK 编译，避免本地环境配置。
+
+| 项目 | 配置 |
+|------|------|
+| 服务器地址 | 192.168.2.3 |
+| SMB 共享路径 | `\\192.168.2.3\home\debian`（对应 Linux 路径 `/home/debian`） |
+| 编译工作目录 | `/home/debian/android` |
+| 用户名 | debian |
+| 密码 | ***REDACTED*** |
+| 用途 | 远程编译 Android APK |
+
+**编译流程**：
+
+```plantuml
+@startuml
+title 远程编译流程
+
+start
+:开发者本地编辑源码;
+:源码同步到远程编译服务器\n(SMB共享 /home/debian/android 或 git push);
+:远程服务器执行 Gradle 编译\n(./gradlew assembleRelease);
+if (编译成功?) then (是)
+    :APK产物生成于远程服务器\n(/home/debian/android/app/build/outputs/);
+    :APK产物回传到本地\n(SMB下载或 git artifacts);
+    :APK安装到目标平板\n(adb install);
+else (否)
+    :编译错误回传到本地;
+    :开发者修复后重新编译;
+endif
+stop
+
+@enduml
+```
+
+**编译环境要求**：
+- 远程服务器须预装 JDK、Android SDK、Gradle。
+- 编译工作目录 `/home/debian/android` 须有读写权限。
+- SMB 共享须可从开发者本地 Windows 机器访问（`\\192.168.2.3\home\debian`）。
+
+### 2.7.2 新仓库管理方案
+
+| 项目 | 配置 |
+|------|------|
+| 新仓库地址 | https://github.com/wujupeng/andriodpad2 |
+| 说明 | 安卓平板项目2（Android Shared File Explorer）新仓库 |
+| 与旧仓库关系 | 旧仓库 `wujupeng/andriodpad` 仅作技术资产参考，新仓库独立演进 |
+
+**版本管理策略**：
+- 主分支 `main`：稳定发布版本。
+- 开发分支 `develop`：集成开发。
+- 阶段分支 `pad2-m1`、`pad2-m2`、`pad2-m3`、`pad2-m4`：对应五阶段规划。
+- 复用旧仓库代码须经 M0 技术审查裁定，不预设复用也不预设重写。
+
+### 2.7.3 技术栈选型
+
+| 层 | 技术选型 | 选型理由 |
+|---|---------|---------|
+| 原生层（Android） | Java/Kotlin + SMBJ | SMBJ 为 Java SMB 客户端库，须在原生层使用；Kotlin 可选用于新模块 |
+| 桥接层 | Capacitor 8 插件 | 复用旧仓库 Capacitor 架构经验，TS↔Java 桥接成熟 |
+| 表现层 | React + TypeScript | 复用旧仓库前端架构经验，组件化开发 |
+| 持久化 | Room/SQLite | Android 官方推荐，支持 schema 迁移与响应式查询 |
+| 凭据加密 | Android Keystore + AES | 系统级密钥保护，符合安全 DFX 约束 |
+| 文件访问 | SAF/ContentProvider | Android 标准文件访问机制，WPS 互操作基础 |
+| 传输协议 | SMBJ（SMB2/3） | 复用旧仓库 SMBJ 经验，M1 冻结协议版本 |
+
+**选型决策理由**：
+- 保留 Capacitor + React + TypeScript 架构以复用旧仓库前端与桥接经验，降低迁移成本。
+- 原生层保留 Java 以复用 SMBJ 封装与 Android 插件经验，新模块可选用 Kotlin。
+- 持久化从 SharedPreferences 升级为 Room/SQLite 以支持任务持久化与断点续传。
+- 凭据从明文升级为 Keystore 加密以满足安全 DFX 约束。
+
+## 2.8 各阶段实现路径
+
+### 2.8.1 阶段门禁与实现路径总览
+
+```plantuml
+@startuml
+title 五阶段实现路径
+
+state "PAD2-M0\n只读技术审查" as M0
+state "PAD2-M1\n需求与架构冻结" as M1
+state "PAD2-M2\n核心验证(WPS门禁)" as M2
+state "PAD2-M3\n资源管理器实现" as M3
+state "PAD2-M4\n规模与可靠性验收" as M4
+
+M0 --> M1 : 差距矩阵+风险清单+验收方案
+M1 --> M2 : 冻结需求规格+架构设计\n(本design.md)
+M2 --> M3 : WPS技术验证门禁通过\n(V1-V7全部通过)
+M3 --> M4 : 完整能力实现+单元/集成测试通过
+M4 --> [*] : 功能/压力/断网/完整性/安全测试达标
+
+note right of M0 : 已完成第一轮审查\n不改代码不提交
+note right of M1 : 冻结Android版本/SMB协议/\n并发规模/WPS兼容/性能指标
+note right of M2 : 真实平板+真实SMB+实际WPS\n验证关键路径
+note right of M3 : 浏览/文件操作/传输队列/\n缓存/重试/冲突/安全凭据
+note right of M4 : 目标平板+真实共享+目标网络\n客户端与服务端承载能力分开验证
+
+@enduml
+```
+
+### 2.8.2 各阶段实现内容
+
+| 阶段 | 实现内容 | 产出 | 门禁标准 |
+|------|---------|------|---------|
+| PAD2-M0 | 只读技术审查旧仓库 | 差距矩阵、风险清单、改造建议、验收方案 | 基线未被修改（已完成） |
+| PAD2-M1 | 冻结需求规格与架构设计 | 正式 spec.md + design.md（本文档） | 含全部冻结项：Android 版本、SMB 协议、并发规模、文件大小上限、权限模型、WPS 兼容范围、性能指标 |
+| PAD2-M2 | WPS 关键路径技术验证 | 技术验证报告（V1-V7） | 真实环境验证通过：WPS 打开/编辑/保存回写/冲突/断网恢复，共享文件内容确实变化且失败时原文件不被破坏 |
+| PAD2-M3 | 完整资源管理器实现 | 可测试 APK | 共享目录浏览、文件操作、传输队列、缓存、重试、冲突处理、安全凭据管理全部实现且单元/集成测试通过 |
+| PAD2-M4 | 规模与可靠性验收 | 验收报告 + 发布 APK | 功能/压力/断网恢复/数据完整性/安全测试全部达标；客户端与服务端承载能力分开出具报告 |
+
+### 2.8.3 M2 阶段验证优先级
+
+M2 须优先验证关键路径，不急于扩展所有功能：
+
+1. **真实 SMB 浏览**：验证目录枚举与文件属性展示。
+2. **打开文件**：验证共享文件直接打开（ContentProvider/临时文件交付 WPS）。
+3. **WPS 编辑保存回写**：验证保存后回写共享且 SHA-256 校验通过（V1-V5）。
+4. **文件冲突**：验证两人同时编辑不静默覆盖（V6）。
+5. **断网恢复**：验证编辑期间断网后恢复回写可完成（V7）。
+
+### 2.8.4 M3 阶段实现优先级
+
+M3 在 M2 门禁通过后按以下优先级实现完整能力：
+
+1. **共享目录浏览**：分页枚举、搜索、排序、属性、收藏。
+2. **文件操作**：复制/移动/重命名/删除（入传输队列）。
+3. **传输队列**：持久化、流式传输、进度、暂停/取消/重试、断点续传。
+4. **缓存管理**：编辑会话缓存、空间检查、LRU 清理。
+5. **冲突处理**：版本基线检测、冲突提示、用户决策。
+6. **安全凭据管理**：Keystore 加密、凭据迁移、日志脱敏、审计。
+7. **网络恢复**：网络监听、会话重建、自动续传、退避重试。
+
+### 2.8.5 M4 阶段验收量化指标
+
+| 指标 | 量化标准 |
+|------|---------|
+| 大文件基线 | 1 GiB 文件传输，内存不超限，SHA-256 校验通过 |
+| 批量文件基线 | 10,000 个混合大小文件，全部完成且逐个校验通过 |
+| 文件完整性 | 所有传输/回写 SHA-256 校验通过 |
+| 网络恢复 | Wi-Fi 切换、短暂断网、SMB 会话失效、应用重启均可恢复 |
+| 编辑保存 | WPS 保存后内容确实回写目标共享文件 |
+| 冲突保护 | 两台设备同时编辑不静默丢失更新 |
+| 多用户规模 | PM 明确目标并发用户数下成功率达标 |
+| 客户端/服务端承载 | 分开验证，分别出具报告 |
+
+---
+
+> 本技术设计文档已覆盖需求与存量功能关系分析、增量设计方案（实现模型、接口设计、数据模型）、WPS 集成方案、安全方案、可靠性方案、部署与编译方案（含远程编译服务器 192.168.2.3 使用）及各阶段实现路径。下一步须由 spec-task-agent 基于本设计文档生成 tasks.md 任务分解。

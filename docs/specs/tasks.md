@@ -1,0 +1,467 @@
+# 安卓平板项目2：Windows SMB 共享资源管理器 编码任务规划
+
+> 本文档基于 `spec.md` 需求规格与 `design.md` 技术设计文档生成，将五项核心需求（REQ-01 ~ REQ-05）、WPS 保存关键技术门禁、五项关键风险缓解措施及五阶段验收门禁拆解为可执行的开发任务。任务按业务功能垂直切割，遵循依赖关系排序，覆盖从项目初始化到验收发布的完整路径。
+
+---
+
+## 1. 项目初始化与工程基线
+
+### 1.1 初始化新仓库与分支策略
+- [ ] 在 GitHub 创建新仓库 `wujupeng/andriodpad2`，初始化 `main`、`develop` 分支及 `pad2-m1` ~ `pad2-m4` 阶段分支
+- [ ] 将旧仓库 `wujupeng/andriodpad` 标记为只读技术资产参考，不预设代码复用
+- [ ] 配置 `.gitignore`，排除 `node_modules/`、`android/app/build/`、`android/.gradle/`、本地凭据文件等
+
+### 1.2 搭建项目脚手架（Capacitor 8 + React + TypeScript + Android Java）
+- [ ] 初始化 Capacitor 8 项目骨架，包含 `package.json`、`capacitor.config.ts`、`tsconfig.json`
+- [ ] 初始化 React + TypeScript 前端工程，配置 Vite 或 Webpack 构建链
+- [ ] 初始化 Android 原生工程 `android/`，配置 `build.gradle`、`app/build.gradle`，目标 Android API 26+（M1 冻结后确认）
+- [ ] 配置 AndroidManifest.xml 最小权限集：INTERNET、ACCESS_NETWORK_STATE、ACCESS_WIFI_STATE、READ/WRITE_EXTERNAL_STORAGE、FOREGROUND_SERVICE
+
+### 1.3 配置远程编译服务器环境
+- [ ] 验证远程编译服务器 `192.168.2.3` 可达性，确认 SMB 共享 `\\192.168.2.3\home\debian` 可从本地 Windows 挂载
+- [ ] 在远程服务器 `/home/debian/android` 预装 JDK、Android SDK、Gradle 编译环境
+- [ ] 编写远程编译脚本（PowerShell），实现源码同步→远程 Gradle 编译→APK 产物回传→adb install 部署的自动化流程
+- [ ] 验证远程编译流程可成功产出空壳 APK 并安装到目标平板
+
+### 1.4 搭建分层架构骨架
+- [ ] 在 Android 原生层创建四层包结构：`ui`（表现层）、`orchestration`（业务编排层）、`core`（核心能力层）、`infrastructure`（基础设施层）
+- [ ] 在前端层创建对应目录结构：`src/ui/`、`src/orchestration/`、`src/core/`、`src/infrastructure/`
+- [ ] 定义层间依赖规则：上层依赖下层，禁止反向依赖，配置 lint 规则校验依赖方向
+
+---
+
+## 2. PAD2-M1 需求与架构冻结
+
+### 2.1 冻结兼容性与协议要求
+- [ ] 冻结支持 Android 版本范围（建议 Android 8.0+ / API 26+），写入 spec.md 与 build.gradle
+- [ ] 冻结支持 SMB 协议版本（建议 SMB2/3，不支持 SMB1），评估 SMB3 端到端加密支持
+- [ ] 冻结已验证 WPS 版本范围，在真实平板上实测 WPS 版本并记录
+- [ ] 冻结认证策略（NTLMv2 或 Kerberos，禁用 NTLMv1）
+
+### 2.2 冻结性能与并发指标
+- [ ] 冻结并发 SMB 会话上限（建议 4-8）与并发传输任务上限（建议 2-4）
+- [ ] 冻结单文件内存上限与分块大小（建议 64KB-1MB 流式分块）
+- [ ] 冻结目录枚举响应上限（建议首屏 2s，分页加载）
+- [ ] 冻结重试退避上限（建议指数退避，上限 5 次）
+- [ ] 冻结目标并发用户数（PM 明确），作为客户端与服务端承载能力验证基准
+- [ ] 冻结核心操作成功率下限与故障恢复时间上限
+
+---
+
+## 3. 基础设施层实现
+
+### 3.1 实现 SMBJ 封装层
+- [ ] 封装 SMBJ 会话建立、认证（NTLMv2/SPNEGO）、断开操作，提供线程安全会话池化管理（`infrastructure/smb/SmbJWrapper.java`）
+- [ ] 封装 SMBJ 目录枚举、文件读写、重命名、删除、属性查询操作（`infrastructure/smb/SmbJOperations.java`）
+- [ ] 实现 SMB 协议版本适配，支持 SMB2/3，拒绝 SMB1（`infrastructure/smb/SmbProtocolAdapter.java`）
+- [ ] 定义 SMB 异常分类：网络不可达、认证失败、协议不支持、连接超时、权限不足（`infrastructure/smb/SmbExceptions.java`）
+
+### 3.2 实现 Room/SQLite 持久化层
+- [ ] 配置 Room 数据库初始化与 schema 版本迁移机制（`infrastructure/db/AppDatabase.java`）
+- [ ] 定义 `SmbConnectionConfig` 实体与 DAO（不含凭据明文）（`infrastructure/db/entity/SmbConnectionConfigEntity.java`）
+- [ ] 定义 `TransferTask` 实体与 DAO，支持状态机驱动与断点偏移查询（`infrastructure/db/entity/TransferTaskEntity.java`）
+- [ ] 定义 `EditSession` 实体与 DAO，支持活跃会话查询与归档（`infrastructure/db/entity/EditSessionEntity.java`）
+- [ ] 定义 `FileCacheEntry` 实体与 DAO，支持 LRU 清理查询（`infrastructure/db/entity/FileCacheEntryEntity.java`）
+- [ ] 定义 `AuditLog` 实体与 DAO，支持定期轮转与导出（`infrastructure/db/entity/AuditLogEntity.java`）
+
+### 3.3 实现 Keystore 凭据加密层
+- [ ] 实现 `CredentialVault` 接口：检查 Keystore 可用性、生成/获取 AES 密钥、加密存储、解密读取、删除凭据（`infrastructure/security/CredentialVaultImpl.java`）
+- [ ] 实现 Keystore 不可用时的异常处理与用户提示（提示启用设备锁屏）
+- [ ] 确保解密后明文仅在内存临时存在，使用后立即清除，任何位置不落盘明文
+
+### 3.4 实现日志与脱敏层
+- [ ] 实现结构化日志框架，含错误分类码、操作上下文、时间戳（`infrastructure/logging/StructuredLogger.java`）
+- [ ] 实现日志脱敏规则：密码、完整凭据、文件敏感内容替换为 `***`（`infrastructure/logging/LogSanitizer.java`）
+- [ ] 实现错误分类体系：输入校验失败、业务规则冲突、外部系统失败、并发竞争、超时重试（`infrastructure/logging/ErrorClassifier.java`）
+
+### 3.5 实现文件缓存管理
+- [ ] 实现本地缓存副本管理：创建、查询、更新、删除（`infrastructure/cache/FileCacheManager.java`）
+- [ ] 实现缓存空间检查与 LRU + 空间上限清理策略
+- [ ] 实现缓存元数据与 Room/SQLite 持久化联动
+
+### 3.6 实现 SAF/URI 文件访问封装
+- [ ] 封装 Android SAF 权限申请、URI 授权、持久化授权管理（`infrastructure/saf/SafAccessHelper.java`）
+- [ ] 封装 ContentProvider 文件访问操作（openFile、query、cursor）（`infrastructure/saf/ContentProviderHelper.java`）
+- [ ] 适配不同 Android 版本 SAF 行为差异（在 M1 冻结版本范围内验证）
+
+---
+
+## 4. SMB 连接与目录浏览（REQ-01）
+
+### 4.1 实现 SMB 连接管理
+- [ ] 实现 `SmbConnectionManager` 接口：connect、testConnection、disconnect、reconnect、getActiveSession（`core/smb/SmbConnectionManagerImpl.java`）
+- [ ] 实现会话池化与并发会话上限控制（M1 冻结值）
+- [ ] 实现会话失效检测与自动重建触发机制
+- [ ] 实现连接测试不持久化无效会话，分类返回错误原因
+
+### 4.2 实现共享配置管理
+- [ ] 实现共享配置增删改查编排逻辑，凭据通过 `CredentialVault` 加密存储（`orchestration/ConnectionOrchestrator.java`）
+- [ ] 实现存量凭据从明文迁移为 Keystore 加密的迁移脚本与流程
+- [ ] 实现多共享入口管理与切换浏览状态独立维护
+- [ ] 实现连接配置数据校验：服务器地址格式、共享名非空、端口范围、协议版本范围
+
+### 4.3 实现目录分页枚举
+- [ ] 实现 `SmbDirectoryEnumerator` 接口：分页 enumerate、search、sort（`core/smb/SmbDirectoryEnumeratorImpl.java`）
+- [ ] 实现首屏优先策略，首屏在响应上限内返回，剩余分页延迟加载
+- [ ] 实现目录枚举在后台线程执行，避免阻塞 UI
+- [ ] 实现枚举超时重试与超限失败提示
+
+### 4.4 实现搜索与排序
+- [ ] 实现共享范围内按名称搜索，异步搜索与结果分页
+- [ ] 实现按名称、大小、修改时间排序，支持升序/降序
+
+### 4.5 实现文件属性与收藏
+- [ ] 实现文件属性展示：大小、修改时间、类型等（`core/smb/FileAttributeService.java`）
+- [ ] 实现文件/目录收藏列表管理与快速访问（`core/favorite/FavoriteService.java`）
+- [ ] 收藏数据持久化至 Room/SQLite
+
+---
+
+## 5. 流式传输与完整性校验（RISK-01、RISK-02）
+
+### 5.1 实现流式读写引擎
+- [ ] 实现 `StreamTransferEngine` 接口：流式 copy、move、resume（`core/transfer/StreamTransferEngineImpl.java`）
+- [ ] 实现分块读写（64KB-1MB），禁止一次性 `byte[]` 读取整体文件
+- [ ] 实现进度回调机制，实时上报已传输字节数与总字节数
+- [ ] 实现断点续传：从已传输字节偏移定位读写位置继续传输
+
+### 5.2 实现完整性校验引擎
+- [ ] 实现 `IntegrityChecker` 接口：流式 computeSha256、verify（`core/checksum/IntegrityCheckerImpl.java`）
+- [ ] 实现流式 SHA-256 计算，不将文件整体载入内存
+- [ ] 实现传输/回写前后 SHA-256 比对，校验通过方可标记成功
+
+### 5.3 实现安全写入事务
+- [ ] 实现"临时文件→校验→原子替换"安全写入策略（`core/transfer/SafeWriteTransaction.java`）
+- [ ] 实现写入中途失败时回滚：删除临时文件，原文件不被破坏
+- [ ] 实现校验失败时回滚：保留临时文件供重试，原文件不被破坏
+- [ ] 实现 SMB 原子重命名操作完成最终替换
+
+---
+
+## 6. 持久化传输队列与文件操作（REQ-04、RISK-05）
+
+### 6.1 实现持久化传输队列引擎
+- [ ] 实现 `TransferQueueManager` 接口：enqueue、pause、resume、cancel、retry、getQueueStatus、restorePendingTasks（`core/transfer/TransferQueueManagerImpl.java`）
+- [ ] 实现传输任务状态机：排队→进行中→暂停/已完成/失败/已取消，每次状态迁移持久化
+- [ ] 实现应用重启后恢复未完成任务队列（`restorePendingTasks`）
+- [ ] 实现重复操作防护：入队前检查相同源→目标任务是否正在进行
+
+### 6.2 实现文件操作编排
+- [ ] 实现复制/移动/重命名/删除操作编排，入传输队列执行（`orchestration/FileOperationOrchestrator.java`）
+- [ ] 实现本地↔共享互操作与共享间互操作
+- [ ] 实现重命名/删除操作审计日志记录（删除为不可逆操作）
+- [ ] 实现文件被占用时提示而非静默失败
+
+### 6.3 实现批量操作与部分失败恢复
+- [ ] 实现批量文件操作，拆分为子任务粒度，逐文件记录结果
+- [ ] 实现已校验文件清单持久化，恢复时不重复传输已校验文件
+- [ ] 实现批量操作部分失败时显示成功与失败清单，失败项可重试
+
+### 6.4 实现同名冲突检测与处理
+- [ ] 实现目标同名文件冲突检测，提示覆盖/跳过/重命名选项
+- [ ] 实现禁止静默覆盖，用户决策后方可执行
+- [ ] 实现冲突决策记忆（批量操作中"全部覆盖/全部跳过"选项）
+
+---
+
+## 7. 网络恢复与重试退避（REQ-05）
+
+### 7.1 实现网络状态监听
+- [ ] 实现 `NetworkRecoveryService` 接口：startMonitoring、stopMonitoring、registerRecoverable（`core/network/NetworkRecoveryServiceImpl.java`）
+- [ ] 实现网络状态广播接收：Wi-Fi 连接/断开、网络切换、连接超时
+- [ ] 实现 SMB 会话失效检测与自动重建触发
+- [ ] 实现网络不可用时暂停所有进行中任务（持久化状态）并显示等待
+
+### 7.2 实现自动会话重建与续传
+- [ ] 实现网络恢复后自动重建 SMB 会话（如已失效）
+- [ ] 实现网络恢复后自动续传挂起的可恢复任务
+- [ ] 实现续传完成后 SHA-256 校验，确认数据完整
+
+### 7.3 实现重试退避框架
+- [ ] 实现指数退避重试策略，上限 5 次（M1 冻结值）（`core/retry/RetryBackoffFramework.java`）
+- [ ] 实现重试次数耗尽后标记任务失败，保留任务供用户手动重试
+- [ ] 实现连接超时与会话失效的退避重试调度
+- [ ] 实现网络不可用时明确显示等待或失败状态，禁止伪报成功
+
+---
+
+## 8. PAD2-M2 WPS 技术验证门禁（REQ-02、REQ-03、RISK-03）
+
+### 8.1 搭建 M2 验证环境
+- [ ] 准备真实安卓平板、真实 Windows SMB 服务器、实际 WPS 版本环境
+- [ ] 搭建 M2 最小验证工程，含 SMB 连接、文件读取、WPS 交付、保存检测、回写的最小闭环
+
+### 8.2 验证 V1 WPS 可打开
+- [ ] 验证通过 ContentProvider + URI 方式交付文件，WPS 可正常打开编辑
+- [ ] 若 ContentProvider 方式不通过，验证临时文件 + Intent 回退方式
+- [ ] 记录验证结果与最终选型决策
+
+### 8.3 验证 V2 WPS 可保存
+- [ ] 验证 WPS 保存操作可被本组件检测（FileObserver + ContentProvider 回调）
+- [ ] 验证保存事件含目标 URI、变更时间、内容指纹
+
+### 8.4 验证 V3 保存行为识别
+- [ ] 验证正确识别 WPS 直接写入原文件行为
+- [ ] 验证正确识别 WPS 另存为新文件行为
+- [ ] 验证正确识别 WPS 生成临时文件行为（`~$` 前缀或 `.tmp` 后缀），过滤临时文件识别最终结果
+
+### 8.5 验证 V4 回写成功
+- [ ] 验证保存后回写共享原位置，SHA-256 校验通过
+- [ ] 验证共享文件内容确实发生预期变化（不能仅凭 WPS 启动成功判定）
+
+### 8.6 验证 V5 回写失败不破坏原文件
+- [ ] 验证回写失败时原文件内容与基线一致，未被破坏
+- [ ] 验证安全写入事务在失败时正确回滚
+
+### 8.7 验证 V6 并发冲突
+- [ ] 验证两台设备同时编辑同一文件并保存，不静默丢失任一方更新
+- [ ] 验证冲突提示正确出现，提供合并/覆盖/放弃选项
+
+### 8.8 验证 V7 断网恢复
+- [ ] 验证编辑期间断网后恢复，回写可完成且校验通过
+- [ ] 验证断网期间显示等待状态，不显示成功
+
+### 8.9 M2 门禁评审
+- [ ] 汇总 V1-V7 验证报告，全部通过方可批准进入 PAD2-M3 开发
+- [ ] 冻结 WPS 文件交付方式（M2 验证通过后的最终方式）
+- [ ] 未通过项记录差距与整改计划，不批准进入 M3
+
+---
+
+## 9. WPS 编辑会话与可靠回写（REQ-03）
+
+### 9.1 实现编辑会话管理
+- [ ] 实现 `EditSessionManager` 接口：openSession、getSessionState、detectChange、abandon、getActiveSessions（`core/edit/EditSessionManagerImpl.java`）
+- [ ] 实现编辑会话状态机：已打开→编辑中→已保存待回写→回写中→回写成功/失败/冲突/已放弃
+- [ ] 实现会话状态迁移持久化与单会话串行执行
+- [ ] 实现编辑会话缓存副本管理与空间检查
+
+### 9.2 实现版本基线与冲突检测
+- [ ] 实现编辑会话开始时计算共享文件 SHA-256 与修改时间作为版本基线（`core/edit/VersionBaselineService.java`）
+- [ ] 实现 `ConflictDetector` 接口：回写前查询共享当前版本与基线比对（`core/edit/ConflictDetectorImpl.java`）
+- [ ] 实现冲突时禁止静默覆盖，提示用户选择合并/覆盖/放弃
+
+### 9.3 实现 WPS 文件交付
+- [ ] 实现 `WpsDeliveryHandler` 接口：deliver、resolveResultFile（`core/wps/WpsDeliveryHandlerImpl.java`）
+- [ ] 实现优先 ContentProvider/URI 交付，回退临时文件交付（M2 冻结方式）
+- [ ] 实现文件类型→应用选择调度，优先 WPS，回退系统选择
+
+### 9.4 实现 WPS 保存变更检测
+- [ ] 实现文件变更监听（FileObserver）+ ContentProvider 回调 + 指纹比对综合判定
+- [ ] 实现本地副本变更检测，未变更时不触发回写
+- [ ] 实现暂停/恢复变更监听时机控制（回写期间暂停监听）
+
+### 9.5 实现可靠回写引擎
+- [ ] 实现 `WriteBackEngine` 接口：writeBack（`core/edit/WriteBackEngineImpl.java`）
+- [ ] 实现回写流程：版本基线冲突检测→流式回写（安全写入事务）→SHA-256 校验→状态更新
+- [ ] 实现回写成功且校验通过方显示"已保存到共享"
+- [ ] 实现回写失败或校验不通过时显示保存失败，保留本地副本供重试，原文件未被破坏
+
+### 9.6 实现 WPS 另存为与临时文件识别
+- [ ] 实现 WPS 另存为新文件识别，提示用户选择回写为新文件或覆盖原文件
+- [ ] 实现临时文件识别（`~$` 前缀、`.tmp` 后缀），过滤临时文件识别最终结果文件
+- [ ] 实现文件名/路径模式匹配规则配置
+
+### 9.7 实现编辑会话编排
+- [ ] 实现打开→交付→保存检测→回写全流程编排（`orchestration/EditSessionOrchestrator.java`）
+- [ ] 实现回写完成后更新目录列表状态与修改时间
+- [ ] 实现编辑会话异常场景处理：目标文件被占用、回写过程网络中断、回写校验不通过
+
+---
+
+## 10. 无感打开（REQ-02）
+
+### 10.1 实现直接打开调度
+- [ ] 实现用户点击共享文件后自动选择合适应用（优先 WPS）打开（`orchestration/OpenOrchestrator.java`）
+- [ ] 实现文件类型识别与应用选择策略（`core/wps/FileAppResolver.java`）
+- [ ] 实现打开失败时如实显示失败及原因，不隐藏为成功
+- [ ] 实现无合适应用时提示用户并建议安装
+
+### 10.2 实现大文件流式缓存
+- [ ] 实现大文件打开时流式/分块缓存，避免整体载入内存（`core/edit/StreamCacheService.java`）
+- [ ] 实现本地缓存空间不足时提示，不开始下载
+- [ ] 实现打开过程中网络中断时暂停下载，恢复后续传或提示重试
+
+### 10.3 实现状态及时更新
+- [ ] 实现编辑保存返回资源管理器后文件状态与修改时间及时更新
+- [ ] 实现目录列表状态刷新机制
+
+---
+
+## 11. 安全与审计（RISK-04）
+
+### 11.1 完善凭据安全存储
+- [ ] 验证 SMB 账号密码全部通过 `CredentialVault` 加密存储，无明文落盘
+- [ ] 验证日志、界面、SharedPreferences 中均不出现密码明文
+- [ ] 实现凭据存储不可用时拒绝存储并提示启用设备安全
+
+### 11.2 实现审计日志
+- [ ] 实现关键操作审计记录：连接建立、文件写入、删除、重命名、回写（`infrastructure/audit/AuditLogService.java`）
+- [ ] 实现审计日志含操作类型、目标、时间、结果，且脱敏
+- [ ] 实现审计日志定期轮转与导出
+
+### 11.3 实现诊断信息导出
+- [ ] 实现用户触发导出脱敏诊断包（操作日志 + 错误分类 + 环境信息）（`infrastructure/audit/DiagnosticExporter.java`）
+- [ ] 确保导出信息不含密码、凭据、文件敏感内容
+
+### 11.4 验证最小权限
+- [ ] 审查 AndroidManifest.xml 权限清单，每项权限均有对应功能用途且无可裁剪冗余权限
+- [ ] Android 10+ 采用分区存储适配
+
+---
+
+## 12. 对外接口（第三方应用访问）
+
+### 12.1 实现 ContentProvider 共享文件访问
+- [ ] 实现 `SmbFileContentProvider`，URI 格式 `content://com.smbexplorer.v1/shared/<configId>/<path>`（`infrastructure/provider/SmbFileContentProvider.java`）
+- [ ] 实现 openFile、query、cursor 等标准 ContentProvider 操作
+- [ ] 实现第三方应用 URI 授权（grantUriPermission）与权限校验，未授权拒绝访问
+
+### 12.2 实现 Intent 接口
+- [ ] 实现响应第三方应用打开共享文件的 Intent（`infrastructure/provider/SmbFileOpenIntentReceiver.java`）
+- [ ] 实现接口变更兼容策略：版本化 URI，变更时提供迁移说明
+
+---
+
+## 13. 表现层 UI 实现
+
+### 13.1 实现共享管理 UI
+- [ ] 实现共享配置增删改查界面与连接测试交互（`src/ui/ConnectionManagement.tsx`）
+- [ ] 实现凭据输入界面，密码不明文显示
+- [ ] 实现多共享入口列表与切换浏览
+
+### 13.2 实现资源管理器 UI
+- [ ] 实现目录浏览界面，分页加载与首屏优先渲染（`src/ui/Explorer.tsx`）
+- [ ] 实现搜索栏与排序选项（名称/大小/修改时间，升序/降序）
+- [ ] 实现文件属性展示面板
+- [ ] 实现收藏列表与快速访问入口
+- [ ] 实现文件操作菜单（复制/移动/重命名/删除/打开/收藏）
+
+### 13.3 实现传输队列 UI
+- [ ] 实现传输进度显示（整体进度与单文件进度）（`src/ui/TransferQueue.tsx`）
+- [ ] 实现暂停/取消/重试交互
+- [ ] 实现失败原因显示与重试入口
+- [ ] 实现批量操作部分成功与失败清单展示
+
+### 13.4 实现编辑会话 UI
+- [ ] 实现编辑状态展示（已打开/编辑中/回写中/回写成功/失败/冲突）（`src/ui/EditSession.tsx`）
+- [ ] 实现冲突提示与用户决策交互（合并/覆盖/放弃）
+- [ ] 实现另存为提示与处理方式选择
+- [ ] 实现回写结果通知（成功/失败）
+
+### 13.5 实现设置与诊断 UI
+- [ ] 实现设置界面（`src/ui/Settings.tsx`）
+- [ ] 实现诊断信息导出入口
+- [ ] 实现网络状态显示（可用/不可用/等待恢复）
+
+### 13.6 实现 Capacitor 插件桥接
+- [ ] 实现 `SmbExplorerPlugin` Capacitor 插件桥接 TS↔Java（`src/plugins/SmbExplorerPlugin.ts` + `android/.../SmbExplorerPlugin.java`）
+- [ ] 实现桥接接口方法签名版本化，新增参数使用可选默认值
+
+---
+
+## 14. PAD2-M3 集成测试与门禁
+
+### 14.1 单元测试
+- [ ] 编写 SMBJ 封装层单元测试，覆盖会话建立/枚举/读写/异常分类
+- [ ] 编写流式传输引擎单元测试，覆盖分块读写/断点续传/进度上报
+- [ ] 编写完整性校验引擎单元测试，覆盖流式 SHA-256 计算与比对
+- [ ] 编写安全写入事务单元测试，覆盖成功/写入失败/校验失败/原子替换失败回滚
+- [ ] 编写传输队列状态机单元测试，覆盖所有状态迁移与持久化恢复
+- [ ] 编写编辑会话状态机单元测试，覆盖所有状态迁移与冲突检测
+- [ ] 编写 Keystore 凭据加密单元测试，覆盖加密存储/解密读取/Keystore 不可用
+- [ ] 编写日志脱敏单元测试，覆盖密码/凭据/文件内容脱敏
+
+### 14.2 集成测试
+- [ ] 编写 SMB 连接→目录浏览→文件操作端到端集成测试
+- [ ] 编写传输队列→流式传输→完整性校验→断点续传集成测试
+- [ ] 编写编辑会话→WPS 交付→保存检测→回写校验集成测试
+- [ ] 编写网络中断→自动恢复→续传集成测试
+- [ ] 编写冲突检测→用户决策→覆盖/放弃集成测试
+
+### 14.3 M3 门禁评审
+- [ ] 验证共享目录浏览、文件操作、传输队列、缓存、重试、冲突处理、安全凭据管理全部实现
+- [ ] 验证单元/集成测试全部通过
+- [ ] 通过远程编译服务器产出可测试 APK 并安装到目标平板
+
+---
+
+## 15. PAD2-M4 规模与可靠性验收
+
+### 15.1 功能测试
+- [ ] 在目标平板、真实 Windows 共享、目标无线网络中执行全功能测试
+- [ ] 验证 REQ-01 ~ REQ-05 所有验收条件达标
+
+### 15.2 压力测试
+- [ ] 执行大文件基线测试：传输 1 GiB 文件，内存不超限，SHA-256 校验通过
+- [ ] 执行批量文件基线测试：批量复制 10,000 个混合大小文件，全部完成且逐个校验通过
+- [ ] 执行目标并发用户数下成功率测试（PM 明确数值）
+
+### 15.3 断网恢复测试
+- [ ] 验证 Wi-Fi 切换时会话重建且可恢复任务继续
+- [ ] 验证短暂断网后恢复，可恢复任务自动继续且数据完整
+- [ ] 验证 SMB 会话失效后自动重建且任务继续
+- [ ] 验证应用重启后任务队列恢复且可续传
+
+### 15.4 数据完整性测试
+- [ ] 验证所有传输/回写 SHA-256 校验通过方可标记成功
+- [ ] 验证覆盖写入中途失败时原文件不被破坏
+- [ ] 验证两台设备同时编辑不静默丢失更新
+
+### 15.5 安全测试
+- [ ] 验证凭据加密存储，检查本地存储与日志无密码明文
+- [ ] 验证日志脱敏，抓取任意日志条目不含密码明文与文件内容明文
+- [ ] 验证最小权限，审查权限清单每项均有对应功能用途
+- [ ] 验证关键操作审计日志可追溯
+
+### 15.6 客户端与服务端承载能力分开验证
+- [ ] 出具客户端承载能力报告（单台及多台平板并发吞吐与成功率）
+- [ ] 出具服务端承载能力报告（服务器性能、SMB 配置、无线网络、认证体系承载上限）
+- [ ] 明确区分瓶颈来源（客户端/服务端/网络），不混淆
+
+### 15.7 M4 门禁评审
+- [ ] 汇总功能/压力/断网恢复/数据完整性/安全测试报告
+- [ ] 全部达标方可发布，未达标项记录整改计划
+- [ ] 通过远程编译服务器产出发布 APK
+
+---
+
+## 16. 部署与发布
+
+### 16.1 远程编译流程固化
+- [ ] 固化远程编译脚本（PowerShell）：源码同步→远程 Gradle 编译→APK 产物回传→adb install
+- [ ] 验证远程编译流程可重复执行且稳定产出 APK
+
+### 16.2 版本管理与发布
+- [ ] 在新仓库 `wujupeng/andriodpad2` 打发布版本标签
+- [ ] 更新 `main` 分支为稳定发布版本
+- [ ] 编写发布说明，包含已验证 Android 版本范围、WPS 兼容范围、SMB 协议要求
+
+### 16.3 兼容性测试
+- [ ] 在目标 Android 版本范围内执行兼容性测试
+- [ ] 在已验证 WPS 版本范围内执行兼容性测试
+- [ ] 超出范围标注未验证，不保证兼容
+
+### 16.4 文档更新
+- [ ] 更新接口文档（ContentProvider/Intent/Capacitor 插件桥接）
+- [ ] 编写运维手册（远程编译服务器使用、凭据迁移、诊断导出）
+- [ ] 编写用户使用手册（共享配置、文件浏览、编辑保存、传输管理）
+
+---
+
+## 17. 评审与验证
+
+### 17.1 代码审查
+- [ ] 对关键模块（安全写入事务、回写引擎、冲突检测、凭据加密）进行代码审查
+- [ ] 审查分层架构依赖方向是否合规
+- [ ] 审查所有禁止项是否落实（禁止静默覆盖、禁止伪报成功、禁止明文存储、禁止整体载入内存）
+
+### 17.2 设计回顾
+- [ ] 核对 spec.md 需求规格与实现的一致性，所有 REQ-01 ~ REQ-05 验收条件覆盖
+- [ ] 核对 design.md 技术设计与实现的一致性，所有接口与数据模型落实
+- [ ] 核对五项风险缓解措施（RISK-01 ~ RISK-05）全部落实
+
+### 17.3 变更确认
+- [ ] 确认变更范围与 spec.md/design.md 冻结项一致
+- [ ] 确认阶段门禁逐级通过（M0→M1→M2→M3→M4），无跳级
+- [ ] 确认客户端与服务端承载能力分开出具报告
