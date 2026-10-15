@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+android/app/build/
+android/.gradle/
+android/build/
+android/captures/
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local config
+.env
+.env.local
+*.local
+
+# Credentials
+credentials.json
+*.key
+*.pem
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# Capacitor
+android/app/src/main/assets/public/
+
+# Temp files# Tool artifacts (keep docs)
+!.codeartsdoer/specs/

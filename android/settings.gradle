@@ -1,0 +1,16 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencies {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "pad2-file-manager"
+include ':app'
