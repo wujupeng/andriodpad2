@@ -1,0 +1,71 @@
+=== PAD2 M2-A 技术验证日志 ===
+导出时间: 2026/10/16 09:45:17
+SMB 服务器: 192.168.2.3/share (用户: debian)
+当前路径: 
+选中文件: FM-SP02-01 设备维修单 2.0.doc
+
+=== V1-V7 验证门禁状态 ===
+V1 WPS 可打开: pass URI: file:///storage/emulated/0/Android/data/com.pad2.filemanager/files/smb_cache/FM-SP02-01%20%E8%AE%BE%E5%A4%87%E7%BB%B4%E4%BF%AE%E5%8D%95%202.0.doc, 基线SHA-256: 8f013b035fb49be6...
+V2 WPS 可保存: pass mtime 变更: 1792114571920 → 1792114643000
+V3 保存行为识别: pass 内容SHA-256变更: 8f013b035fb49be6... → 8da9a6aa1105d724...
+V4 回写成功: pass 本地SHA-256=8da9a6aa1105d724..., 远程校验SHA-256=8da9a6aa1105d724...
+V5 回写失败不破坏: pending 
+V6 并发冲突: pass 远程 mtime=1792115057630 ≠ 基线=1792114643000
+V7 断网恢复: pending 
+
+=== 操作日志 ===
+[09:36:08] 连接 SMB 服务器: 192.168.2.3/share
+[09:36:08] SMB 连接成功
+[09:36:08] 浏览目录: (root)
+[09:36:11] 在 WPS 中打开: FM-SP02-01 设备维修单 2.0.doc
+[09:36:12] WPS 打开成功, URI: file:///storage/emulated/0/Android/data/com.pad2.filemanager/files/smb_cache/FM-SP02-01%20%E8%AE%BE%E5%A4%87%E7%BB%B4%E4%BF%AE%E5%8D%95%202.0.doc
+[09:36:12] 基线 SHA-256: 8f013b035fb49be6a8baabed9a7983515e2e897c9e7c9ab6422965719b9f680b
+[09:37:42] 检查本地文件变更...
+[09:37:42] 文件已变更 (mtime: 1792114643000)
+[09:37:42] 内容已变更 (新SHA-256: 8da9a6aa1105d724b3e891781b8e988ded443912305c346da1d2928a20aff216)
+[09:37:55] 导出日志到共享: apk/log/m2a-log-2026-10-16T01-37-55.txt
+[09:37:55] 日志导出成功: apk/log/m2a-log-2026-10-16T01-37-55.txt
+[09:43:33] 执行回写...
+[09:43:33] 回写成功! SHA-256 校验通过
+[09:43:33] 本地: 8da9a6aa1105d724b3e891781b8e988ded443912305c346da1d2928a20aff216
+[09:43:33] 远程: 8da9a6aa1105d724b3e891781b8e988ded443912305c346da1d2928a20aff216
+[09:43:41] 检查远程文件变更...
+[09:43:41] 远程文件已变更 (mtime: 1792115013668)
+[09:44:12] 导出日志到共享: apk/log/m2a-log-2026-10-16T01-44-12.txt
+[09:44:12] 日志导出成功: apk/log/m2a-log-2026-10-16T01-44-12.txt
+[09:44:17] 执行回写...
+[09:44:17] 回写成功! SHA-256 校验通过
+[09:44:17] 本地: 8da9a6aa1105d724b3e891781b8e988ded443912305c346da1d2928a20aff216
+[09:44:17] 远程: 8da9a6aa1105d724b3e891781b8e988ded443912305c346da1d2928a20aff216
+[09:44:20] 导出日志到共享: apk/log/m2a-log-2026-10-16T01-44-20.txt
+[09:44:20] 日志导出成功: apk/log/m2a-log-2026-10-16T01-44-20.txt
+[09:44:22] 检查远程文件变更...
+[09:44:22] 远程文件已变更 (mtime: 1792115057630)
+[09:44:24] 导出日志到共享: apk/log/m2a-log-2026-10-16T01-44-24.txt
+[09:44:25] 日志导出成功: apk/log/m2a-log-2026-10-16T01-44-24.txt
+[09:44:35] 已断开连接
+[09:44:48] 检查本地文件变更...
+[09:44:48] 文件未变更
+[09:45:01] 执行回写...
+[09:45:01] 回写成功! SHA-256 校验通过
+[09:45:01] 本地: 8da9a6aa1105d724b3e891781b8e988ded443912305c346da1d2928a20aff216
+[09:45:01] 远程: 8da9a6aa1105d724b3e891781b8e988ded443912305c346da1d2928a20aff216
+[09:45:11] 连接 SMB 服务器: 192.168.2.3/share
+[09:45:11] SMB 连接成功
+[09:45:11] 浏览目录: (root)
+[09:45:14] 执行回写...
+[09:45:14] 回写成功! SHA-256 校验通过
+[09:45:14] 本地: 8da9a6aa1105d724b3e891781b8e988ded443912305c346da1d2928a20aff216
+[09:45:14] 远程: 8da9a6aa1105d724b3e891781b8e988ded443912305c346da1d2928a20aff216
+
+=== 详细结果 ===
+WPS 打开结果: intentLaunched=true, intentAction=ACTION_EDIT, uriScheme=file, uri=file:///storage/emulated/0/Android/data/com.pad2.filemanager/files/smb_cache/FM-SP02-01%20%E8%AE%BE%E5%A4%87%E7%BB%B4%E4%BF%AE%E5%8D%95%202.0.doc
+  baselineHash=8f013b035fb49be6a8baabed9a7983515e2e897c9e7c9ab6422965719b9f680b, baselineMtime=1792114571920
+本地变更: changed=false, contentChanged=undefined
+  newHash=undefined, baselineHash=undefined
+  observerDetectedChange=true, observerEventLog=DirObserver event: 256 path: 704685241.593655023-22473407; DirObserver event: 8 path: 704685241.593655023-22473407; DirObserver event: 2 path: 704685241.593655023-22473407; DirObserver event: 2 path: 704685241.593655023-22473407; DirObserver event: 2 path: 704685241.593655023-22473407; DirObserver event: 8 path: 704685241.593655023-22473407; DirObserver event: 256 path: .moffice_wr_check-1963754456; DirObserver event: 8 path: .moffice_wr_check-1963754456; FileObserver event: 32768 path: null; DirObserver event: 256 path: FM-SP02-01 设备维修单 2.0.doc; DirObserver event: 2 path: FM-SP02-01 设备维修单 2.0.doc; DirObserver event: 2 path: FM-SP02-01 设备维修单 2.0.doc; DirObserver event: 8 path: FM-SP02-01 设备维修单 2.0.doc; 
+回写结果: success=true
+  localHash=8da9a6aa1105d724b3e891781b8e988ded443912305c346da1d2928a20aff216
+  verifyHash=8da9a6aa1105d724b3e891781b8e988ded443912305c346da1d2928a20aff216
+远程变更: remoteChanged=true
+  remoteMtime=1792115057630, baselineMtime=1792114643000
