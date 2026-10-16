@@ -40,6 +40,17 @@ public class FileAppResolver {
         result.put("availableApps", activities.size());
 
         if (activities.isEmpty()) {
+            String wpsPkg = getWpsPackageName();
+            if (wpsPkg != null) {
+                result.put("resolved", true);
+                result.put("packageName", wpsPkg);
+                result.put("appName", "WPS Office");
+                result.put("isWps", true);
+                result.put("useExplicitPackage", true);
+                result.put("fallback", true);
+                Log.i(TAG, "queryIntentActivities empty, fallback to WPS: " + wpsPkg);
+                return result;
+            }
             result.put("resolved", false);
             result.put("reason", "no_app");
             result.put("suggestion", "请安装 WPS Office 以编辑此文件类型");
