@@ -22,6 +22,8 @@ public class WpsDeliveryHandler {
     private EditSessionManager sessionManager;
     private FileAppResolver appResolver;
     private WpsSaveDetector saveDetector;
+    private SaveAsDiscoveryService saveAsDiscoveryService;
+    private SaveAsResolutionPrompt saveAsResolutionPrompt;
     private String currentRemotePath;
     private File currentLocalFile;
     private String currentBaselineHash;
@@ -30,6 +32,8 @@ public class WpsDeliveryHandler {
     private String currentSessionUuid;
     private String currentUriScheme;
     private String currentIntentAction;
+    private long currentSessionStartTime;
+    private String currentLocalFileName;
 
     public WpsDeliveryHandler(Context context, SmbClient smbClient) {
         this.context = context;
@@ -38,6 +42,8 @@ public class WpsDeliveryHandler {
         this.sessionManager = new EditSessionManager(context);
         this.appResolver = new FileAppResolver(context);
         this.saveDetector = new WpsSaveDetector(context);
+        this.saveAsDiscoveryService = new SaveAsDiscoveryService();
+        this.saveAsResolutionPrompt = new SaveAsResolutionPrompt();
     }
 
     public Map<String, Object> openFileInWps(String remotePath) throws IOException {
@@ -71,10 +77,41 @@ public class WpsDeliveryHandler {
         currentBaselineHash = baselineHash;
         currentBaselineMtime = baselineMtime;
         currentRemoteMtime = remoteMtime;
+        currentSessionStartTime = System.currentTimeMillis();
+        currentLocalFileName = localFileName;
+
+        String fileExtension = getFileExtension(localFileName);
+        String mimeType = FileAppResolver.getMimeTypeWithSniff(localFileName, localFile);
+
+        if (mimeType == null) {
+            Map<String, Object> errResult = new HashMap<>();
+            errResult.put("intentLaunched", false);
+            errResult.put("error", "文件可能已损坏，无法作为 Word 文档打开");
+            errResult.put("errorType", "CORRUPTED_DOCX");
+            errResult.put("localPath", localPath);
+            errResult.put("baselineHash", baselineHash);
+            Log.e(TAG, "Corrupted .docx rejected: " + remotePath);
+            return errResult;
+        }
+
+        DeliveryStrategy strategy = DeliveryStrategySelector.selectStrategy(
+                fileExtension,
+                "docx".equalsIgnoreCase(fileExtension) ? DocxContentSniffer.sniff(localFile) : null
+        );
+        Log.i(TAG, "Delivery strategy: " + strategy);
+
+        if (strategy.getUriScheme() == DeliveryStrategy.UriScheme.REJECT_DELIVERY) {
+            Map<String, Object> errResult = new HashMap<>();
+            errResult.put("intentLaunched", false);
+            errResult.put("error", "文件可能已损坏，无法作为 Word 文档打开");
+            errResult.put("errorType", "CORRUPTED_DOCX");
+            errResult.put("localPath", localPath);
+            errResult.put("baselineHash", baselineHash);
+            Log.e(TAG, "Delivery rejected for corrupted .docx: " + remotePath);
+            return errResult;
+        }
 
         Uri uri = Uri.fromFile(localFile);
-        String mimeType = FileAppResolver.getMimeType(localFileName);
-
         Map<String, Object> appInfo = appResolver.resolveApp(localFileName, uri);
         boolean appResolved = (boolean) appInfo.get("resolved");
 
@@ -90,19 +127,9 @@ public class WpsDeliveryHandler {
             return errResult;
         }
 
-        Intent intent = new Intent(Intent.ACTION_EDIT);
-        intent.setDataAndType(uri, mimeType);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-        if (appInfo.containsKey("packageName") && (boolean) appInfo.getOrDefault("useExplicitPackage", false)) {
-            intent.setPackage((String) appInfo.get("packageName"));
-        }
-
         saveDetector.startMonitoring(localFile, baselineHash, baselineMtime);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("uri", uri.toString());
         result.put("localPath", localPath);
         result.put("baselineHash", baselineHash);
         result.put("baselineMtime", baselineMtime);
@@ -112,35 +139,95 @@ public class WpsDeliveryHandler {
         result.put("appName", appInfo.get("appName"));
         result.put("isWps", appInfo.getOrDefault("isWps", false));
         result.put("intentAction", "ACTION_EDIT");
-        result.put("uriScheme", "file");
         result.put("streamingUsed", true);
         result.put("cacheElapsedMs", cacheResult.get("elapsedMs"));
+        result.put("deliveryStrategy", strategy.getUriScheme().name());
 
-        currentUriScheme = "file";
-        currentIntentAction = "ACTION_EDIT";
+        boolean useContentFirst = strategy.getUriScheme() == DeliveryStrategy.UriScheme.CONTENT_URI_FIRST;
+        String intentAction = strategy.getIntentAction().equals("ACTION_VIEW") ? Intent.ACTION_VIEW : Intent.ACTION_EDIT;
+
+        if (useContentFirst) {
+            try {
+                Uri fpUri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", localFile);
+                String action = strategy.getIntentAction().equals("ACTION_VIEW") ? Intent.ACTION_VIEW : Intent.ACTION_EDIT;
+                Intent intent = new Intent(action);
+                intent.setDataAndType(fpUri, mimeType);
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                if (appInfo.containsKey("packageName") && (boolean) appInfo.getOrDefault("useExplicitPackage", false)) {
+                    intent.setPackage((String) appInfo.get("packageName"));
+                }
+
+                context.startActivity(intent);
+                result.put("intentLaunched", true);
+                result.put("uriScheme", "content");
+                result.put("intentAction", action);
+                result.put("uri", fpUri.toString());
+                currentUriScheme = "content";
+                currentIntentAction = action;
+
+                Map<String, Object> sessionMap = sessionManager.createSession(
+                        remotePath, localPath, localFileName,
+                        baselineHash, baselineMtime, remoteMtime, fileSize,
+                        "content", action
+                );
+                currentSessionUuid = (String) sessionMap.get("sessionId");
+                result.put("sessionId", currentSessionUuid);
+                result.put("sessionStatus", "open");
+                Log.i(TAG, "File delivered via content:// (primary, " + action + "): " + remotePath + " -> " + localPath);
+            } catch (Exception e) {
+                Log.w(TAG, "content:// delivery failed, falling back to file://", e);
+                deliverViaFileUri(localFile, mimeType, appInfo, remotePath, localPath, localFileName,
+                        baselineHash, baselineMtime, remoteMtime, fileSize, result, intentAction);
+            }
+        } else {
+            deliverViaFileUri(localFile, mimeType, appInfo, remotePath, localPath, localFileName,
+                    baselineHash, baselineMtime, remoteMtime, fileSize, result, intentAction);
+        }
+
+        return result;
+    }
+
+    private void deliverViaFileUri(File localFile, String mimeType, Map<String, Object> appInfo,
+                                   String remotePath, String localPath, String localFileName,
+                                   String baselineHash, long baselineMtime, long remoteMtime,
+                                   long fileSize, Map<String, Object> result, String intentAction) {
+        Uri uri = Uri.fromFile(localFile);
+        Intent intent = new Intent(intentAction);
+        intent.setDataAndType(uri, mimeType);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        if (appInfo.containsKey("packageName") && (boolean) appInfo.getOrDefault("useExplicitPackage", false)) {
+            intent.setPackage((String) appInfo.get("packageName"));
+        }
 
         try {
             context.startActivity(intent);
             result.put("intentLaunched", true);
+            result.put("uriScheme", "file");
+            result.put("intentAction", intentAction);
+            result.put("uri", uri.toString());
+            currentUriScheme = "file";
+            currentIntentAction = intentAction;
 
             Map<String, Object> sessionMap = sessionManager.createSession(
-                    remotePath, localPath, localFileName,
-                    baselineHash, baselineMtime, remoteMtime, fileSize,
-                    "file", "ACTION_EDIT"
-            );
-            currentSessionUuid = (String) sessionMap.get("sessionId");
-            result.put("sessionId", currentSessionUuid);
-            result.put("sessionStatus", "open");
-
-            Log.i(TAG, "File delivered successfully: " + remotePath + " -> " + localPath);
+                        remotePath, localPath, localFileName,
+                        baselineHash, baselineMtime, remoteMtime, fileSize,
+                        "file", intentAction
+                );
+                currentSessionUuid = (String) sessionMap.get("sessionId");
+                result.put("sessionId", currentSessionUuid);
+                result.put("sessionStatus", "open");
+                Log.i(TAG, "File delivered via file:// (" + intentAction + "): " + remotePath + " -> " + localPath);
         } catch (Exception e) {
-            Log.w(TAG, "file:// ACTION_EDIT failed, trying FileProvider", e);
+            Log.w(TAG, "file:// failed, trying FileProvider", e);
             try {
                 Uri fpUri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", localFile);
                 Intent fpIntent = new Intent(Intent.ACTION_EDIT);
                 fpIntent.setDataAndType(fpUri, mimeType);
-                fpIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                fpIntent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+                fpIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
                 fpIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
                 if (appInfo.containsKey("packageName") && (boolean) appInfo.getOrDefault("useExplicitPackage", false)) {
@@ -149,7 +236,6 @@ public class WpsDeliveryHandler {
 
                 context.startActivity(fpIntent);
                 result.put("intentLaunched", true);
-                result.put("intentAction", "ACTION_EDIT");
                 result.put("uriScheme", "content");
                 result.put("uri", fpUri.toString());
                 currentUriScheme = "content";
@@ -162,7 +248,6 @@ public class WpsDeliveryHandler {
                 currentSessionUuid = (String) sessionMap.get("sessionId");
                 result.put("sessionId", currentSessionUuid);
                 result.put("sessionStatus", "open");
-
                 Log.i(TAG, "File delivered via FileProvider fallback: " + remotePath);
             } catch (Exception e2) {
                 Log.e(TAG, "Failed to launch WPS", e2);
@@ -172,26 +257,142 @@ public class WpsDeliveryHandler {
                 result.put("fallbackTried", true);
             }
         }
+    }
 
-        return result;
+    private static String getFileExtension(String fileName) {
+        int lastDot = fileName.lastIndexOf('.');
+        if (lastDot > 0 && lastDot < fileName.length() - 1) {
+            return fileName.substring(lastDot + 1);
+        }
+        return "";
     }
 
     public Map<String, Object> checkLocalFileChanged() {
-        Map<String, Object> result = saveDetector.checkChange();
-        if (result.containsKey("contentChanged") && (boolean) result.get("contentChanged")) {
-            if (currentSessionUuid != null) {
-                sessionManager.updateStatus(currentSessionUuid, "saved");
-            }
+        SaveDetectionResult detectionResult = saveDetector.checkChange();
+        Map<String, Object> result = detectionResult.toMap();
+
+        switch (detectionResult.getVerdict()) {
+            case SAVE_SUCCESS:
+                if (currentSessionUuid != null) {
+                    sessionManager.updateStatus(currentSessionUuid, "saved");
+                }
+                result.put("saveAsFileName", saveDetector.getSaveAsFileName());
+                result.put("lastTempFileFiltered", null);
+                result.put("eventLog", "");
+                break;
+            case SAVE_AS_DETECTED:
+                result.put("saveAsFileName", saveDetector.getSaveAsFileName());
+                result.put("saveAsPrompt", "检测到另存为: " + saveDetector.getSaveAsFileName() + "，请选择回写为新文件或覆盖原文件");
+                break;
+            case MTIME_FALSE_POSITIVE:
+            case DETECTION_UNCERTAIN:
+            case TEMP_FILE_FILTERED:
+            case SAVE_FAILED:
+                break;
         }
-        if (result.containsKey("saveAsDetected") && (boolean) result.get("saveAsDetected")) {
-            result.put("saveAsPrompt", "检测到另存为: " + result.get("saveAsFileName") + "，请选择回写为新文件或覆盖原文件");
-        }
+
         return result;
     }
 
     public Map<String, Object> foregroundCheck() {
         Log.i(TAG, "Foreground check for missed events");
-        return checkLocalFileChanged();
+        SaveDetectionResult detectionResult = saveDetector.foregroundCheck();
+        Map<String, Object> result = detectionResult.toMap();
+
+        switch (detectionResult.getVerdict()) {
+            case SAVE_SUCCESS:
+                if (currentSessionUuid != null) {
+                    sessionManager.updateStatus(currentSessionUuid, "saved");
+                }
+                break;
+            case SAVE_AS_DETECTED:
+                result.put("saveAsFileName", saveDetector.getSaveAsFileName());
+                triggerSaveAsDiscovery(result);
+                break;
+            case DETECTION_UNCERTAIN:
+                triggerSaveAsDiscovery(result);
+                break;
+            default:
+                break;
+        }
+
+        return result;
+    }
+
+    private void triggerSaveAsDiscovery(Map<String, Object> result) {
+        if (currentLocalFileName == null) return;
+
+        long endTime = System.currentTimeMillis();
+        EditSessionContext sessionCtx = new EditSessionContext(
+                currentLocalFileName, currentSessionStartTime, endTime);
+
+        java.util.List<File> saveAsFiles = saveAsDiscoveryService.discoverSaveAs(sessionCtx);
+
+        if (!saveAsFiles.isEmpty()) {
+            File saveAsFile = saveAsFiles.get(0);
+            Map<String, Object> promptData = saveAsResolutionPrompt.prompt(saveAsFile, currentLocalFileName);
+            result.put("saveAsPrompt", promptData.get("message"));
+            result.put("saveAsDiscovered", true);
+            result.put("saveAsFilePath", saveAsFile.getAbsolutePath());
+            result.put("saveAsChoices", promptData.get("choices"));
+            result.put("formatChange", promptData.getOrDefault("formatChange", false));
+            Log.i(TAG, "Save-as discovered: " + saveAsFile.getAbsolutePath());
+        } else {
+            Map<String, Object> promptData = saveAsResolutionPrompt.prompt(null, currentLocalFileName);
+            result.put("saveAsPrompt", promptData.get("message"));
+            result.put("saveAsDiscovered", false);
+            result.put("saveAsChoices", promptData.get("choices"));
+            Log.i(TAG, "Save-as not auto-discovered, prompting manual select");
+        }
+    }
+
+    public Map<String, Object> resolveSaveAs(String choice, String saveAsFilePath) throws IOException {
+        Map<String, Object> result = new HashMap<>();
+        SaveAsDecision.SaveAsChoice saveAsChoice;
+
+        try {
+            saveAsChoice = SaveAsDecision.SaveAsChoice.valueOf(choice);
+        } catch (IllegalArgumentException e) {
+            result.put("error", "Invalid choice: " + choice);
+            return result;
+        }
+
+        result.put("choice", choice);
+        result.put("saveAsFilePath", saveAsFilePath);
+
+        switch (saveAsChoice) {
+            case WRITE_AS_NEW:
+                if (saveAsFilePath != null) {
+                    File saveAsFile = new File(saveAsFilePath);
+                    String newRemotePath = currentRemotePath != null ?
+                            currentRemotePath.substring(0, currentRemotePath.lastIndexOf('/') + 1) + saveAsFile.getName() :
+                            "/" + saveAsFile.getName();
+                    byte[] data = readFileBytes(saveAsFile);
+                    smbClient.writeFileSafe(newRemotePath, data);
+                    result.put("writebackSuccess", true);
+                    result.put("newRemotePath", newRemotePath);
+                    Log.i(TAG, "Save-as resolved: WRITE_AS_NEW to " + newRemotePath);
+                }
+                break;
+            case OVERWRITE_ORIGINAL:
+                if (saveAsFilePath != null) {
+                    File saveAsFile = new File(saveAsFilePath);
+                    byte[] data = readFileBytes(saveAsFile);
+                    smbClient.writeFileSafe(currentRemotePath, data);
+                    String verifyHash = StreamCacheService.calculateSHA256FromStream(smbClient.readFileStream(currentRemotePath));
+                    String localHash = StreamCacheService.calculateSHA256(saveAsFile);
+                    result.put("writebackSuccess", verifyHash.equals(localHash));
+                    Log.i(TAG, "Save-as resolved: OVERWRITE_ORIGINAL, verified=" + verifyHash.equals(localHash));
+                }
+                break;
+            case DISCARD:
+                result.put("writebackSuccess", false);
+                result.put("discarded", true);
+                Log.i(TAG, "Save-as resolved: DISCARD");
+                break;
+        }
+
+        return result;
     }
 
     public Map<String, Object> writeback() throws IOException {
@@ -212,8 +413,7 @@ public class WpsDeliveryHandler {
             byte[] localData = readFileBytes(currentLocalFile);
             smbClient.writeFileSafe(currentRemotePath, localData);
 
-            byte[] verifyData = smbClient.readFile(currentRemotePath);
-            String verifyHash = StreamCacheService.calculateSHA256(currentLocalFile);
+            String verifyHash = StreamCacheService.calculateSHA256FromStream(smbClient.readFileStream(currentRemotePath));
 
             result.put("writebackSuccess", verifyHash.equals(localHash));
             result.put("localHash", localHash);
@@ -229,8 +429,10 @@ public class WpsDeliveryHandler {
                 if (verifyHash.equals(localHash)) {
                     sessionManager.updateStatus(currentSessionUuid, "writeback");
                     sessionManager.updateBaseline(currentSessionUuid, localHash, currentBaselineMtime);
+                    Log.i(TAG, "Writeback verified: remote SHA-256 matches local");
                 } else {
                     sessionManager.failSession(currentSessionUuid);
+                    Log.e(TAG, "Writeback verification FAILED: remote SHA-256 != local SHA-256");
                 }
             }
 

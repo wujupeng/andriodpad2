@@ -163,6 +163,22 @@ public class SmbPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void resolveSaveAs(PluginCall call) {
+        String choice = call.getString("choice", "DISCARD");
+        String saveAsFilePath = call.getString("saveAsFilePath", "");
+        try {
+            Map<String, Object> result = wpsHandler.resolveSaveAs(choice, saveAsFilePath);
+            JSObject ret = new JSObject();
+            for (Map.Entry<String, Object> entry : result.entrySet()) {
+                ret.put(entry.getKey(), entry.getValue());
+            }
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Resolve save-as failed: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
     public void getSessionInfo(PluginCall call) {
         Map<String, Object> result = wpsHandler.getSessionInfo();
         JSObject ret = new JSObject();
