@@ -17,6 +17,7 @@ public class WpsSaveDetector {
     private Context context;
     private FileObserver fileObserver;
     private FileObserver dirObserver;
+    private FileObserver parentDirObserver;
     private volatile boolean monitoring = false;
     private volatile boolean paused = false;
 
@@ -102,6 +103,36 @@ public class WpsSaveDetector {
             dirObserver.startWatching();
         }
 
+        File parentDir = file.getParentFile();
+        if (parentDir != null) {
+            File grandparentDir = parentDir.getParentFile();
+            if (grandparentDir != null && !grandparentDir.equals(parentDir)) {
+                parentDirObserver = new FileObserver(grandparentDir,
+                        FileObserver.MODIFY | FileObserver.CLOSE_WRITE | FileObserver.MOVED_TO | FileObserver.CREATE) {
+                    @Override
+                    public void onEvent(int event, String path) {
+                        if (paused) return;
+                        if (path == null) return;
+
+                        if (isTempFile(path)) {
+                            return;
+                        }
+
+                        Log.i(TAG, "ParentDirObserver: " + getEventName(event) + " path: " + path);
+                        recordEvent("parent_dir", getEventName(event), path);
+
+                        if (!path.equals(monitoredFileName)) {
+                            Log.i(TAG, "Save-as detected (parent dir): " + path);
+                            saveAsDetected = true;
+                            saveAsFileName = path;
+                        }
+                    }
+                };
+                parentDirObserver.startWatching();
+                Log.i(TAG, "Parent dir observer started on: " + grandparentDir.getAbsolutePath());
+            }
+        }
+
         monitoring = true;
         Log.i(TAG, "Started monitoring: " + file.getAbsolutePath());
     }
@@ -114,6 +145,10 @@ public class WpsSaveDetector {
         if (dirObserver != null) {
             dirObserver.stopWatching();
             dirObserver = null;
+        }
+        if (parentDirObserver != null) {
+            parentDirObserver.stopWatching();
+            parentDirObserver = null;
         }
         monitoring = false;
         paused = false;
