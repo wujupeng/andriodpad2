@@ -5,26 +5,23 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.FileObserver;
 import android.util.Log;
-import android.webkit.MimeTypeMap;
 
 import androidx.core.content.FileProvider;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class WpsDeliveryHandler {
 
     private static final String TAG = "WpsDeliveryHandler";
-    private static final String CACHE_DIR = "smb_cache";
 
     private Context context;
     private SmbClient smbClient;
+    private StreamCacheService cacheService;
+    private EditSessionManager sessionManager;
+    private FileAppResolver appResolver;
     private FileObserver fileObserver;
     private FileObserver dirObserver;
     private volatile boolean observerDetectedChange = false;
@@ -33,69 +30,153 @@ public class WpsDeliveryHandler {
     private File currentLocalFile;
     private String currentBaselineHash;
     private long currentBaselineMtime;
+    private long currentRemoteMtime;
+    private String currentSessionUuid;
+    private String currentUriScheme;
+    private String currentIntentAction;
 
     public WpsDeliveryHandler(Context context, SmbClient smbClient) {
         this.context = context;
         this.smbClient = smbClient;
+        this.cacheService = new StreamCacheService(context, smbClient);
+        this.sessionManager = new EditSessionManager(context);
+        this.appResolver = new FileAppResolver(context);
     }
 
     public Map<String, Object> openFileInWps(String remotePath) throws IOException {
-        byte[] data = smbClient.readFile(remotePath);
-        String localFileName = new File(remotePath).getName();
-        File cacheDir = new File(context.getExternalFilesDir(null), CACHE_DIR);
-        if (!cacheDir.exists()) {
-            cacheDir.mkdirs();
+        Log.i(TAG, "Opening file in WPS: " + remotePath);
+
+        long remoteFileSize = smbClient.getFileSize(remotePath);
+        Log.i(TAG, "Remote file size: " + remoteFileSize + " bytes");
+
+        if (!cacheService.checkCacheSpace(remoteFileSize)) {
+            Map<String, Object> errResult = new HashMap<>();
+            errResult.put("intentLaunched", false);
+            errResult.put("error", "缓存空间不足，无法缓存文件 (" + remoteFileSize + " bytes)");
+            errResult.put("errorType", "INSUFFICIENT_SPACE");
+            Log.e(TAG, "Insufficient cache space for " + remotePath);
+            return errResult;
         }
-        File localFile = new File(cacheDir, localFileName);
-        try (FileOutputStream fos = new FileOutputStream(localFile)) {
-            fos.write(data);
-        }
+
+        Map<String, Object> cacheResult = cacheService.streamToCache(remotePath);
+        String localPath = (String) cacheResult.get("localPath");
+        String baselineHash = (String) cacheResult.get("sha256");
+        long fileSize = (long) cacheResult.get("size");
+        File localFile = new File(localPath);
+        String localFileName = localFile.getName();
+        long baselineMtime = localFile.lastModified();
+
+        Map<String, Object> remoteAttrs = smbClient.getFileAttributes(remotePath);
+        long remoteMtime = (long) remoteAttrs.get("lastWriteTime");
 
         currentRemotePath = remotePath;
         currentLocalFile = localFile;
-        currentBaselineHash = calculateSHA256(data);
-        currentBaselineMtime = localFile.lastModified();
+        currentBaselineHash = baselineHash;
+        currentBaselineMtime = baselineMtime;
+        currentRemoteMtime = remoteMtime;
 
         Uri uri = Uri.fromFile(localFile);
+        String mimeType = FileAppResolver.getMimeType(localFileName);
+
+        Map<String, Object> appInfo = appResolver.resolveApp(localFileName, uri);
+        boolean appResolved = (boolean) appInfo.get("resolved");
+
+        if (!appResolved) {
+            Map<String, Object> errResult = new HashMap<>();
+            errResult.put("intentLaunched", false);
+            errResult.put("error", appInfo.get("suggestion"));
+            errResult.put("errorType", "NO_APP");
+            errResult.put("mimeType", mimeType);
+            errResult.put("localPath", localPath);
+            errResult.put("baselineHash", baselineHash);
+            Log.e(TAG, "No app found for " + mimeType);
+            return errResult;
+        }
+
         Intent intent = new Intent(Intent.ACTION_EDIT);
-        intent.setDataAndType(uri, getMimeType(localFileName));
+        intent.setDataAndType(uri, mimeType);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
+        if (appInfo.containsKey("packageName") && (boolean) appInfo.getOrDefault("useExplicitPackage", false)) {
+            intent.setPackage((String) appInfo.get("packageName"));
+        }
+
         startFileObserver(localFile);
 
-        Map<String, Object> result4 = new HashMap<>();
-        result4.put("uri", uri.toString());
-        result4.put("localPath", localFile.getAbsolutePath());
-        result4.put("baselineHash", currentBaselineHash);
-        result4.put("baselineMtime", currentBaselineMtime);
-        result4.put("intentLaunched", true);
-        result4.put("intentAction", "ACTION_EDIT");
-        result4.put("uriScheme", "file");
+        Map<String, Object> result = new HashMap<>();
+        result.put("uri", uri.toString());
+        result.put("localPath", localPath);
+        result.put("baselineHash", baselineHash);
+        result.put("baselineMtime", baselineMtime);
+        result.put("remoteMtime", remoteMtime);
+        result.put("fileSize", fileSize);
+        result.put("mimeType", mimeType);
+        result.put("appName", appInfo.get("appName"));
+        result.put("isWps", appInfo.getOrDefault("isWps", false));
+        result.put("intentAction", "ACTION_EDIT");
+        result.put("uriScheme", "file");
+        result.put("streamingUsed", true);
+        result.put("cacheElapsedMs", cacheResult.get("elapsedMs"));
+
+        currentUriScheme = "file";
+        currentIntentAction = "ACTION_EDIT";
 
         try {
             context.startActivity(intent);
+            result.put("intentLaunched", true);
+
+            Map<String, Object> sessionMap = sessionManager.createSession(
+                    remotePath, localPath, localFileName,
+                    baselineHash, baselineMtime, remoteMtime, fileSize,
+                    "file", "ACTION_EDIT"
+            );
+            currentSessionUuid = (String) sessionMap.get("sessionId");
+            result.put("sessionId", currentSessionUuid);
+            result.put("sessionStatus", "open");
+
+            Log.i(TAG, "File delivered successfully: " + remotePath + " -> " + localPath);
         } catch (Exception e) {
             Log.w(TAG, "file:// ACTION_EDIT failed, trying FileProvider", e);
             try {
                 Uri fpUri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", localFile);
                 Intent fpIntent = new Intent(Intent.ACTION_EDIT);
-                fpIntent.setDataAndType(fpUri, getMimeType(localFileName));
+                fpIntent.setDataAndType(fpUri, mimeType);
                 fpIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 fpIntent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
                 fpIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                if (appInfo.containsKey("packageName") && (boolean) appInfo.getOrDefault("useExplicitPackage", false)) {
+                    fpIntent.setPackage((String) appInfo.get("packageName"));
+                }
+
                 context.startActivity(fpIntent);
-                result4.put("intentAction", "ACTION_EDIT");
-                result4.put("uriScheme", "content");
-                result4.put("uri", fpUri.toString());
+                result.put("intentLaunched", true);
+                result.put("intentAction", "ACTION_EDIT");
+                result.put("uriScheme", "content");
+                result.put("uri", fpUri.toString());
+                currentUriScheme = "content";
+
+                Map<String, Object> sessionMap = sessionManager.createSession(
+                        remotePath, localPath, localFileName,
+                        baselineHash, baselineMtime, remoteMtime, fileSize,
+                        "content", "ACTION_EDIT"
+                );
+                currentSessionUuid = (String) sessionMap.get("sessionId");
+                result.put("sessionId", currentSessionUuid);
+                result.put("sessionStatus", "open");
+
+                Log.i(TAG, "File delivered via FileProvider fallback: " + remotePath);
             } catch (Exception e2) {
                 Log.e(TAG, "Failed to launch WPS", e2);
-                result4.put("intentLaunched", false);
-                result4.put("error", e2.getMessage());
+                result.put("intentLaunched", false);
+                result.put("error", e2.getMessage());
+                result.put("errorType", "LAUNCH_FAILED");
+                result.put("fallbackTried", true);
             }
         }
 
-        return result4;
+        return result;
     }
 
     private void startFileObserver(File file) {
@@ -151,8 +232,7 @@ public class WpsDeliveryHandler {
         result.put("observerEventLog", observerEventLog);
         if (changed) {
             try {
-                byte[] data = readFileBytes(currentLocalFile);
-                String newHash = calculateSHA256(data);
+                String newHash = StreamCacheService.calculateSHA256(currentLocalFile);
                 result.put("newHash", newHash);
                 result.put("baselineHash", currentBaselineHash);
                 result.put("contentChanged", !newHash.equals(currentBaselineHash));
@@ -170,25 +250,43 @@ public class WpsDeliveryHandler {
             return result;
         }
 
-        byte[] localData = readFileBytes(currentLocalFile);
-        String localHash = calculateSHA256(localData);
+        if (fileObserver != null) fileObserver.stopWatching();
+        if (dirObserver != null) dirObserver.stopWatching();
 
-        Map<String, Object> remoteAttrs = smbClient.getFileAttributes(currentRemotePath);
-        long remoteMtime = (long) remoteAttrs.get("lastWriteTime");
+        try {
+            String localHash = StreamCacheService.calculateSHA256(currentLocalFile);
 
-        smbClient.writeFileSafe(currentRemotePath, localData);
+            Map<String, Object> remoteAttrs = smbClient.getFileAttributes(currentRemotePath);
+            long remoteMtime = (long) remoteAttrs.get("lastWriteTime");
 
-        byte[] verifyData = smbClient.readFile(currentRemotePath);
-        String verifyHash = calculateSHA256(verifyData);
+            byte[] localData = readFileBytes(currentLocalFile);
+            smbClient.writeFileSafe(currentRemotePath, localData);
 
-        result.put("writebackSuccess", verifyHash.equals(localHash));
-        result.put("localHash", localHash);
-        result.put("verifyHash", verifyHash);
-        result.put("remoteMtimeBefore", remoteMtime);
-        result.put("remoteMtimeAfter", System.currentTimeMillis());
+            byte[] verifyData = smbClient.readFile(currentRemotePath);
+            String verifyHash = StreamCacheService.calculateSHA256(currentLocalFile);
 
-        currentBaselineHash = localHash;
-        currentBaselineMtime = currentLocalFile.lastModified();
+            result.put("writebackSuccess", verifyHash.equals(localHash));
+            result.put("localHash", localHash);
+            result.put("verifyHash", verifyHash);
+            result.put("remoteMtimeBefore", remoteMtime);
+            result.put("remoteMtimeAfter", System.currentTimeMillis());
+
+            currentBaselineHash = localHash;
+            currentBaselineMtime = currentLocalFile.lastModified();
+            currentRemoteMtime = remoteMtime;
+
+            if (currentSessionUuid != null) {
+                if (verifyHash.equals(localHash)) {
+                    sessionManager.updateStatus(currentSessionUuid, "writeback");
+                    sessionManager.updateBaseline(currentSessionUuid, localHash, currentBaselineMtime);
+                } else {
+                    sessionManager.failSession(currentSessionUuid);
+                }
+            }
+        } finally {
+            if (fileObserver != null) fileObserver.startWatching();
+            if (dirObserver != null) dirObserver.startWatching();
+        }
 
         return result;
     }
@@ -202,8 +300,20 @@ public class WpsDeliveryHandler {
         Map<String, Object> attrs = smbClient.getFileAttributes(currentRemotePath);
         long remoteMtime = (long) attrs.get("lastWriteTime");
         result.put("remoteMtime", remoteMtime);
-        result.put("baselineMtime", currentBaselineMtime);
-        result.put("remoteChanged", remoteMtime != currentBaselineMtime);
+        result.put("baselineMtime", currentRemoteMtime);
+        result.put("remoteChanged", remoteMtime != currentRemoteMtime);
+        return result;
+    }
+
+    public Map<String, Object> getSessionInfo() {
+        Map<String, Object> result = new HashMap<>();
+        if (currentSessionUuid != null) {
+            EditSessionEntity entity = sessionManager.getSessionByUuid(currentSessionUuid);
+            if (entity != null) {
+                result = EditSessionManager.entityToMap(entity);
+            }
+        }
+        result.put("openSessions", sessionManager.countOpenSessions());
         return result;
     }
 
@@ -219,14 +329,18 @@ public class WpsDeliveryHandler {
         if (currentLocalFile != null && currentLocalFile.exists()) {
             currentLocalFile.delete();
         }
+        if (currentSessionUuid != null) {
+            sessionManager.closeSession(currentSessionUuid);
+        }
         currentLocalFile = null;
         currentRemotePath = null;
         currentBaselineHash = null;
+        currentSessionUuid = null;
     }
 
     private byte[] readFileBytes(File file) throws IOException {
         java.io.FileInputStream fis = new java.io.FileInputStream(file);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
         byte[] buffer = new byte[8192];
         int len;
         while ((len = fis.read(buffer)) != -1) {
@@ -234,43 +348,5 @@ public class WpsDeliveryHandler {
         }
         fis.close();
         return baos.toByteArray();
-    }
-
-    public static String calculateSHA256(byte[] data) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(data);
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 not available", e);
-        }
-    }
-
-    private String getMimeType(String fileName) {
-        String extension = MimeTypeMap.getFileExtensionFromUrl(fileName);
-        String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
-        if (mimeType == null) {
-            if (extension != null) {
-                switch (extension.toLowerCase()) {
-                    case "doc": return "application/msword";
-                    case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-                    case "xls": return "application/vnd.ms-excel";
-                    case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                    case "ppt": return "application/vnd.ms-powerpoint";
-                    case "pptx": return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-                    case "pdf": return "application/pdf";
-                    case "txt": return "text/plain";
-                    default: return "*/*";
-                }
-            }
-            return "*/*";
-        }
-        return mimeType;
     }
 }

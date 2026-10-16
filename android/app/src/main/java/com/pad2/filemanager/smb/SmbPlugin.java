@@ -153,6 +153,25 @@ public class SmbPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void getSessionInfo(PluginCall call) {
+        Map<String, Object> result = wpsHandler.getSessionInfo();
+        JSObject ret = new JSObject();
+        for (Map.Entry<String, Object> entry : result.entrySet()) {
+            ret.put(entry.getKey(), entry.getValue());
+        }
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void isWpsInstalled(PluginCall call) {
+        FileAppResolver resolver = new FileAppResolver(getContext());
+        JSObject ret = new JSObject();
+        ret.put("installed", resolver.isWpsInstalled());
+        ret.put("packageName", resolver.getWpsPackageName());
+        call.resolve(ret);
+    }
+
+    @PluginMethod
     public void writeTextFile(PluginCall call) {
         String path = call.getString("path", "");
         String content = call.getString("content", "");
