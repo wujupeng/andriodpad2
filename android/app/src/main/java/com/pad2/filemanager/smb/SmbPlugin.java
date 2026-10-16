@@ -104,6 +104,16 @@ public class SmbPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void foregroundCheck(PluginCall call) {
+        Map<String, Object> result = wpsHandler.foregroundCheck();
+        JSObject ret = new JSObject();
+        for (Map.Entry<String, Object> entry : result.entrySet()) {
+            ret.put(entry.getKey(), entry.getValue());
+        }
+        call.resolve(ret);
+    }
+
+    @PluginMethod
     public void writeback(PluginCall call) {
         try {
             Map<String, Object> result = wpsHandler.writeback();

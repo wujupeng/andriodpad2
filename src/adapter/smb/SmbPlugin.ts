@@ -100,6 +100,7 @@ export interface SmbPluginInterface {
   listDirectory(options: { path?: string }): Promise<SmbListResult>;
   openInWps(options: { path: string }): Promise<WpsOpenResult>;
   checkLocalFileChanged(): Promise<FileChangeResult>;
+  foregroundCheck(): Promise<FileChangeResult>;
   writeback(): Promise<WritebackResult>;
   checkRemoteChanged(): Promise<RemoteChangeResult>;
   getFileAttributes(options: { path: string }): Promise<{ size: number; lastWriteTime: number }>;
