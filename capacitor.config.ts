@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
   appId: 'com.pad2.filemanager',
-  appName: 'PAD2 File Manager',
+  appName: '大总理文件管理',
   webDir: 'dist',
   android: {
     allowMixedContent: false,

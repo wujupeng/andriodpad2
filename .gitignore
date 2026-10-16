@@ -42,5 +42,16 @@ coverage/
 # Capacitor
 android/app/src/main/assets/public/
 
-# Temp files# Tool artifacts (keep docs)
+# Temp files
+*.tar.gz
+*.zip
+
+# Local SDK
+local-sdk/
+
+# Gradle caches
+android-custom/.gradle/
+**/.gradle/
+
+# Tool artifacts (keep docs)
 !.codeartsdoer/specs/
