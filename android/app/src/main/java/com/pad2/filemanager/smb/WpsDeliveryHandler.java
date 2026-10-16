@@ -3,7 +3,6 @@ package com.pad2.filemanager.smb;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.FileObserver;
 import android.util.Log;
 
 import androidx.core.content.FileProvider;
@@ -22,10 +21,7 @@ public class WpsDeliveryHandler {
     private StreamCacheService cacheService;
     private EditSessionManager sessionManager;
     private FileAppResolver appResolver;
-    private FileObserver fileObserver;
-    private FileObserver dirObserver;
-    private volatile boolean observerDetectedChange = false;
-    private volatile String observerEventLog = "";
+    private WpsSaveDetector saveDetector;
     private String currentRemotePath;
     private File currentLocalFile;
     private String currentBaselineHash;
@@ -41,6 +37,7 @@ public class WpsDeliveryHandler {
         this.cacheService = new StreamCacheService(context, smbClient);
         this.sessionManager = new EditSessionManager(context);
         this.appResolver = new FileAppResolver(context);
+        this.saveDetector = new WpsSaveDetector(context);
     }
 
     public Map<String, Object> openFileInWps(String remotePath) throws IOException {
@@ -102,7 +99,7 @@ public class WpsDeliveryHandler {
             intent.setPackage((String) appInfo.get("packageName"));
         }
 
-        startFileObserver(localFile);
+        saveDetector.startMonitoring(localFile, baselineHash, baselineMtime);
 
         Map<String, Object> result = new HashMap<>();
         result.put("uri", uri.toString());
@@ -179,68 +176,22 @@ public class WpsDeliveryHandler {
         return result;
     }
 
-    private void startFileObserver(File file) {
-        if (fileObserver != null) {
-            fileObserver.stopWatching();
-        }
-        if (dirObserver != null) {
-            dirObserver.stopWatching();
-        }
-        observerDetectedChange = false;
-        observerEventLog = "";
-
-        fileObserver = new FileObserver(file, FileObserver.MODIFY | FileObserver.CLOSE_WRITE | FileObserver.MOVED_TO) {
-            @Override
-            public void onEvent(int event, String path) {
-                String msg = "FileObserver event: " + event + " path: " + path;
-                Log.i(TAG, msg);
-                observerDetectedChange = true;
-                observerEventLog += msg + "; ";
-            }
-        };
-        fileObserver.startWatching();
-
-        File cacheDir = file.getParentFile();
-        if (cacheDir != null) {
-            dirObserver = new FileObserver(cacheDir, FileObserver.MODIFY | FileObserver.CLOSE_WRITE | FileObserver.MOVED_TO | FileObserver.CREATE) {
-                @Override
-                public void onEvent(int event, String path) {
-                    String msg = "DirObserver event: " + event + " path: " + path;
-                    Log.i(TAG, msg);
-                    observerEventLog += msg + "; ";
-                    if (path != null && !path.equals(file.getName())) {
-                        observerDetectedChange = true;
-                    }
-                }
-            };
-            dirObserver.startWatching();
-        }
-    }
-
     public Map<String, Object> checkLocalFileChanged() {
-        Map<String, Object> result = new HashMap<>();
-        if (currentLocalFile == null) {
-            result.put("error", "No file opened");
-            return result;
-        }
-        long currentMtime = currentLocalFile.lastModified();
-        boolean changed = currentMtime != currentBaselineMtime;
-        result.put("changed", changed);
-        result.put("currentMtime", currentMtime);
-        result.put("baselineMtime", currentBaselineMtime);
-        result.put("observerDetectedChange", observerDetectedChange);
-        result.put("observerEventLog", observerEventLog);
-        if (changed) {
-            try {
-                String newHash = StreamCacheService.calculateSHA256(currentLocalFile);
-                result.put("newHash", newHash);
-                result.put("baselineHash", currentBaselineHash);
-                result.put("contentChanged", !newHash.equals(currentBaselineHash));
-            } catch (Exception e) {
-                result.put("error", "Failed to calculate hash: " + e.getMessage());
+        Map<String, Object> result = saveDetector.checkChange();
+        if (result.containsKey("contentChanged") && (boolean) result.get("contentChanged")) {
+            if (currentSessionUuid != null) {
+                sessionManager.updateStatus(currentSessionUuid, "saved");
             }
+        }
+        if (result.containsKey("saveAsDetected") && (boolean) result.get("saveAsDetected")) {
+            result.put("saveAsPrompt", "检测到另存为: " + result.get("saveAsFileName") + "，请选择回写为新文件或覆盖原文件");
         }
         return result;
+    }
+
+    public Map<String, Object> foregroundCheck() {
+        Log.i(TAG, "Foreground check for missed events");
+        return checkLocalFileChanged();
     }
 
     public Map<String, Object> writeback() throws IOException {
@@ -250,8 +201,7 @@ public class WpsDeliveryHandler {
             return result;
         }
 
-        if (fileObserver != null) fileObserver.stopWatching();
-        if (dirObserver != null) dirObserver.stopWatching();
+        saveDetector.pause();
 
         try {
             String localHash = StreamCacheService.calculateSHA256(currentLocalFile);
@@ -283,9 +233,10 @@ public class WpsDeliveryHandler {
                     sessionManager.failSession(currentSessionUuid);
                 }
             }
+
+            saveDetector.updateBaseline(localHash, currentBaselineMtime);
         } finally {
-            if (fileObserver != null) fileObserver.startWatching();
-            if (dirObserver != null) dirObserver.startWatching();
+            saveDetector.resume();
         }
 
         return result;
@@ -318,14 +269,7 @@ public class WpsDeliveryHandler {
     }
 
     public void cleanup() {
-        if (fileObserver != null) {
-            fileObserver.stopWatching();
-            fileObserver = null;
-        }
-        if (dirObserver != null) {
-            dirObserver.stopWatching();
-            dirObserver = null;
-        }
+        saveDetector.stopMonitoring();
         if (currentLocalFile != null && currentLocalFile.exists()) {
             currentLocalFile.delete();
         }
