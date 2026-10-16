@@ -1,6 +1,7 @@
 package com.pad2.filemanager.smb;
 
 import android.content.Context;
+import android.os.Environment;
 import android.util.Log;
 
 import java.io.File;
@@ -27,7 +28,7 @@ public class StreamCacheService {
     }
 
     public Map<String, Object> streamToCache(String remotePath) throws IOException {
-        File cacheDir = new File(context.getExternalFilesDir(null), CACHE_DIR);
+        File cacheDir = new File(Environment.getExternalStorageDirectory(), "PAD2/" + CACHE_DIR);
         if (!cacheDir.exists()) {
             cacheDir.mkdirs();
         }
@@ -80,11 +81,11 @@ public class StreamCacheService {
     }
 
     public File getCacheFile(String fileName) {
-        return new File(new File(context.getExternalFilesDir(null), CACHE_DIR), fileName);
+        return new File(new File(Environment.getExternalStorageDirectory(), "PAD2/" + CACHE_DIR), fileName);
     }
 
     public File getCacheDir() {
-        return new File(context.getExternalFilesDir(null), CACHE_DIR);
+        return new File(Environment.getExternalStorageDirectory(), "PAD2/" + CACHE_DIR);
     }
 
     public boolean checkCacheSpace(long requiredBytes) {
