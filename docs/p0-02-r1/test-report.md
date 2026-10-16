@@ -4,7 +4,10 @@
 - 设备: HONOR NDL2-W09 (Android 16, API 36)
 - WPS: cn.wps.moffice_eng
 - SMB: 192.168.2.3/share (debian)
-- APK: pad2-p0-02-r1.apk (2026-10-16 构建)
+- APK: pad2-p0-02-r1.apk (2026-10-16 构建, 10508194 bytes)
+- APK 分发路径: /mnt/share/apk/pad2-p0-02-r1.apk
+- 提交 SHA: 693fb75ffcacaf8563d30b34d46d9c139d9a2495
+- 远端: https://github.com/wujupeng/andriodpad2/commit/693fb75
 
 ## 测试结果汇总
 
@@ -84,3 +87,22 @@
 ## 结论
 
 P0-02-R1 全部修复项验证通过，建议 PM 放行 P0-02。
+## 实测证据索引
+
+| 证据 | 类型 | 说明 |
+|------|------|------|
+| pad2-test-final-docx.png | 截图 | WPS 正确渲染 .docx 为 Word 文档（舍弗勒CSP_Line Setup） |
+| pad2-test-docx-open.png | 截图 | .docx 交付后 WPS Writer 为 topResumedActivity |
+| openInWps JSON 输出 | 运行时数据 | deliveryStrategy=FILE_URI_FIRST, uriScheme=file, intentAction=ACTION_VIEW |
+| checkLocalFileChanged JSON | 运行时数据 | verdict=SAVE_SUCCESS, contentChanged=true, mtimeChanged=true |
+| writeback JSON | 运行时数据 | writebackSuccess=true, localHash==verifyHash |
+| /mnt/share/p0-02-test.txt | 远程文件 | 回写后内容已更新为 "EDITED CONTENT" 版本 |
+
+### SHA-256 证据链
+
+```
+基线 (打开时): fb12456995182f4c0258d5d6b47a2267d50446708cdf4551c339b5eb46c3dc16
+编辑后 (本地): 9cadeef30640d437e5873e37fd17ba665de2bcba038b417689baafc6dcaa2dbb
+回写后 (远程): 9cadeef30640d437e5873e37fd17ba665de2bcba038b417689baafc6dcaa2dbb
+                 ↑ 本地与远程一致，SHA-256 校验通过
+```
