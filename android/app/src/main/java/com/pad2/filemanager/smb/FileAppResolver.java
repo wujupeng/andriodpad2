@@ -7,6 +7,7 @@ import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.util.Log;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -153,6 +154,24 @@ public class FileAppResolver {
             case "mp3": return "audio/mpeg";
             default: return "*/*";
         }
+    }
+
+    public static String getMimeTypeWithSniff(String fileName, File file) {
+        String mimeType = getMimeType(fileName);
+        String docxMime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+        if (docxMime.equals(mimeType) && file != null && file.exists()) {
+            SniffResult sniffResult = DocxContentSniffer.sniff(file);
+            if (sniffResult.getStatus() == SniffResult.SniffStatus.VALID) {
+                Log.i(TAG, "MIME sniff OK for " + fileName + ": " + mimeType);
+                return mimeType;
+            } else {
+                Log.w(TAG, "MIME sniff FAILED for " + fileName + ": " + sniffResult.getStatus() + " — " + sniffResult.getDetail());
+                return null;
+            }
+        }
+
+        return mimeType;
     }
 
     private static String getFileExtension(String fileName) {

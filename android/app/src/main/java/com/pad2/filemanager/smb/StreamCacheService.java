@@ -125,6 +125,22 @@ public class StreamCacheService {
         return bytesToHex(digest.digest());
     }
 
+    public static String calculateSHA256FromStream(InputStream is) throws IOException {
+        MessageDigest digest;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 not available", e);
+        }
+        byte[] buffer = new byte[8192];
+        int len;
+        while ((len = is.read(buffer)) != -1) {
+            digest.update(buffer, 0, len);
+        }
+        is.close();
+        return bytesToHex(digest.digest());
+    }
+
     private static String bytesToHex(byte[] hash) {
         StringBuilder hexString = new StringBuilder();
         for (byte b : hash) {
