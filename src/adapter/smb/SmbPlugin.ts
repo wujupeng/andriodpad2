@@ -31,8 +31,20 @@ export interface WpsOpenResult {
   localPath: string;
   baselineHash: string;
   baselineMtime: number;
+  remoteMtime?: number;
+  fileSize?: number;
+  mimeType?: string;
+  appName?: string;
+  isWps?: boolean;
   intentLaunched: boolean;
   intentAction?: string;
+  uriScheme?: string;
+  sessionId?: string;
+  sessionStatus?: string;
+  streamingUsed?: boolean;
+  cacheElapsedMs?: number;
+  errorType?: string;
+  fallbackTried?: boolean;
   error?: string;
 }
 
@@ -64,6 +76,23 @@ export interface RemoteChangeResult {
   error?: string;
 }
 
+export interface SessionInfoResult {
+  sessionId?: string;
+  remotePath?: string;
+  localCachePath?: string;
+  fileName?: string;
+  baselineSha256?: string;
+  status?: string;
+  uriScheme?: string;
+  intentAction?: string;
+  openSessions: number;
+}
+
+export interface WpsInstallResult {
+  installed: boolean;
+  packageName: string | null;
+}
+
 export interface SmbPluginInterface {
   connect(options: SmbConnectOptions): Promise<SmbConnectResult>;
   disconnect(): Promise<void>;
@@ -78,6 +107,8 @@ export interface SmbPluginInterface {
   writeTextFile(options: { path: string; content: string }): Promise<{ success: boolean; path: string }>;
   ensureDirectory(options: { path: string }): Promise<{ success: boolean; path: string }>;
   exportLog(options: { logDir?: string; content: string; fileName: string }): Promise<{ success: boolean; path: string }>;
+  getSessionInfo(): Promise<SessionInfoResult>;
+  isWpsInstalled(): Promise<WpsInstallResult>;
 }
 
 const SmbPlugin = registerPlugin<SmbPluginInterface>('SmbPlugin');

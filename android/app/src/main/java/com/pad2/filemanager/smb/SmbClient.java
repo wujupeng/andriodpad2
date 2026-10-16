@@ -153,6 +153,56 @@ public class SmbClient {
         }
     }
 
+    public InputStream readFileStream(String path) throws IOException {
+        reconnectIfNeeded();
+        final File file = diskShare.openFile(
+            normalizePath(path),
+            EnumSet.of(AccessMask.GENERIC_READ),
+            null,
+            SMB2ShareAccess.ALL,
+            SMB2CreateDisposition.FILE_OPEN,
+            null
+        );
+        final InputStream is = file.getInputStream();
+        return new InputStream() {
+            @Override
+            public int read() throws IOException {
+                return is.read();
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                return is.read(b, off, len);
+            }
+
+            @Override
+            public void close() throws IOException {
+                try {
+                    is.close();
+                } finally {
+                    file.close();
+                }
+            }
+        };
+    }
+
+    public long getFileSize(String path) throws IOException {
+        reconnectIfNeeded();
+        File file = diskShare.openFile(
+            normalizePath(path),
+            EnumSet.of(AccessMask.GENERIC_READ),
+            null,
+            SMB2ShareAccess.ALL,
+            SMB2CreateDisposition.FILE_OPEN,
+            null
+        );
+        try {
+            return file.getFileInformation().getStandardInformation().getEndOfFile();
+        } finally {
+            file.close();
+        }
+    }
+
     public void writeFile(String path, byte[] data) throws IOException {
         reconnectIfNeeded();
         File file = diskShare.openFile(

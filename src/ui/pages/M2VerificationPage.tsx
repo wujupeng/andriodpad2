@@ -30,7 +30,7 @@ export default function M2VerificationPage() {
   const [share, setShare] = useState('share');
   const [username, setUsername] = useState('debian');
   const [password, setPassword] = useState('9090');
-  const [domain, setDomain] = useState('');
+  const [domain] = useState('');
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [currentPath, setCurrentPath] = useState('');

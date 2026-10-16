@@ -1,4 +1,4 @@
-import { ProtocolCapabilities, FileOperationCapability } from './ProtocolCapabilities'
+import { ProtocolCapabilities } from './ProtocolCapabilities'
 
 export interface FileEntry {
   name: string
