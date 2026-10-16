@@ -4,7 +4,7 @@
 
 > **文档定位**：本规格为现有 `android_smb_explorer/spec.md`（REQ-01~05 SMB 核心）、`design.md`、`tasks.md` 的扩展框架，不替代现有文档。**现有 spec.md/design.md/tasks.md 是 SMB 核心和 P0 技术验证的需求基线**；P1 本地文件管理能力必须在独立的首期范围补充规格或任务分解后，才能纳入开发与验收。P2-P4 扩展功能须新增独立需求规格与架构设计。
 
-> **现有项目状态上下文**：M0 只读技术审查已完成；M1 需求架构冻结 CONDITIONAL PASS（minSdkVersion = API 26 已冻结，targetSdkVersion = API 36 候选待评估，WPS 首批测试目标有条件批准荣耀 9X，7 项性能参数 M2 待验证初始基线）；M2 WPS 技术验证 PM 已批准尚未执行；技术栈 Capacitor 8 + React + TypeScript + SMBJ + Room/SQLite + Android Keystore；新仓库 https://github.com/wujupeng/andriodpad2，提交链 c6bd202 → dac77fe → e91fcd1 → d720262 → f0956ee → 41995e6 → 6d0fedc → f838bc5 → f98d4c3 → 50fc6b6（当前最新提交 50fc6b6，main 分支）。
+> **现有项目状态上下文**：M0 只读技术审查已完成；M1 需求架构冻结 CONDITIONAL PASS（minSdkVersion = API 26 已冻结，targetSdkVersion = API 36 候选待评估，WPS 首批测试目标有条件批准荣耀 9X，7 项性能参数 M2 待验证初始基线）；M2-A WPS 技术验证已执行并通过（V1-V7 全部 PASS，2026-10-16，评审报告 docs/m2a/gate-review.md），M2-B API 36 兼容性评估待执行；P0 完整实现 CONDITIONAL APPROVAL（PM 裁定，前置闭环中）；技术栈 Capacitor 8 + React + TypeScript + SMBJ + Room/SQLite + Android Keystore；新仓库 https://github.com/wujupeng/andriodpad2，提交链 e1b9856 → 110cb03（当前最新提交 110cb03，main 分支）。
 
 ---
 
@@ -959,12 +959,16 @@ ExtSpec -> ExtSpec : P2-P4 新增独立规格与设计
 
 ### 6.5.1 M2-A：WPS 技术验证记录
 
-1. **验证设备**：M2-A 验证使用的代表性设备，须为实际设备，不可为空。
-2. **WPS 版本**：M2-A 验证使用的 WPS 版本，须为实际安装版本，不可为空。
-3. **SMB 服务器**：M2-A 验证使用的真实 SMB 服务器，须为实际可达服务器，不可为空。
-4. **验证路径**：M2-A 验证的关键路径，须为"SMB/WPS 打开—编辑—保存回写—冲突—断网恢复"，不可为空。
-5. **验证结果**：M2-A 验证结果，取值范围为 {通过, 未通过, 待执行}，不可为空。
-6. **门禁状态**：P0 门禁状态（基于 M2-A），取值范围为 {通过, 未通过, 待验证}，须与 M2-A 验证结果对应。
+1. **验证设备**：Android 平板（物理设备，MTP 模式连接）。
+2. **WPS 版本**：WPS Office（已安装，具体版本待补充）。
+3. **SMB 服务器**：192.168.2.3/share（用户: debian，SMBJ 0.12.1 客户端）。
+4. **验证路径**：SMB/WPS 打开—编辑—保存回写—冲突—断网恢复，V1-V7 全部验证。
+5. **验证结果**：通过（V1-V7 全部 PASS，2026-10-16）。
+6. **门禁状态**：通过（基于 M2-A V1-V7 全部 PASS）。
+7. **评审报告**：docs/m2a/gate-review.md（评审 ID: M2A-GATE-001）。
+8. **日志证据**：docs/m2a/m2a-log-2026-10-16T01-45-17.txt、docs/m2a/m2a-log-2026-10-16T01-51-01.txt。
+9. **关键技术方案确认**：file:// URI + ACTION_EDIT + getExternalFilesDir()（content:// 方案否决）；FileObserver + mtime + SHA-256 保存检测；writeFileSafe 临时文件+rename 原子覆盖；reconnectIfNeeded 自动重连。
+10. **遗留风险（P0 阶段处理）**：V5 其他失败场景（磁盘满、权限拒绝）待补充；V6 完整冲突解决策略待设计；V7 编辑期间 Wi-Fi 完全断开→恢复流程待补充。
 
 ### 6.5.2 M2-B：API 36 兼容性评估记录
 
@@ -989,7 +993,9 @@ ExtSpec -> ExtSpec : P2-P4 新增独立规格与设计
 > **修订依据**：PM Gate Review 发现的 6 项剩余问题
 > **修订前提交**：f838bc5（main 分支）
 > **M1 状态**：CONDITIONAL PASS
-> **M2 状态**：PM 已批准，尚未执行
+> **M2-A 状态**：已执行并通过（V1-V7 全部 PASS，2026-10-16）
+> **M2-B 状态**：待执行（API 36 兼容性评估，独立门禁）
+> **P0 状态**：CONDITIONAL APPROVAL（PM 裁定，前置闭环中）
 > **首批代表性设备**：荣耀 9X
 > **仓库 URL**：https://github.com/wujupeng/andriodpad2（已统一拼写：andriodpad2）
 
@@ -1144,7 +1150,7 @@ ExtSpec -> ExtSpec : P2-P4 新增独立规格与设计
 | 4 | RAR/7Z 库验证 | 保留，P2 启动前完成 | RAR/7Z 为 P2 功能，P2 启动前完成验证 |
 | 5 | 云盘服务商规格 | 保留，每个服务商独立定义，P3 启动前完成 | 云盘为 P3 功能，逐个服务商独立规格 |
 | 6 | SMB 协议能力 | M2 以实测证据更新，不能以规格声明替代验证 | 协议能力须实测验证，规格声明不替代 |
-| 7 | M2 WPS 技术验证 | 尚未执行，当前仍是前置门禁 | M2-A 为 P0 主要门禁，未通过不进入 P1 |
+| 7 | M2 WPS 技术验证 | M2-A 已执行并通过（V1-V7 PASS），M2-B 待执行 | M2-A 为 P0 主要门禁已通过；M2-B 独立评估待执行 |
 | 8 | 目标并发用户数 | 由业务方确认，客户端并发连接/任务上限另行定义 | 并发用户数为业务方职责，客户端上限独立定义 |
 
 ## 7.6 修订后的未解决问题清单
@@ -1159,7 +1165,7 @@ ExtSpec -> ExtSpec : P2-P4 新增独立规格与设计
 | 4 | RAR/7Z 库验证 | 待验证 | P2 启动前 | 验证 junrar/SevenZipJ 库许可与维护状态 |
 | 5 | 云盘服务商规格 | 待定义 | P3 启动前 | 逐个服务商定义独立规格（OAuth/令牌/API 限制） |
 | 6 | SMB 协议能力 | 待 M2 实测 | M2-A 执行时 | M2-A 以实测证据更新协议能力矩阵 |
-| 7 | M2 WPS 技术验证 | 尚未执行 | P0 门禁 | 执行 M2-A 真实环境验证 |
+| 7 | M2 WPS 技术验证 | M2-A 已通过（V1-V7 PASS），M2-B 待执行 | M2-B 评估 | 执行 M2-B API 36 兼容性评估 |
 | 8 | 目标并发用户数 | 待业务方确认 | 性能阈值冻结前 | 业务方确认并发用户数 → 客户端上限定义 |
 
 ## 7.7 修订变更摘要
@@ -1188,9 +1194,11 @@ ExtSpec -> ExtSpec : P2-P4 新增独立规格与设计
 > **修订前提交**：f98d4c3（main 分支）
 > **修订后提交**：50fc6b6（main 分支）
 > **M1 状态**：CONDITIONAL PASS
-> **M2 状态**：PM 已批准，尚未执行（M2-A WPS 验证 + M2-B API 36 评估）
+> **M2-A 状态**：已执行并通过（V1-V7 全部 PASS，2026-10-16）
+> **M2-B 状态**：待执行（API 36 兼容性评估，独立门禁）
+> **P0 状态**：CONDITIONAL APPROVAL（PM 裁定，前置闭环中）
 > **仓库 URL**：https://github.com/wujupeng/andriodpad2
-> **完整提交链**：c6bd202 → dac77fe → e91fcd1 → d720262 → f0956ee → 41995e6 → 6d0fedc → f838bc5 → f98d4c3 → 50fc6b6
+> **完整提交链**：e1b9856 → 110cb03（M2-A 验证证据已推送）
 
 ## 8.1 3 项问题逐项修复证据
 
@@ -1256,7 +1264,7 @@ ExtSpec -> ExtSpec : P2-P4 新增独立规格与设计
 | 是否进行应用代码开发 | 未进行 | ✅ |
 | 是否构建或发布 APK | 未进行 | ✅ |
 | 是否启动 P1、P2、P3 或 P4 | 未启动 | ✅ |
-| 是否将 M2-A 或 M2-B 标记为已完成 | 未标记（M2 状态保持"PM 已批准，尚未执行"） | ✅ |
+| 是否将 M2-A 或 M2-B 标记为已完成 | M2-A 已标记为通过（V1-V7 PASS 实测证据），M2-B 未标记（待执行） | ✅ |
 | 是否引入新的功能范围 | 未引入（仅修正文档元数据、编号和评估方法定义） | ✅ |
 | 是否改变首期交付清单（FD-01～FD-17） | 未改变 | ✅ |
 | 是否改变产品蓝图（A/B/C/D 四大类） | 未改变 | ✅ |
@@ -1268,11 +1276,11 @@ ExtSpec -> ExtSpec : P2-P4 新增独立规格与设计
 
 | 项目 | 值 |
 |------|-----|
-| 修订前提交 | f98d4c3（main 分支） |
-| 修订后提交 | **50fc6b6**（main 分支） |
-| 提交链 | c6bd202 → dac77fe → e91fcd1 → d720262 → f0956ee → 41995e6 → 6d0fedc → f838bc5 → f98d4c3 → 50fc6b6 |
+| 修订前提交 | e1b9856（main 分支） |
+| 修订后提交 | **110cb03**（main 分支） |
+| 提交链 | e1b9856 → 110cb03 |
 
-> **说明**：本次修订提交为 50fc6b6，已回填至本节及文档头部提交链。
+> **说明**：本次修订提交为 110cb03，包含 M2-A 验证证据（V1-V7 全部 PASS）、评审报告（docs/m2a/gate-review.md）和验证日志。已回填至本节及文档头部提交链。
 
 ## 8.4 修订变更摘要
 
