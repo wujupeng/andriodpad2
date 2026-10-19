@@ -706,7 +706,7 @@ testSaveAs() 内部顺序执行场景A（发现候选文件）与场景B（未�
 
 R2-04 要求重新执行回归测试并更新测试报告，本设计方案对此的支撑：
 
-1. **代码变更后重新编译**：修复 R1RegressionTestSuite.java 后，在远程编译服务器（192.168.2.3:***REDACTED***）执行 `./gradlew assembleRelease` 产出新 APK。
+1. **代码变更后重新编译**：修复 R1RegressionTestSuite.java 后，在远程编译服务器（192.168.2.3 (密码已脱敏)）执行 `./gradlew assembleRelease` 产出新 APK。
 2. **真实平板重新执行**：在 Honor NDL2-W09 + Android 16 + WPS cn.wps.moffice_eng 上安装新 APK，调用 runAllScenarios() 执行全部五类场景真实断言。
 3. **新代码 SHA**：提交代码变更后获取新的完整 40 字符 Git SHA，不复用旧 SHA 693fb75。
 4. **更新 test-report.md**：在 `docs/p0-02-r2/test-report.md` 中记录：

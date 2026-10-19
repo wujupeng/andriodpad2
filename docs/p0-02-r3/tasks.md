@@ -235,7 +235,7 @@
 > 对应 design.md 模块 J + 四、R3-05 提交策略；重新执行全部五类场景，产出 test-report.md + execution-log.md，含执行方式声明、哈希结果、另存为证据、新 SHA。
 
 ### 6.1 T06.1 远程编译新 APK
-- [ ] 在远程编译服务器（192.168.2.3:***REDACTED***）同步修复后源码，执行 ./gradlew assembleRelease 产出新 APK
+- [ ] 在远程编译服务器（192.168.2.3 (密码已脱敏)）同步修复后源码，执行 ./gradlew assembleRelease 产出新 APK
   - **涉及文件**：无（编译产物）
   - **输入**：修复后的 R1RegressionTestSuite.java + RegressionTestConfig.java
   - **输出**：新 APK（版本号不同于 R2）

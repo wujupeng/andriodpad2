@@ -138,7 +138,7 @@ rectangle "P0-02-R3-FIX 定向修复组件\n(版本证据统一 + 另存为证�
 }
 
 database "Git 仓库\n(GitHub)" as Git
-rectangle "远程编译服务器\n192.168.2.3:***REDACTED***" as BuildServer
+rectangle "远程编译服务器\n192.168.2.3 (密码已脱敏)" as BuildServer
 rectangle "HONOR NDL2_W09\n(Android 16)" as Device
 rectangle "WPS Office\ncn.wps.moffice_eng" as WPS
 cloud "Windows SMB 服务器" as SMB

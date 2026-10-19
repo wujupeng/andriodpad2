@@ -112,7 +112,7 @@ rectangle "P0-02-R2 证据完整性修复组件\n(R1RegressionTestSuite 修复)"
 rectangle "WPS Office\ncn.wps.moffice_eng" as WPS
 rectangle "Android 系统\n(FileObserver / SAF)" as AndroidSys
 cloud "Windows SMB 服务器" as SMB
-rectangle "远程编译服务器\n192.168.2.3:***REDACTED***" as BuildServer
+rectangle "远程编译服务器\n192.168.2.3 (密码已脱敏)" as BuildServer
 
 Tester --> Fix : 修复测试框架 + 重新执行回归验证
 PM --> Fix : Gate Review 裁定

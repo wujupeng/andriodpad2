@@ -133,7 +133,7 @@ rectangle "WPS Office\ncn.wps.moffice_eng" as WPS
 rectangle "Android 系统\n(FileObserver / SAF / adb)" as AndroidSys
 rectangle "CDP WebSocket\n(Capacitor 插件调用)" as CDP
 cloud "Windows SMB 服务器" as SMB
-rectangle "远程编译服务器\n192.168.2.3:***REDACTED***" as BuildServer
+rectangle "远程编译服务器\n192.168.2.3 (密码已脱敏)" as BuildServer
 database "Git 仓库\n(GitHub)" as Git
 
 Tester --> Fix : 修复断言+补充证据+声明执行方式+审核R1差异

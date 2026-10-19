@@ -1064,7 +1064,7 @@ R1RegressionTestSuite ..> TestReport : 聚合
 2. **文档提交**：产出 docs/p0-02-r3/test-report.md + docs/p0-02-r3/execution-log.md，提交到 git 仓库。
 3. **提交范围审计**：确认提交仅修改 R1RegressionTestSuite.java + RegressionTestConfig.java + docs/p0-02-r3/，未触碰功能组件代码与 R1 测试报告。
 4. **重新执行**：在真实平板（Honor NDL2-W09 + Android 16 + WPS cn.wps.moffice_eng）上按声明的执行方式重新执行全部五类场景回归测试。
-5. **APK 重新编译**：在远程编译服务器（192.168.2.3:***REDACTED***）上重新编译产出新 APK，安装到设备执行测试。
+5. **APK 重新编译**：在远程编译服务器（192.168.2.3 (密码已脱敏)）上重新编译产出新 APK，安装到设备执行测试。
 
 ## 4.2 执行日志格式
 
