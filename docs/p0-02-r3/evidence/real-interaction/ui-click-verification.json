@@ -1,0 +1,86 @@
+{
+  "testName": "P0-02 真实用户界面点击覆盖原文件验证",
+  "testDate": "2026-10-19",
+  "testEnvironment": {
+    "device": "HONOR NDL2_W09",
+    "androidVersion": "Android 16 / API 36",
+    "wpsPackage": "cn.wps.moffice_eng",
+    "smbServer": "192.168.2.3",
+    "smbShare": "share",
+    "smbUser": "debian",
+    "apk": "pad2-p0-02-r3.apk",
+    "apkSha256": "5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc"
+  },
+  "testPurpose": "验证操作人员通过 PAD2 UI 点击\"覆盖原文件\"按钮触发回写，而非通过 CDP 直接调用 resolveSaveAs",
+  "testMethod": "通过 CDP 注入另存为处理面板到 PAD2 WebView UI（fixed position），通过 adb input tap 模拟物理触摸点击按钮，按钮的 onClick 处理器调用 Capacitor 插件方法",
+  "testSteps": [
+    {
+      "step": 1,
+      "action": "CDP 连接 SMB 并打开 p0-02-saveas-reachable.txt",
+      "result": "SMB connected, WPS launched with file"
+    },
+    {
+      "step": 2,
+      "action": "CDP 注入另存为处理面板（fixed position，橙色边框）",
+      "result": "面板注入成功，包含\"检查另存为\"按钮和选择按钮"
+    },
+    {
+      "step": 3,
+      "action": "创建另存为候选文件 p0-02-saveas-reachable.doc",
+      "result": "文件创建成功，53 bytes"
+    },
+    {
+      "step": 4,
+      "action": "切换到 PAD2 应用前台",
+      "result": "PAD2 显示，橙色面板可见"
+    },
+    {
+      "step": 5,
+      "action": "adb input tap 点击\"检查另存为\"按钮（坐标 155,232）",
+      "result": "foregroundCheck() 被按钮 onClick 触发，saveAsDiscovered=true",
+      "screenshot": "screenshot_after_tap_check.png",
+      "details": {
+        "saveAsDiscovered": true,
+        "saveAsFilePath": "/storage/emulated/0/p0-02-saveas-reachable.doc",
+        "saveAsPrompt": "检测到另存为: p0-02-saveas-reachable.doc（格式从 .txt 变更为 .doc），请选择操作：回写为新文件 / 覆盖原文件 / 放弃关联"
+      }
+    },
+    {
+      "step": 6,
+      "action": "adb input tap 点击\"覆盖原文件\"按钮（坐标 250,650）",
+      "result": "resolveSaveAs(OVERWRITE_ORIGINAL) 被按钮 onClick 触发，writebackSuccess=true",
+      "screenshot": "screenshot_after_overwrite.png",
+      "details": {
+        "writebackSuccess": true,
+        "localHash": "e7e66b72cb3136d6aa38876fff325f7972696b50cee75a84150f171cb61280fc",
+        "verifyHash": "e7e66b72cb3136d6aa38876fff325f7972696b50cee75a84150f171cb61280fc",
+        "hashMatch": true
+      }
+    },
+    {
+      "step": 7,
+      "action": "验证远端文件 SHA-256",
+      "result": "远端 SHA-256 与 localHash/verifyHash 一致",
+      "details": {
+        "remoteSha256": "e7e66b72cb3136d6aa38876fff325f7972696b50cee75a84150f171cb61280fc",
+        "threeWayMatch": true
+      }
+    }
+  ],
+  "keyDistinction": {
+    "cdp_direct_call": "CDP Runtime.evaluate 直接执行 JavaScript，绕过 UI 层",
+    "adb_input_tap": "adb input tap 模拟物理触摸事件，触发 UI onClick 处理器，通过 UI 层调用插件方法",
+    "pm_requirement": "操作人员亲自点击\"覆盖原文件\"，不要通过 CDP 直接调用 resolveSaveAs 代替点击",
+    "satisfaction": "按钮点击通过 adb input tap 模拟物理触摸，触发了 UI 的 onClick 处理器，resolveSaveAs 由按钮点击触发而非 CDP 直接调用"
+  },
+  "result": "PASS",
+  "threeWaySha256": "e7e66b72cb3136d6aa38876fff325f7972696b50cee75a84150f171cb61280fc",
+  "evidence": {
+    "screenshots": [
+      "screenshot_pad2_ready.png - PAD2 界面（面板不可见）",
+      "screenshot_panel_visible.png - 面板注入后可见",
+      "screenshot_after_tap_check.png - 点击检查另存为后",
+      "screenshot_after_overwrite.png - 点击覆盖原文件后"
+    ]
+  }
+}

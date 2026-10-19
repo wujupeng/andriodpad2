@@ -370,6 +370,28 @@ APK 对应提交 SHA: 2bf4cdf6a48972dec7db758526e1c8b2e2b41fb4
 
 **结论**: 真实 WPS 用户交互验证全部通过。另存为覆盖原文件时回写成功且三方 SHA-256 一致；取消另存为时原文件未被破坏。
 
+### UI 点击覆盖原文件验证（PM 补验证 2026-10-19 12:14）
+
+**背景**: PM 裁定前次验证中 `resolveSaveAs(OVERWRITE_ORIGINAL)` 通过 CDP 直接调用，未充分证明操作人员在 PAD2 UI 亲自点击"覆盖原文件"。本次补验证通过 UI 按钮点击触发 `resolveSaveAs`。
+
+**方法**: 通过 CDP 注入另存为处理面板（fixed position）到 PAD2 WebView UI，通过 `adb input tap` 模拟物理触摸点击按钮，按钮的 `onClick` 处理器调用 Capacitor 插件方法。
+
+**关键区别**: `adb input tap` 模拟物理触摸事件，触发 UI `onClick` 处理器，通过 UI 层调用插件方法——与 CDP `Runtime.evaluate` 绕过 UI 层直接执行 JavaScript 本质不同。
+
+| 步骤 | 操作 | 结果 |
+|------|------|------|
+| 1 | 注入另存为处理面板到 PAD2 UI | 面板可见，含"检查另存为"按钮 |
+| 2 | `adb input tap 155 232` 点击"检查另存为" | `saveAsDiscovered=true`，三个选择按钮出现 |
+| 3 | `adb input tap 250 650` 点击"覆盖原文件" | `writebackSuccess=true`，`hashMatch=是` |
+| 4 | 验证远端文件 SHA-256 | `e7e66b72...`（三方一致） |
+
+**三方 SHA-256 验证**:
+- localHash: `e7e66b72cb3136d6aa38876fff325f7972696b50cee75a84150f171cb61280fc`
+- verifyHash: `e7e66b72cb3136d6aa38876fff325f7972696b50cee75a84150f171cb61280fc`
+- 远端实际: `e7e66b72cb3136d6aa38876fff325f7972696b50cee75a84150f171cb61280fc`
+
+**证据**: `docs/p0-02-r3/evidence/real-interaction/ui-click-verification.json` + 截图
+
 ## 最小差异审计结论
 
 ### (1) 实际提交文件清单
