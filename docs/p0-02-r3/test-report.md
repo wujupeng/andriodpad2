@@ -9,8 +9,8 @@
 - APK SHA-256: 5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc
 - APK 分发路径: /mnt/share/apk/pad2-p0-02-r3.apk
 - 测试时间: 2026-10-19 01:38:17 ~ 01:38:21 UTC
-- 提交 SHA: b987ceb6f1b55876a8814482e548e0cd53022464
-- 远端: https://github.com/wujupeng/andriodpad2/commit/b987ceb6f1b55876a8814482e548e0cd53022464
+- 提交 SHA: 2bf4cdf6a48972dec7db758526e1c8b2e2b41fb4
+- 远端: https://github.com/wujupeng/andriodpad2/commit/2bf4cdf6a48972dec7db758526e1c8b2e2b41fb4
 
 ## 执行方式声明
 
