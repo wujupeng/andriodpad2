@@ -1,0 +1,151 @@
+{
+  "testName": "P0-02-R3 真实 WPS 另存为交互验证",
+  "testDate": "2026-10-19",
+  "testEnvironment": {
+    "device": "HONOR NDL2_W09",
+    "androidVersion": "Android 16 / API 36",
+    "wpsPackage": "cn.wps.moffice_eng",
+    "smbServer": "192.168.2.3",
+    "smbShare": "share",
+    "smbUser": "debian",
+    "apk": "pad2-p0-02-r3.apk",
+    "apkSha256": "5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc"
+  },
+  "tests": [
+    {
+      "id": "TEST-1",
+      "name": "另存为覆盖原文件（场景4 - SaveAs Reachable）",
+      "testType": "真实用户交互",
+      "result": "PASS",
+      "steps": [
+        {
+          "step": 1,
+          "action": "通过 PAD2 openInWps 打开 SMB 文件",
+          "file": "p0-02-saveas-reachable.txt",
+          "baselineHash": "ac9ae518771b0a9aec71bcb98db7e000163369859f538d86bbc7f9a183981bcc",
+          "baselineSize": 28,
+          "result": "WPS Office 启动，文件已打开"
+        },
+        {
+          "step": 2,
+          "action": "操作人员在 WPS 中编辑文件内容",
+          "edit": "在末尾添加 ' 2026-10-19'",
+          "wordCountBefore": 29,
+          "wordCountAfter": 40,
+          "screenshot": "screenshot_wps_edited.png",
+          "result": "编辑成功"
+        },
+        {
+          "step": 3,
+          "action": "操作人员在 WPS 中执行另存为",
+          "saveAsPath": "/storage/emulated/0/p0-02-saveas-reachable.doc",
+          "saveAsSize": 14336,
+          "screenshot": "screenshot_after_saveas.png",
+          "result": "另存为成功，文件已保存到设备"
+        },
+        {
+          "step": 4,
+          "action": "PAD2 foregroundCheck() 检测另存为文件",
+          "saveAsDiscovered": true,
+          "saveAsFilePath": "/storage/emulated/0/p0-02-saveas-reachable.doc",
+          "saveAsPrompt": "检测到另存为: p0-02-saveas-reachable.doc（格式从 .txt 变更为 .doc），请选择操作：回写为新文件 / 覆盖原文件 / 放弃关联",
+          "result": "另存为文件已检测，选项完整"
+        },
+        {
+          "step": 5,
+          "action": "PAD2 resolveSaveAs(OVERWRITE_ORIGINAL) 执行回写",
+          "writebackSuccess": true,
+          "localHash": "5344f461ea385bf27d8e1ee4b9462c8a18662c86ab1d99cddfaa2517541623ef",
+          "verifyHash": "5344f461ea385bf27d8e1ee4b9462c8a18662c86ab1d99cddfaa2517541623ef",
+          "hashMatch": true,
+          "result": "回写成功，SHA-256 三方验证通过"
+        },
+        {
+          "step": 6,
+          "action": "验证远端文件 SHA-256",
+          "remoteSha256": "5344f461ea385bf27d8e1ee4b9462c8a18662c86ab1d99cddfaa2517541623ef",
+          "remoteSize": 14336,
+          "threeWayMatch": true,
+          "result": "远端文件已更新，三方 SHA-256 一致"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "screenshot_wps_open.png",
+          "screenshot_wps_edited.png",
+          "screenshot_after_saveas.png"
+        ],
+        "threeWaySha256": "5344f461ea385bf27d8e1ee4b9462c8a18662c86ab1d99cddfaa2517541623ef",
+        "baselineSha256": "ac9ae518771b0a9aec71bcb98db7e000163369859f538d86bbc7f9a183981bcc"
+      }
+    },
+    {
+      "id": "TEST-2",
+      "name": "取消另存为不破坏原文件（场景B - Safe Fallback）",
+      "testType": "真实用户交互",
+      "result": "PASS",
+      "steps": [
+        {
+          "step": 1,
+          "action": "通过 PAD2 openInWps 打开 SMB 文件",
+          "file": "p0-02-saveas-unreachable.txt",
+          "baselineHash": "f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476",
+          "baselineSize": 32,
+          "result": "WPS Office 启动，文件已打开"
+        },
+        {
+          "step": 2,
+          "action": "操作人员在 WPS 中编辑文件内容",
+          "edit": "在末尾添加 'CANCEL TEST 2026-10-19'",
+          "result": "编辑成功"
+        },
+        {
+          "step": 3,
+          "action": "操作人员在 WPS 中执行另存为但取消",
+          "result": "另存为操作已取消，未保存文件",
+          "screenshot": "screenshot_after_cancel.png"
+        },
+        {
+          "step": 4,
+          "action": "PAD2 foregroundCheck() 检测另存为",
+          "saveAsDiscovered": false,
+          "saveAsPrompt": "未自动发现另存为文件，请手动选择文件",
+          "verdict": "DETECTION_UNCERTAIN",
+          "contentChanged": false,
+          "result": "未检测到另存为（符合预期），安全回退"
+        },
+        {
+          "step": 5,
+          "action": "验证远端文件 SHA-256 未变",
+          "remoteSha256": "f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476",
+          "baselineSha256": "f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476",
+          "unchanged": true,
+          "result": "远端文件 SHA-256 未变，原文件未破坏"
+        },
+        {
+          "step": 6,
+          "action": "验证本地缓存 SHA-256 未变",
+          "localCacheSha256": "f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476",
+          "unchanged": true,
+          "result": "本地缓存 SHA-256 未变，内容完整"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "screenshot_after_cancel.png"
+        ],
+        "baselineSha256": "f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476",
+        "finalSha256": "f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476",
+        "originalContent": "saveas unreachable test content"
+      }
+    }
+  ],
+  "summary": {
+    "totalTests": 2,
+    "passed": 2,
+    "failed": 0,
+    "overall": "ALL PASSED",
+    "verificationStatus": "VERIFIED",
+    "previousStatus": "UNVERIFIED"
+  }
+}

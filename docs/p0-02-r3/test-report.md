@@ -332,13 +332,43 @@ APK 对应提交 SHA: 2bf4cdf6a48972dec7db758526e1c8b2e2b41fb4
 
 | 场景 | 验证状态 | 说明 |
 |------|----------|------|
-| 真实用户在 WPS UI 中执行另存为并确认覆盖 | **未验证 (UNVERIFIED)** | WPS UI 无法可靠自动化 |
+| 真实用户在 WPS UI 中执行另存为并确认覆盖 | **已验证 (VERIFIED)** | 2026-10-19 真实交互测试通过 |
+| 真实用户在 WPS UI 中取消另存为且原文件不破坏 | **已验证 (VERIFIED)** | 2026-10-19 真实交互测试通过 |
 
-**未验证原因**: WPS UI 无法可靠自动化，本次测试通过 CDP 直接调用插件方法（SmbPlugin.resolveSaveAs）验证处理分支逻辑，未通过真实 WPS UI 操作验证真实用户决策行为。
+### 真实交互验证详情（2026-10-19）
 
-**已验证的自动化分支测试结果**: 场景A 自动化分支测试通过（见场景 4 证据），证明候选发现与回写处理分支逻辑正确。
+**测试环境**: HONOR NDL2_W09 / Android 16 / API 36 / WPS cn.wps.moffice_eng / APK SHA-256: 5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc
 
-**说明**: 自动化分支测试证明了插件方法的处理分支逻辑，但**不能直接等同于真实 WPS 用户在交互界面中的决策行为**。
+#### 测试1 - 另存为覆盖原文件（PASS）
+
+| 步骤 | 操作 | 结果 |
+|------|------|------|
+| 1 | PAD2 openInWps 打开 p0-02-saveas-reachable.txt | WPS 启动，baselineHash=ac9ae518... |
+| 2 | 操作人员在 WPS 中编辑内容（添加 " 2026-10-19"） | 字数 29→40，编辑成功 |
+| 3 | 操作人员在 WPS 中执行「另存为」保存为 .doc 格式 | 文件保存到 /storage/emulated/0/p0-02-saveas-reachable.doc (14336 bytes) |
+| 4 | PAD2 foregroundCheck() 检测另存为 | saveAsDiscovered=true，提示「覆盖原文件」选项 |
+| 5 | PAD2 resolveSaveAs(OVERWRITE_ORIGINAL) 执行回写 | writebackSuccess=true |
+| 6 | 三方 SHA-256 验证 | localHash=verifyHash=remoteHash=5344f461ea385bf27d8e1ee4b9462c8a18662c86ab1d99cddfaa2517541623ef |
+
+#### 测试2 - 取消另存为不破坏原文件（PASS）
+
+| 步骤 | 操作 | 结果 |
+|------|------|------|
+| 1 | PAD2 openInWps 打开 p0-02-saveas-unreachable.txt | WPS 启动，baselineHash=f4191319... |
+| 2 | 操作人员在 WPS 中编辑内容（添加 "CANCEL TEST 2026-10-19"） | 编辑成功 |
+| 3 | 操作人员在 WPS 中执行「另存为」但点击取消 | 未保存文件 |
+| 4 | PAD2 foregroundCheck() 检测另存为 | saveAsDiscovered=false，安全回退 |
+| 5 | 远端文件 SHA-256 验证 | f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476（未变） |
+| 6 | 本地缓存 SHA-256 验证 | f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476（未变） |
+
+**证据归档**: `docs/p0-02-r3/evidence/real-interaction/`
+- `real-interaction-results.json` — 完整测试结果
+- `screenshot_wps_open.png` — WPS 打开文件截图
+- `screenshot_wps_edited.png` — WPS 编辑后截图
+- `screenshot_after_saveas.png` — 另存为后截图
+- `screenshot_after_cancel.png` — 取消另存为后截图
+
+**结论**: 真实 WPS 用户交互验证全部通过。另存为覆盖原文件时回写成功且三方 SHA-256 一致；取消另存为时原文件未被破坏。
 
 ## 最小差异审计结论
 

@@ -161,3 +161,39 @@ smbClient = new SMBClient(config);
 报告记录:     5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc
                ↑ 三者一致，APK 版本证据链统一可核对
 ```
+## 真实 WPS 另存为交互验证执行记录
+
+**执行时间**: 2026-10-19 11:08 - 11:14 (UTC+8)
+
+**执行环境**: HONOR NDL2_W09 / Android 16 / API 36 / WPS cn.wps.moffice_eng
+
+**执行方式**: 操作人员在平板上物理操作 WPS Office，通过 adb 截图和 CDP 插件调用协助验证
+
+### 测试1 - 另存为覆盖原文件
+
+| 时间 | 操作 | 结果 |
+|------|------|------|
+| 11:08 | CDP 调用 SmbPlugin.connect() 连接 SMB | connected=true |
+| 11:08 | CDP 调用 SmbPlugin.openInWps() 打开 p0-02-saveas-reachable.txt | intentLaunched=true, baselineHash=ac9ae518... |
+| 11:10 | 操作人员在 WPS 中编辑内容（添加 " 2026-10-19"） | 字数 29→40 |
+| 11:12 | 操作人员在 WPS 中执行「另存为」保存为 .doc | /storage/emulated/0/p0-02-saveas-reachable.doc (14336 bytes) |
+| 11:12 | CDP 调用 SmbPlugin.foregroundCheck() | saveAsDiscovered=true, saveAsFilePath=/storage/emulated/0/p0-02-saveas-reachable.doc |
+| 11:12 | CDP 调用 SmbPlugin.resolveSaveAs(OVERWRITE_ORIGINAL) | writebackSuccess=true, localHash=5344f461..., verifyHash=5344f461... |
+| 11:14 | 远端文件 SHA-256 验证 | 5344f461ea385bf27d8e1ee4b9462c8a18662c86ab1d99cddfaa2517541623ef（三方一致） |
+
+### 测试2 - 取消另存为不破坏原文件
+
+| 时间 | 操作 | 结果 |
+|------|------|------|
+| 11:14 | CDP 调用 SmbPlugin.openInWps() 打开 p0-02-saveas-unreachable.txt | intentLaunched=true, baselineHash=f4191319... |
+| 11:15 | 操作人员在 WPS 中编辑内容（添加 "CANCEL TEST 2026-10-19"） | 编辑成功 |
+| 11:15 | 操作人员在 WPS 中执行「另存为」但取消 | 未保存文件 |
+| 11:16 | CDP 调用 SmbPlugin.foregroundCheck() | saveAsDiscovered=false, 安全回退 |
+| 11:16 | 远端文件 SHA-256 验证 | f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476（未变） |
+| 11:16 | 本地缓存 SHA-256 验证 | f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476（未变） |
+
+### 验证结论
+
+- 测试1: **PASS** — 另存为覆盖原文件，回写成功，三方 SHA-256 一致
+- 测试2: **PASS** — 取消另存为，原文件 SHA-256 未变，内容完整
+- 真实用户交互验证状态: **UNVERIFIED → VERIFIED**
