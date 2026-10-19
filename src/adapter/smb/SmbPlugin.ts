@@ -58,6 +58,24 @@ export interface FileChangeResult {
   observerDetectedChange?: boolean;
   observerEventLog?: string;
   error?: string;
+  saveAsDiscovered?: boolean;
+  saveAsFilePath?: string;
+  saveAsPrompt?: string;
+}
+
+export interface SaveAsResolveOptions {
+  choice: 'OVERWRITE_ORIGINAL' | 'WRITE_AS_NEW' | 'DISCARD';
+  saveAsFilePath?: string;
+}
+
+export interface SaveAsResolveResult {
+  writebackSuccess: boolean;
+  localHash?: string;
+  verifyHash?: string;
+  remoteMtimeBefore: number;
+  remoteMtimeAfter: number;
+  choice: 'OVERWRITE_ORIGINAL' | 'WRITE_AS_NEW' | 'DISCARD';
+  error?: string;
 }
 
 export interface WritebackResult {
@@ -101,6 +119,7 @@ export interface SmbPluginInterface {
   openInWps(options: { path: string }): Promise<WpsOpenResult>;
   checkLocalFileChanged(): Promise<FileChangeResult>;
   foregroundCheck(): Promise<FileChangeResult>;
+  resolveSaveAs(options: SaveAsResolveOptions): Promise<SaveAsResolveResult>;
   writeback(): Promise<WritebackResult>;
   checkRemoteChanged(): Promise<RemoteChangeResult>;
   getFileAttributes(options: { path: string }): Promise<{ size: number; lastWriteTime: number }>;

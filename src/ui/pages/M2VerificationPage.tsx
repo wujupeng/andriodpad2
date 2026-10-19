@@ -5,6 +5,7 @@ import SmbPlugin, {
   FileChangeResult,
   WritebackResult,
   RemoteChangeResult,
+  SaveAsResolveResult,
 } from '../../adapter/smb/SmbPlugin';
 
 interface VerificationStep {
@@ -42,6 +43,10 @@ export default function M2VerificationPage() {
   const [changeResult, setChangeResult] = useState<FileChangeResult | null>(null);
   const [writebackResult, setWritebackResult] = useState<WritebackResult | null>(null);
   const [remoteChangeResult, setRemoteChangeResult] = useState<RemoteChangeResult | null>(null);
+  const [saveAsResult, setSaveAsResult] = useState<FileChangeResult | null>(null);
+  const [resolveAsResult, setResolveAsResult] = useState<SaveAsResolveResult | null>(null);
+  const [saveAsChecking, setSaveAsChecking] = useState(false);
+  const [resolveAsLoading, setResolveAsLoading] = useState(false);
   const [steps, setSteps] = useState<VerificationStep[]>(initialSteps);
   const [log, setLog] = useState<string[]>([]);
   const [exporting, setExporting] = useState(false);
@@ -147,6 +152,29 @@ export default function M2VerificationPage() {
     }
   }, []);
 
+  const handleForegroundCheck = useCallback(async () => {
+    addLog('执行另存为检测 foregroundCheck()...');
+    setSaveAsChecking(true);
+    try {
+      const result = await SmbPlugin.foregroundCheck();
+      setSaveAsResult(result);
+      if (result.saveAsDiscovered) {
+        updateStep('V3', 'pass', `另存为已识别: ${result.saveAsFilePath}`);
+        addLog(`✅ 发现另存为候选文件: ${result.saveAsFilePath}`);
+        addLog(`提示: ${result.saveAsPrompt}`);
+      } else {
+        addLog(`未发现另存为候选文件 (安全回退)`);
+        if (result.saveAsPrompt) {
+          addLog(`提示: ${result.saveAsPrompt}`);
+        }
+      }
+    } catch (e: any) {
+      addLog(`另存为检测失败: ${e.message || e}`);
+    } finally {
+      setSaveAsChecking(false);
+    }
+  }, []);
+
   const handleWriteback = useCallback(async () => {
     addLog('执行回写...');
     updateStep('V4', 'running');
@@ -167,6 +195,48 @@ export default function M2VerificationPage() {
       addLog(`回写失败: ${e.message || e}`);
     }
   }, []);
+
+  const handleResolveSaveAs = useCallback(async (
+    choice: 'OVERWRITE_ORIGINAL' | 'WRITE_AS_NEW' | 'DISCARD'
+  ) => {
+    addLog(`执行另存为处理 resolveSaveAs({choice: '${choice}'})...`);
+    setResolveAsLoading(true);
+    if (choice === 'OVERWRITE_ORIGINAL' || choice === 'WRITE_AS_NEW') {
+      updateStep('V4', 'running');
+    }
+    try {
+      const result = await SmbPlugin.resolveSaveAs({ choice, saveAsFilePath: saveAsResult?.saveAsFilePath });
+      setResolveAsResult(result);
+      addLog(`处理结果: success=${result.writebackSuccess}, choice=${result.choice}`);
+      if (choice === 'DISCARD') {
+        if (result.writebackSuccess) {
+          addLog(`✅ 已放弃关联, 远端原文件 mtime: ${result.remoteMtimeBefore} → ${result.remoteMtimeAfter} (一致)`);
+        } else {
+          addLog(`❌ 放弃关联失败: ${result.error || '未知错误'}`);
+        }
+      } else {
+        if (result.writebackSuccess && result.localHash && result.verifyHash && result.localHash === result.verifyHash) {
+          updateStep('V4', 'pass', `本地SHA-256=${result.localHash?.substring(0, 16)}..., 远程校验SHA-256=${result.verifyHash?.substring(0, 16)}...`);
+          addLog(`✅ 回写成功! SHA-256 校验通过`);
+          addLog(`本地: ${result.localHash}`);
+          addLog(`远程: ${result.verifyHash}`);
+        } else {
+          updateStep('V4', 'fail', `SHA-256 不匹配或回写失败: 本地=${result.localHash?.substring(0, 16)}..., 远程=${result.verifyHash?.substring(0, 16)}...`);
+          addLog(`❌ 回写失败! SHA-256 不匹配或回写失败`);
+          if (result.localHash) addLog(`本地: ${result.localHash}`);
+          if (result.verifyHash) addLog(`远程: ${result.verifyHash}`);
+          if (result.error) addLog(`错误: ${result.error}`);
+        }
+      }
+    } catch (e: any) {
+      addLog(`另存为处理失败: ${e.message || e}`);
+      if (choice !== 'DISCARD') {
+        updateStep('V4', 'fail', e.message || String(e));
+      }
+    } finally {
+      setResolveAsLoading(false);
+    }
+  }, [saveAsResult]);
 
   const handleCheckRemote = useCallback(async () => {
     addLog('检查远程文件变更...');
@@ -239,6 +309,20 @@ export default function M2VerificationPage() {
     if (remoteChangeResult) {
       lines.push(`远程变更: remoteChanged=${remoteChangeResult.remoteChanged}`);
       lines.push(`  remoteMtime=${remoteChangeResult.remoteMtime}, baselineMtime=${remoteChangeResult.baselineMtime}`);
+    }
+    if (saveAsResult) {
+      lines.push(`另存为检测: saveAsDiscovered=${saveAsResult.saveAsDiscovered}`);
+      lines.push(`  saveAsFilePath=${saveAsResult.saveAsFilePath || '(无)'}`);
+      lines.push(`  saveAsPrompt=${saveAsResult.saveAsPrompt || '(无)'}`);
+    }
+    if (resolveAsResult) {
+      lines.push(`另存为处理: success=${resolveAsResult.writebackSuccess}, choice=${resolveAsResult.choice}`);
+      lines.push(`  localHash=${resolveAsResult.localHash || '(无)'}`);
+      lines.push(`  verifyHash=${resolveAsResult.verifyHash || '(无)'}`);
+      lines.push(`  remoteMtimeBefore=${resolveAsResult.remoteMtimeBefore}, remoteMtimeAfter=${resolveAsResult.remoteMtimeAfter}`);
+      if (resolveAsResult.error) {
+        lines.push(`  error=${resolveAsResult.error}`);
+      }
     }
     if (error) {
       lines.push(`错误: ${error}`);
@@ -401,7 +485,52 @@ export default function M2VerificationPage() {
             <button onClick={handleWriteback} style={btnStyle('#4caf50')}>执行回写</button>
             <button onClick={handleCheckRemote} style={btnStyle('#9c27b0')}>检查远程变更</button>
             <button onClick={handleCleanup} style={btnStyle('#666')}>清理</button>
+            <button onClick={handleForegroundCheck} disabled={saveAsChecking} style={btnStyle('#1976d2')}>
+              {saveAsChecking ? '检测中...' : '另存为检测'}
+            </button>
           </div>
+
+          {saveAsResult && saveAsResult.saveAsDiscovered && (
+            <div style={{ marginTop: 12, padding: 8, background: '#fff3e0', borderRadius: 4, fontSize: 13 }}>
+              <strong>⚠️ 另存为候选文件已发现:</strong>
+              <div style={{ marginTop: 4 }}>候选文件路径: <code style={{ fontSize: 11 }}>{saveAsResult.saveAsFilePath}</code></div>
+              <div style={{ marginTop: 4 }}>{saveAsResult.saveAsPrompt}</div>
+              <div style={{ marginTop: 4, color: '#666' }}>请选择下方操作:</div>
+            </div>
+          )}
+          {saveAsResult && !saveAsResult.saveAsDiscovered && (
+            <div style={{ marginTop: 12, padding: 8, background: '#e3f2fd', borderRadius: 4, fontSize: 13 }}>
+              <strong>ℹ️ 另存为检测安全回退:</strong>
+              <div style={{ marginTop: 4 }}>{saveAsResult.saveAsPrompt || '未自动发现另存为文件,请手动选择文件'}</div>
+              <div style={{ marginTop: 4 }}>本地缓存 SHA-256 (原文件保护证据): <code style={{ fontSize: 11 }}>{openResult?.baselineHash}</code></div>
+            </div>
+          )}
+
+          {saveAsResult && saveAsResult.saveAsDiscovered && (
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                onClick={() => handleResolveSaveAs('OVERWRITE_ORIGINAL')}
+                disabled={resolveAsLoading}
+                style={btnStyle('#f44336')}
+              >
+                覆盖原文件
+              </button>
+              <button
+                onClick={() => handleResolveSaveAs('WRITE_AS_NEW')}
+                disabled={resolveAsLoading}
+                style={btnStyle('#4caf50')}
+              >
+                回写为新文件
+              </button>
+              <button
+                onClick={() => handleResolveSaveAs('DISCARD')}
+                disabled={resolveAsLoading}
+                style={btnStyle('#666')}
+              >
+                放弃关联
+              </button>
+            </div>
+          )}
 
           {changeResult && (
             <div style={{ marginTop: 12, padding: 8, background: '#f5f5f5', borderRadius: 4, fontSize: 13 }}>
@@ -435,6 +564,46 @@ export default function M2VerificationPage() {
           {remoteChangeResult && (
             <div style={{ marginTop: 12, padding: 8, background: '#f5f5f5', borderRadius: 4, fontSize: 13 }}>
               <strong>远程变更检查:</strong> {remoteChangeResult.remoteChanged ? '⚠️ 远程已变更 (可能冲突)' : '远程未变更'}
+            </div>
+          )}
+
+          {resolveAsResult && (
+            <div style={{
+              marginTop: 12,
+              padding: 8,
+              background: resolveAsResult.choice === 'DISCARD'
+                ? (resolveAsResult.writebackSuccess ? '#f5f5f5' : '#ffebee')
+                : (resolveAsResult.writebackSuccess ? '#e8f5e9' : '#ffebee'),
+              borderRadius: 4,
+              fontSize: 13
+            }}>
+              <strong>另存为处理结果:</strong>{' '}
+              {resolveAsResult.choice === 'DISCARD'
+                ? (resolveAsResult.writebackSuccess ? '✅ 已放弃关联' : '❌ 放弃关联失败')
+                : (resolveAsResult.writebackSuccess ? '✅ 成功' : '❌ 失败')}
+              <div style={{ marginTop: 4 }}>决策: <code>{resolveAsResult.choice}</code></div>
+              <div>远端 mtime: {resolveAsResult.remoteMtimeBefore} → {resolveAsResult.remoteMtimeAfter}
+                {resolveAsResult.remoteMtimeBefore === resolveAsResult.remoteMtimeAfter
+                  ? ' (一致, 原文件未变)'
+                  : ' (已变更)'}
+              </div>
+              {resolveAsResult.localHash && (
+                <div style={{ marginTop: 4 }}>本地 SHA-256: <code style={{ fontSize: 11 }}>{resolveAsResult.localHash}</code></div>
+              )}
+              {resolveAsResult.verifyHash && (
+                <div>远程 SHA-256: <code style={{ fontSize: 11 }}>{resolveAsResult.verifyHash}</code></div>
+              )}
+              {resolveAsResult.localHash && resolveAsResult.verifyHash && (
+                <div style={{ marginTop: 4 }}>
+                  哈希一致性:{' '}
+                  <strong style={{ color: resolveAsResult.localHash === resolveAsResult.verifyHash ? 'green' : 'red' }}>
+                    {resolveAsResult.localHash === resolveAsResult.verifyHash ? '✅ 一致' : '❌ 不一致'}
+                  </strong>
+                </div>
+              )}
+              {resolveAsResult.error && (
+                <div style={{ marginTop: 4, color: 'red' }}>错误: {resolveAsResult.error}</div>
+              )}
             </div>
           )}
         </div>
