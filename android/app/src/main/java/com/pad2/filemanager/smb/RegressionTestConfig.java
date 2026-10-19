@@ -6,6 +6,9 @@ public class RegressionTestConfig {
     private String saveAsReachablePath;
     private String saveAsUnreachablePath;
     private String docxRenderEvidencePath;
+    private long sessionWindowToleranceMs = 60000;
+    private long waitTimeoutMs = 10000;
+    private String localCacheBasePath = "/storage/emulated/0/PAD2/smb_cache/";
 
     public RegressionTestConfig() {
     }
@@ -35,12 +38,24 @@ public class RegressionTestConfig {
     public String getDocxRenderEvidencePath() { return docxRenderEvidencePath; }
     public void setDocxRenderEvidencePath(String docxRenderEvidencePath) { this.docxRenderEvidencePath = docxRenderEvidencePath; }
 
+    public long getSessionWindowToleranceMs() { return sessionWindowToleranceMs; }
+    public void setSessionWindowToleranceMs(long v) { this.sessionWindowToleranceMs = v; }
+
+    public long getWaitTimeoutMs() { return waitTimeoutMs; }
+    public void setWaitTimeoutMs(long v) { this.waitTimeoutMs = v; }
+
+    public String getLocalCacheBasePath() { return localCacheBasePath; }
+    public void setLocalCacheBasePath(String v) { this.localCacheBasePath = v; }
+
     public boolean isValid() {
         return isNotBlank(txtRemotePath)
                 && isNotBlank(docxRemotePath)
                 && isNotBlank(saveAsReachablePath)
                 && isNotBlank(saveAsUnreachablePath)
-                && isNotBlank(docxRenderEvidencePath);
+                && isNotBlank(docxRenderEvidencePath)
+                && sessionWindowToleranceMs > 0
+                && waitTimeoutMs > 0
+                && isNotBlank(localCacheBasePath);
     }
 
     private static boolean isNotBlank(String s) {

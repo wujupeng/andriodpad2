@@ -382,6 +382,8 @@ public class WpsDeliveryHandler {
                     String verifyHash = StreamCacheService.calculateSHA256FromStream(smbClient.readFileStream(currentRemotePath));
                     String localHash = StreamCacheService.calculateSHA256(saveAsFile);
                     result.put("writebackSuccess", verifyHash.equals(localHash));
+                    result.put("localHash", localHash);
+                    result.put("verifyHash", verifyHash);
                     Log.i(TAG, "Save-as resolved: OVERWRITE_ORIGINAL, verified=" + verifyHash.equals(localHash));
                 }
                 break;
