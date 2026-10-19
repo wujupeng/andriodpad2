@@ -1,0 +1,134 @@
+================================================================================
+P0-02 Final Gate 证据补齐 — 任务1：远端与设备文件操作原始执行日志
+================================================================================
+
+任务名：补齐远端与设备文件修改的原始执行证据
+执行者：CodeArts 自动化代理
+执行环境：Windows + Git Bash + plink + adb.exe
+规格引用：evidence-supplement-spec.md 5.1 (EV-01～EV-04)
+创建时间：2026-10-19T21:03:00+08:00
+
+远程服务器：192.168.2.3 (debian)
+SSH hostkey：SHA256:MFMAP0xIKVj+SQYyhEVXoCHiBRdmthh5dyoqC7rNgPY
+SMB 共享路径：/mnt/share
+测试设备：HONOR NDL2-W09, serial AJ7XJV6904H00320, Android 16, API 36
+ADB 路径：C:\Program Files (x86)\Android\android-sdk\platform-tools\adb.exe
+
+================================================================================
+第一部分：远端文件操作证据
+================================================================================
+
+目标文件：/mnt/share/p0-02-saveas-reachable.txt
+
+--- 步骤 T0：写入基线内容（证明远端 shell 执行） ---
+时间戳：2026-10-19T21:01:20+08:00
+命令全文：
+  MSYS_NO_PATHCONV=1 plink -ssh -pw ***REDACTED*** -hostkey "SHA256:MFMAP0xIKVj+SQYyhEVXoCHiBRdmthh5dyoqC7rNgPY" debian@192.168.2.3 "printf '%s' 'BASELINE CONTENT FOR REMOTE WRITE TEST' > /mnt/share/p0-02-saveas-reachable.txt"
+退出码：0
+标准输出：（空）
+标准错误：（空）
+重定向位置核验：> 在 SSH 双引号内部 ✓
+
+--- 步骤 T1：远端操作前 SHA-256 查询 ---
+时间戳：2026-10-19T21:01:20+08:00
+命令全文：
+  MSYS_NO_PATHCONV=1 plink -ssh -pw ***REDACTED*** -hostkey "SHA256:MFMAP0xIKVj+SQYyhEVXoCHiBRdmthh5dyoqC7rNgPY" debian@192.168.2.3 "sha256sum /mnt/share/p0-02-saveas-reachable.txt"
+退出码：0
+标准输出：
+  b45ac60a30df437e9801bb8b04f214b7fe223ad0cb1bf4214fec762cd1ed7890  /mnt/share/p0-02-saveas-reachable.txt
+SHA_BEFORE_REMOTE=b45ac60a30df437e9801bb8b04f214b7fe223ad0cb1bf4214fec762cd1ed7890
+
+--- 步骤 T2：远端文件写入目标内容 ---
+时间戳：2026-10-19T21:01:38+08:00
+命令全文：
+  MSYS_NO_PATHCONV=1 plink -ssh -pw ***REDACTED*** -hostkey "SHA256:MFMAP0xIKVj+SQYyhEVXoCHiBRdmthh5dyoqC7rNgPY" debian@192.168.2.3 "printf '%s' 'SAVEAS CANDIDATE R3 CONTENT' > /mnt/share/p0-02-saveas-reachable.txt"
+退出码：0
+标准输出：（空）
+标准错误：（空）
+重定向位置核验：> 在 SSH 双引号内部 ✓
+
+--- 步骤 T3：远端操作后 SHA-256 查询 ---
+时间戳：2026-10-19T21:01:39+08:00
+命令全文：
+  MSYS_NO_PATHCONV=1 plink -ssh -pw ***REDACTED*** -hostkey "SHA256:MFMAP0xIKVj+SQYyhEVXoCHiBRdmthh5dyoqC7rNgPY" debian@192.168.2.3 "sha256sum /mnt/share/p0-02-saveas-reachable.txt"
+退出码：0
+标准输出：
+  5129191c08dc20733a82c903a26b03c3005ac1edb13b82aad215684d2487b8fe  /mnt/share/p0-02-saveas-reachable.txt
+SHA_AFTER_REMOTE=5129191c08dc20733a82c903a26b03c3005ac1edb13b82aad215684d2487b8fe
+
+--- 远端 SHA-256 比对 ---
+SHA_BEFORE_REMOTE=b45ac60a30df437e9801bb8b04f214b7fe223ad0cb1bf4214fec762cd1ed7890
+SHA_AFTER_REMOTE =5129191c08dc20733a82c903a26b03c3005ac1edb13b82aad215684d2487b8fe
+比对结果：SHA_BEFORE_REMOTE != SHA_AFTER_REMOTE
+REMOTE_FILE_CHANGED=PASS
+
+================================================================================
+第二部分：设备端文件操作证据
+================================================================================
+
+目标文件：/storage/emulated/0/p0-02-saveas-reachable.docx
+
+--- 步骤 T4：写入基线内容（证明设备 shell 执行） ---
+时间戳：2026-10-19T21:01:59+08:00
+命令全文：
+  MSYS_NO_PATHCONV=1 adb -s AJ7XJV6904H00320 shell "printf '%s' 'BASELINE CONTENT FOR DEVICE WRITE TEST' > /storage/emulated/0/p0-02-saveas-reachable.docx"
+退出码：0
+标准输出：（空）
+标准错误：（空）
+重定向位置核验：> 在 ADB shell 双引号内部 ✓
+
+--- 步骤 T5：设备端操作前 SHA-256 查询 ---
+时间戳：2026-10-19T21:02:00+08:00
+命令全文：
+  MSYS_NO_PATHCONV=1 adb -s AJ7XJV6904H00320 shell "sha256sum /storage/emulated/0/p0-02-saveas-reachable.docx"
+退出码：0
+标准输出：
+  d3e7103c1d5af033cd3968aaf7012dea830e10f45c881a2967e5fe074287ee0d  /storage/emulated/0/p0-02-saveas-reachable.docx
+SHA_BEFORE_DEVICE=d3e7103c1d5af033cd3968aaf7012dea830e10f45c881a2967e5fe074287ee0d
+
+--- 步骤 T6：设备端文件写入目标内容 ---
+时间戳：2026-10-19T21:02:18+08:00
+命令全文：
+  MSYS_NO_PATHCONV=1 adb -s AJ7XJV6904H00320 shell "printf '%s' 'DISCARD TEST CONTENT' > /storage/emulated/0/p0-02-saveas-reachable.docx"
+退出码：0
+标准输出：（空）
+标准错误：（空）
+重定向位置核验：> 在 ADB shell 双引号内部 ✓
+
+--- 步骤 T7：设备端操作后 SHA-256 查询 ---
+时间戳：2026-10-19T21:02:19+08:00
+命令全文：
+  MSYS_NO_PATHCONV=1 adb -s AJ7XJV6904H00320 shell "sha256sum /storage/emulated/0/p0-02-saveas-reachable.docx"
+退出码：0
+标准输出：
+  b39e1fa863015b02ba8ab279e7ccc5bff874dd2adab19351d34bbc5f20f02847  /storage/emulated/0/p0-02-saveas-reachable.docx
+SHA_AFTER_DEVICE=b39e1fa863015b02ba8ab279e7ccc5bff874dd2adab19351d34bbc5f20f02847
+
+--- 设备端 SHA-256 比对 ---
+SHA_BEFORE_DEVICE=d3e7103c1d5af033cd3968aaf7012dea830e10f45c881a2967e5fe074287ee0d
+SHA_AFTER_DEVICE =b39e1fa863015b02ba8ab279e7ccc5bff874dd2adab19351d34bbc5f20f02847
+比对结果：SHA_BEFORE_DEVICE != SHA_AFTER_DEVICE
+DEVICE_FILE_CHANGED=PASS
+
+================================================================================
+第三部分：汇总
+================================================================================
+
+--- 重定向位置核验 ---
+所有远端写入命令的重定向符 > 均在 SSH 双引号内部 ✓
+所有设备端写入命令的重定向符 > 均在 ADB shell 双引号内部 ✓
+无本机 shell 重定向形式（禁止 plink ... echo '...' > /remote/path 或 adb shell echo '...' > /device/path）✓
+REDIRECT_INSIDE_QUOTES=PASS
+
+--- 文件变化结论 ---
+REMOTE_FILE_CHANGED=PASS (b45ac60a... → 5129191c...)
+DEVICE_FILE_CHANGED=PASS (d3e7103c... → b39e1fa8...)
+
+--- 任务1 总体结论 ---
+任务1结论=PASS
+条件：远端文件变化=PASS 且 设备文件变化=PASS 且 重定向核验=PASS
+满足：全部三项均为 PASS
+
+================================================================================
+日志结束
+================================================================================

@@ -1,0 +1,78 @@
+================================================================================
+P0-02 Final Gate 证据补齐 — 任务3：APK 身份核验记录
+================================================================================
+
+任务名：核验设备安装 APK 的 SHA-256 与期望值一致性
+执行者：CodeArts 自动化代理
+执行环境：Windows + Git Bash + adb.exe + sha256sum
+规格引用：evidence-supplement-spec.md 5.3 (EV-08～EV-10)
+创建时间：2026-10-19T21:05:00+08:00
+
+测试设备：HONOR NDL2-W09, serial AJ7XJV6904H00320, Android 16, API 36
+ADB 路径：C:\Program Files (x86)\Android\android-sdk\platform-tools\adb.exe
+应用包名：com.pad2.filemanager
+期望 APK SHA-256：eed3bf2cbf1b182b4dca93bd188d8d10a65eee5daf0ce0f248fd29cb7dad3a61
+
+================================================================================
+核验步骤
+================================================================================
+
+--- 步骤 T6：获取设备已安装 APK 路径 ---
+时间戳：2026-10-19T21:04:09+08:00
+命令全文：
+  MSYS_NO_PATHCONV=1 adb -s AJ7XJV6904H00320 shell pm path com.pad2.filemanager
+退出码：0
+标准输出：
+  package:/data/app/~~DbymvIv82dbDfsMiKsFyVA==/com.pad2.filemanager-3oRmzRLDHhL6ueQS0j5osA==/base.apk
+APK_PATH=/data/app/~~DbymvIv82dbDfsMiKsFyVA==/com.pad2.filemanager-3oRmzRLDHhL6ueQS0j5osA==/base.apk
+
+--- 步骤 T7：从设备拉取 APK 到本机 ---
+时间戳：2026-10-19T21:04:27+08:00
+命令全文：
+  MSYS_NO_PATHCONV=1 adb -s AJ7XJV6904H00320 pull "/data/app/~~DbymvIv82dbDfsMiKsFyVA==/com.pad2.filemanager-3oRmzRLDHhL6ueQS0j5osA==/base.apk" ./device-installed.apk
+退出码：0
+标准输出：
+  /data/app/~~DbymvIv82dbDfsMiKsFyVA==/com.pad2.filemanager-3oRmzRLDHhL6ueQS0j5osA==/base.apk: 1 file pulled, 0 skipped. 32.4 MB/s (10490865 bytes in 0.308s)
+拉取结果：成功，文件大小 10490865 字节
+
+--- 步骤 T8：计算设备 APK SHA-256 ---
+时间戳：2026-10-19T21:04:48+08:00
+命令全文：
+  sha256sum ./device-installed.apk
+退出码：0
+标准输出：
+  eed3bf2cbf1b182b4dca93bd188d8d10a65eee5daf0ce0f248fd29cb7dad3a61 *./device-installed.apk
+DEVICE_APK_SHA256=eed3bf2cbf1b182b4dca93bd188d8d10a65eee5daf0ce0f248fd29cb7dad3a61
+
+================================================================================
+哈希比对
+================================================================================
+
+时间戳：2026-10-19T21:04:48+08:00
+
+DEVICE_APK_SHA256 = eed3bf2cbf1b182b4dca93bd188d8d10a65eee5daf0ce0f248fd29cb7dad3a61
+EXPECTED_SHA256   = eed3bf2cbf1b182b4dca93bd188d8d10a65eee5daf0ce0f248fd29cb7dad3a61
+
+逐字符比对：
+  位置 01-10: eed3bf2cbf = eed3bf2cbf ✓
+  位置 11-20: 1b182b4dca = 1b182b4dca ✓
+  位置 21-30: 93bd188d8d = 93bd188d8d ✓
+  位置 31-40: 10a65eee5d = 10a65eee5d ✓
+  位置 41-50: af0ce0f248 = af0ce0f248 ✓
+  位置 51-60: fd29cb7dad = fd29cb7dad ✓
+  位置 61-64: 3a61 = 3a61 ✓
+
+VERDICT=PASS
+
+================================================================================
+结论
+================================================================================
+
+设备安装的 APK SHA-256 与期望值完全一致。
+VERDICT=PASS
+
+临时文件 ./device-installed.apk 已清理。
+
+================================================================================
+记录结束
+================================================================================
