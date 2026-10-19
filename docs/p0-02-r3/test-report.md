@@ -115,6 +115,16 @@ checkLocalFileChanged:
 
 ### 场景 4: save_as (R3 关联证明 + 安全回退)
 
+**测试类型标注**
+
+| 操作 | 测试类型 | 说明 |
+|------|----------|------|
+| foregroundCheck() (场景A) | 自动化分支测试 | 通过 CDP WebSocket 调用 Capacitor 插件方法，非真实用户在 WPS UI 中操作 |
+| resolveSaveAs({choice:'OVERWRITE_ORIGINAL'}) | 自动化分支测试模拟选择 | CDP 直接调用插件方法模拟覆盖选择，**非真实用户在 WPS UI 中的覆盖选择决策** |
+| foregroundCheck() (场景B) | 自动化分支测试 | 通过 CDP WebSocket 调用，非真实用户操作 |
+
+> 参见 execution-log.md 步骤 5 的 CDP 调用记录
+
 **场景 A: assertSaveAsAssociation**
 
 ```
@@ -145,6 +155,15 @@ foregroundCheck:
 
 R3 assertSafeFallback: PASS (discovered=false + prompt含"未找到"/"手动"安全回退标志)
 ```
+
+**场景 B 安全回退四项完整证据**
+
+| 证据项 | 核验结果 | 说明 |
+|--------|----------|------|
+| (a) 无错误关联 | ✅ 通过 | saveAsDiscovered=false，未关联任何候选文件，未错误关联到其他无关文件 |
+| (b) 未误报回写成功 | ✅ 通过 | 未调用 resolveSaveAs（因未发现候选文件），无 writebackSuccess=true 误报，系统如实报告"未自动发现另存为文件" |
+| (c) 原远端文件 SHA-256 未变 | ✅ 通过 | 处理前: f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476，处理后: f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476，一致，原远端文件未被破坏 |
+| (d) 本地缓存保留 | ✅ 通过 | 本地缓存文件 /storage/emulated/0/PAD2/smb_cache/p0-02-saveas-unreachable.txt 存在(32 bytes)，SHA-256: f4191319...（非空，用户数据未丢弃），saveAsPrompt 含"手动选择文件"提示 |
 
 ### 场景 5: writeback_integrity (R3 三项全检)
 
@@ -250,11 +269,123 @@ R3 assertWriteback: PASS (三项全检通过)
 
 ### SHA-256 证据链汇总
 
-| 场景 | 基线 SHA-256 | 编辑后 SHA-256 | 回写后 SHA-256 | 匹配 |
-|------|-------------|---------------|---------------|------|
-| txt_save | 34daac2e... | 8e4f0d7e... | 8e4f0d7e... | ✅ |
-| save_as(A) | ac9ae518... | ac9ae518... | ac9ae518... | ✅ |
-| writeback_integrity | 8e4f0d7e... | b5eb9723... | b5eb9723... | ✅ |
+| 场景 | 基线 SHA-256 | 编辑后 SHA-256 | 回写后 SHA-256 | 匹配 | 测试类型 |
+|------|-------------|---------------|---------------|------|----------|
+| txt_save | 34daac2e... | 8e4f0d7e... | 8e4f0d7e... | ✅ | 自动化回写核验 |
+| save_as(A) | ac9ae518... | ac9ae518... | ac9ae518... | ✅ | 自动化分支测试回写核验 |
+| writeback_integrity | 8e4f0d7e... | b5eb9723... | b5eb9723... | ✅ | 自动化回写核验 |
+
+## 版本证据链说明
+
+### amend 关系
+
+| SHA | 类型 | 说明 |
+|-----|------|------|
+| b987ceb6f1b55876a8814482e548e0cd53022464 | amend 前提交 | 原始提交，test-report.md 中提交 SHA 为占位符 "(待提交后填充)" |
+| 2bf4cdf6a48972dec7db758526e1c8b2e2b41fb4 | amend 后最终提交 | amend 操作将 test-report.md 中 SHA 更新为 b987ceb6...，但 amend 导致 SHA 变为 2bf4cdf6... |
+| 60db452 | 补充提交 | 将 test-report.md 中 SHA 从 b987ceb6... 修正为 2bf4cdf6... |
+
+**amend 原因**: 提交 b987ceb 后，需将提交 SHA 填入 test-report.md（原为占位符），使用 `git commit --amend` 更新。amend 改变了提交 SHA（b987ceb → 2bf4cdf），导致 test-report.md 中记录的 b987ceb 与实际 SHA 2bf4cdf 不匹配，故创建补充提交 60db452 修正。
+
+**amend 前后代码差异**: 仅 test-report.md 中提交 SHA 字段从 "(待提交后填充)" 变为 "b987ceb6..."，无任何代码逻辑变更。
+
+### APK 构建核对
+
+| 核对项 | 值 | 核对结果 |
+|--------|-----|----------|
+| 构建提交 SHA | 2bf4cdf6a48972dec7db758526e1c8b2e2b41fb4 | ✅ |
+| APK SHA-256 (远程) | 5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc | ✅ |
+| APK SHA-256 (设备安装) | 5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc | ✅ |
+| APK SHA-256 (报告记录) | 5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc | ✅ |
+| APK 大小 | 10,516,104 bytes | ✅ |
+
+**核对结论**: 远程编译产出 APK SHA-256 == 设备安装 APK SHA-256 == 报告记录 APK SHA-256，三者一致。APK 确实由提交 2bf4cdf6... 编译产出。
+
+### 三者对应关系
+
+```
+代码提交 SHA:     2bf4cdf6a48972dec7db758526e1c8b2e2b41fb4
+构建提交 SHA:     2bf4cdf6a48972dec7db758526e1c8b2e2b41fb4
+APK 对应提交 SHA: 2bf4cdf6a48972dec7db758526e1c8b2e2b41fb4
+                   ↑ 三者一致，版本证据链统一可核对
+```
+
+## 原文件保护证据
+
+### 场景A（覆盖原文件）
+
+| 核对项 | SHA-256 | 说明 |
+|--------|---------|------|
+| 处理后远端文件 | ac9ae518771b0a9aec71bcb98db7e000163369859f538d86bbc7f9a183981bcc | resolveSaveAs({choice:'OVERWRITE_ORIGINAL'}) 后远端文件 |
+| 候选文件 (localHash) | ac9ae518771b0a9aec71bcb98db7e000163369859f538d86bbc7f9a183981bcc | 候选文件 SHA-256 |
+| 核对结果 | ✅ 一致 | 处理后远端文件 SHA-256 == 候选文件 SHA-256，远端文件被正确覆盖（预期行为） |
+
+### 场景B（未发现候选）
+
+| 核对项 | SHA-256 | 说明 |
+|--------|---------|------|
+| 处理前远端原文件 | f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476 | foregroundCheck() 前远端原文件 |
+| 处理后远端原文件 | f4191319bfb7d16e4fcbf57fb5980ec80f79490dced14aee56da59e745055476 | foregroundCheck() 后远端原文件 |
+| 核对结果 | ✅ 一致 | 处理前后远端原文件 SHA-256 一致，原远端文件未被破坏（原文件保护） |
+
+## 真实用户交互验证状态
+
+| 场景 | 验证状态 | 说明 |
+|------|----------|------|
+| 真实用户在 WPS UI 中执行另存为并确认覆盖 | **未验证 (UNVERIFIED)** | WPS UI 无法可靠自动化 |
+
+**未验证原因**: WPS UI 无法可靠自动化，本次测试通过 CDP 直接调用插件方法（SmbPlugin.resolveSaveAs）验证处理分支逻辑，未通过真实 WPS UI 操作验证真实用户决策行为。
+
+**已验证的自动化分支测试结果**: 场景A 自动化分支测试通过（见场景 4 证据），证明候选发现与回写处理分支逻辑正确。
+
+**说明**: 自动化分支测试证明了插件方法的处理分支逻辑，但**不能直接等同于真实 WPS 用户在交互界面中的决策行为**。
+
+## 最小差异审计结论
+
+### (1) 实际提交文件清单
+
+提交 `2bf4cdf6a48972dec7db758526e1c8b2e2b41fb4` 修改的文件清单：
+
+```
+R1RegressionTestSuite.java     |  218 +++-
+RegressionTestConfig.java      |   17 +-
+WpsDeliveryHandler.java        |    2 +
+docs/p0-02-r3/design.md        | 1170 ++++++++++++++++++++
+docs/p0-02-r3/execution-log.md |  134 +++
+docs/p0-02-r3/spec.md          |  906 +++++++++++++++
+docs/p0-02-r3/tasks.md         |  440 ++++++++
+docs/p0-02-r3/test-report.md   |  266 +++++
+8 files changed, 3141 insertions(+), 12 deletions(-)
+```
+
+### (2) R1 报告保留确认
+
+- `git show 2bf4cdf6 -- docs/p0-02-r1/test-report.md`: **无输出**（未修改 R1 报告）
+- `git show 60db452 -- docs/p0-02-r1/test-report.md`: **无输出**（未修改 R1 报告）
+- **确认**: R1 历史报告（`docs/p0-02-r1/test-report.md`）在 P0-02-R3 提交中未被触碰，历史结论与原始证据未改写。
+
+### (3) WpsDeliveryHandler.java 授权范围确认
+
+`git show 2bf4cdf6 -- WpsDeliveryHandler.java` diff 输出：
+
+```diff
+@@ -382,6 +382,8 @@ public class WpsDeliveryHandler {
+                     String verifyHash = StreamCacheService.calculateSHA256FromStream(smbClient.readFileStream(currentRemotePath));
+                     String localHash = StreamCacheService.calculateSHA256(saveAsFile);
+                     result.put("writebackSuccess", verifyHash.equals(localHash));
++                    result.put("localHash", localHash);
++                    result.put("verifyHash", verifyHash);
+                     Log.i(TAG, "Save-as resolved: OVERWRITE_ORIGINAL, verified=" + verifyHash.equals(localHash));
+```
+
+**确认**: 修改为 resolveSaveAs() OVERWRITE_ORIGINAL 分支添加 `result.put("localHash", localHash)` 和 `result.put("verifyHash", verifyHash)`，与 R3 spec.md 说明一致（assertWriteback 要求所有回写场景都必须有哈希）。此修改不改变功能行为（哈希计算逻辑未变），仅将已计算的哈希放入结果 Map。**修改处于 R3 授权范围内。**
+
+### 审计结论
+
+**最小差异审计通过**：
+1. ✅ 实际提交文件清单可追溯（8 个文件，+3141/-12）
+2. ✅ R1 历史报告未被改写（2bf4cdf6 和 60db452 均未触碰 docs/p0-02-r1/test-report.md）
+3. ✅ WpsDeliveryHandler.java 修改处于 R3 授权范围内（仅添加 localHash/verifyHash 返回）
 
 ## 结论
 

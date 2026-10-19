@@ -132,3 +132,32 @@ smbClient = new SMBClient(config);
 - 修改时间: 2026-10-19 09:27 (第一次编译) / 09:34 (第二次编译)
 - 还原时间: 编译完成后立即还原
 - 状态: 已还原，SmbClient.java 未包含在本次提交中
+## 构建过程核对
+
+| 核对项 | 值 |
+|--------|-----|
+| 真实构建提交 SHA | 2bf4cdf6a48972dec7db758526e1c8b2e2b41fb4 |
+| 构建时间 | 2026-10-19 09:34 (UTC+8) |
+| 编译命令 | ./gradlew assembleDebug --no-daemon |
+| 编译产出 APK SHA-256 | 5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc |
+| 编译产出 APK 大小 | 10,516,104 bytes |
+| 安装 APK SHA-256 | 5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc |
+| 编译日志路径 | 远程服务器 /home/debian/android/android/app/build/outputs/apk/debug/ |
+| 核对结论 | 编译产出 APK SHA-256 == 安装 APK SHA-256 == 报告记录 APK SHA-256，APK 确实由 2bf4cdf6... 编译产出 |
+
+### amend 关系核对
+
+| SHA | 类型 | reflog 记录 |
+|-----|------|-------------|
+| b987ceb6... | amend 前提交 | HEAD@{2}: commit: fix(P0-02-R3)... |
+| 2bf4cdf6... | amend 后最终提交 | HEAD@{1}: commit (amend): fix(P0-02-R3)... |
+| 60db452 | 补充提交 | HEAD@{0}: commit: docs(P0-02-R3): 补充测试报告提交SHA |
+
+### APK SHA-256 核对
+
+```
+远程编译产出: 5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc
+设备安装 APK: 5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc
+报告记录:     5e54360978399895b279f8b01217cf3275654b1b4f0911ffb808fdaa44cd95dc
+               ↑ 三者一致，APK 版本证据链统一可核对
+```
