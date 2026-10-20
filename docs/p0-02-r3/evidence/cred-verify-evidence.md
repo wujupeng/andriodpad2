@@ -147,13 +147,56 @@ GitHub 远程仓库全部分支历史零明文，reflog 已清理。旧克隆副
 
 | 提交 | SHA | 说明 |
 |------|-----|------|
-| 补充核验证据包提交 | `1b69147` | SEC-01/02/03/04 四项核验证据 + SHA 映射表 + 实现方案 + 任务规划 |
+| 补充核验证据包提交 | `3c7e69e` | SEC-01/02/03/04 四项核验证据 + SHA 映射表 + 实现方案 + 任务规划 |
 | 上一轮闭环整改提交 | `ade386d` | SSH 密钥认证 + 历史重写 + 残留定性 + 报告归档 |
 | 上一轮 SHA 补充提交 | `dd8c0d2` | 补充整改提交 SHA 至闭环报告 |
 
 ---
 
-## 7. 声明
+## 7. 集成验证结果
+
+### 7.1 当前版本扫描（HEAD = `3c7e69e`）
+
+| 扫描项 | 命令 | 结果 |
+|--------|------|------|
+| 旧密码明文 | `git log --all --reflog -G "9090"` | **零匹配** ✅ |
+| 私钥内容 | `git log --all --reflog -G "ssh-ed25519 AAAA"` | **零匹配** ✅ |
+| 私钥标记（命令字符串引用） | `git log --all --reflog -S "BEGIN OPENSSH PRIVATE KEY"` | 1 匹配（设计文档中的扫描命令字符串，非私钥内容） |
+| 公钥指纹（元数据） | `git log --all --reflog -S "kd7uIF..."` | 1 匹配（证据文档中的公钥指纹，非敏感数据） |
+
+### 7.2 历史扫描
+
+| 扫描项 | 范围 | 结果 |
+|--------|------|------|
+| 全分支 + reflog | `git log --all --reflog -G "9090"` | **零匹配** ✅ |
+| 全分支 + reflog | `git log --all --reflog -G "ssh-ed25519 AAAA"` | **零匹配** ✅ |
+
+### 7.3 远端验证
+
+| 分支 | HEAD SHA | 旧密码明文匹配 |
+|------|----------|--------------|
+| origin/main | `3c7e69e` | 0 ✅ |
+| origin/develop | `d9ec7e6` | 0 ✅ |
+| origin/pad2-p0 | `d9ec7e6` | 0 ✅ |
+| origin/pad2-p1 | `d9ec7e6` | 0 ✅ |
+| origin/pad2-p2 | `d9ec7e6` | 0 ✅ |
+| origin/pad2-p3 | `d9ec7e6` | 0 ✅ |
+| origin/pad2-p4 | `d9ec7e6` | 0 ✅ |
+
+### 7.4 约束确认
+
+| 约束项 | 状态 |
+|--------|------|
+| 不修改 SmbPlugin.ts | ✅ 未修改 |
+| 不修改 M2VerificationPage.tsx | ✅ 未修改 |
+| 不重做 WPS/SMB 功能测试 | ✅ 仅凭证范围核验 |
+| 不扩大验收范围 | ✅ 仅处理四项补充核验 |
+| 旧密码统一 `***REDACTED***` 脱敏 | ✅ 全文档已脱敏 |
+| reflog 已清理 | ✅ `git reflog expire --all --expire=now` + `git gc --prune=now` |
+
+---
+
+## 8. 声明
 
 - SSH 私钥**落盘**至执行者本地 `~/.ssh/pad2_cred_closure`，权限 644，无 passphrase，未进入仓库/文档/日志
 - 旧密码 `***REDACTED***` 在 **SSH 和 SMB** 两个服务上**均已失效**，替代认证已验证可用
