@@ -1,0 +1,12 @@
+{
+  "results": {
+    "R1_C": {
+      "pwEcho": "empty(0)",
+      "cbChecked": false,
+      "finding": "记住密码复选框回显=未勾选（登记为 R-1 体验细节）"
+    },
+    "allPass": false,
+    "error": "断言失败: D.1 logcat 全文无明文密码（0 处）"
+  },
+  "ts": "2026-10-24T04:49:34.543Z"
+}
