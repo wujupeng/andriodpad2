@@ -14,7 +14,7 @@
 
 | 目录列表 | 搜索高亮 | 已连接工作台 |
 |:---:|:---:|:---:|
-| ![目录列表](docs/screenshots/04-browse-list.png) | ![搜索](docs/p003-ui/shots/s4/fas-single-menu.png) | ![已连接](docs/screenshots/14-home-connected.png) |
+| ![目录列表](docs/screenshots/04-browse-list.png) | ![搜索](docs/screenshots/05-search.png) | ![已连接](docs/screenshots/14-home-connected.png) |
 
 ### 文件操作
 

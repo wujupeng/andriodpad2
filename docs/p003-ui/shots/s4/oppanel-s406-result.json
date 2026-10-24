@@ -1,0 +1,36 @@
+{
+  "selfTest": {
+    "pass": 15,
+    "total": 15,
+    "items": [
+      "PASS copy 终态 failed",
+      "PASS copy 失败清单 3 条",
+      "PASS copy 原因如实（能力缺失）",
+      "PASS delete 终态 failed",
+      "PASS delete kind",
+      "PASS profileId 字段存在",
+      "PASS rename 终态 failed",
+      "PASS rename 目标名",
+      "PASS acknowledge 清空",
+      "PASS 能力表全披露（copy/move/rename/deleteR/deleteL 缺失）",
+      "PASS createDirectory 能力=true",
+      "PASS 映射 PENDING",
+      "PASS 映射 SUCCESS",
+      "PASS 映射 WAITING_NETWORK→in_progress",
+      "PASS 映射 PAUSED→cancelled"
+    ]
+  },
+  "staticChecks": {
+    "progressAnchor": true,
+    "cancelLabel": true,
+    "expandLabel": true,
+    "retryLabel": true,
+    "failureListTitle": true,
+    "partialFailedBanner": true,
+    "cancelKeepBanner": true,
+    "successBanner": true,
+    "currentFile": true,
+    "cancellingLabel": true
+  },
+  "ts": "2026-10-21T09:31:32.313Z"
+}

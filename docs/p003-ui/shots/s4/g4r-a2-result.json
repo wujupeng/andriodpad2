@@ -1,0 +1,21 @@
+{
+  "results": {
+    "wifiOff": {
+      "netInterrupted": false,
+      "sessionInvalid": false,
+      "reconnectBtn": false,
+      "banner": "无",
+      "path": "Gate3验证服务器gate4-test",
+      "rows": 0
+    },
+    "recovered": {
+      "netInterrupted": false,
+      "sessionInvalid": false,
+      "reconnectBtn": false,
+      "banner": "无",
+      "path": "Gate3验证服务器gate4-test",
+      "rows": 0
+    }
+  },
+  "ts": "2026-10-21T12:57:39.935Z"
+}

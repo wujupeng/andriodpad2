@@ -1,0 +1,29 @@
+{
+  "results": {
+    "phaseB": {
+      "injected": "2026-10-21T23:57:08.209Z",
+      "method": "password change + smbd restart + listDirectory",
+      "afterBreak": {
+        "netInterrupted": false,
+        "sessionInvalid": true,
+        "reconnectBtn": true,
+        "banner": "连接会话已失效请重新连接以继续访问共享目录重连",
+        "path": "Gate3验证服务器gate4-test",
+        "rows": 0
+      },
+      "recovered": {
+        "netInterrupted": false,
+        "sessionInvalid": false,
+        "reconnectBtn": false,
+        "banner": "无",
+        "path": "Gate3验证服务器gate4-test",
+        "rows": 4
+      }
+    },
+    "cleanup": {
+      "password": "restored",
+      "smbd": "restarted(normal)"
+    }
+  },
+  "ts": "2026-10-21T23:57:54.768Z"
+}

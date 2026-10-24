@@ -1,0 +1,45 @@
+{
+  "single": {
+    "count": 7,
+    "disabledCount": 4,
+    "disabledReasons": 4,
+    "dangerRed": "rgb(220, 38, 38)",
+    "hasOpen": true,
+    "hasEdit": true,
+    "hasInfo": true,
+    "context": true
+  },
+  "batch": {
+    "count": 3,
+    "batchCopy": true,
+    "batchMove": true,
+    "batchDelete": true,
+    "noOpen": true,
+    "context": true
+  },
+  "localDlg": {
+    "title": true,
+    "recoverable": true,
+    "noIrreversible": true,
+    "confirmEnabled": true,
+    "dangerAttr": "none"
+  },
+  "remoteDlg": {
+    "title": true,
+    "irreversible": true,
+    "permanent": true,
+    "confirmDisabledBeforeAck": true,
+    "hasAck": true,
+    "dangerIcon": true
+  },
+  "conflict": {
+    "skip": true,
+    "overwrite": true,
+    "keepBoth": true,
+    "rename": true,
+    "radioCount": 4,
+    "confirmDisabledNoSelection": true,
+    "fileName": true
+  },
+  "ts": "2026-10-21T09:16:40.942Z"
+}

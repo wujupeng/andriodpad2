@@ -1,0 +1,26 @@
+{
+  "s500": {
+    "rows": 24,
+    "longTaskCount": 0,
+    "maxDuration": 0
+  },
+  "s1000": {
+    "rows": 24,
+    "longTaskCount": 0,
+    "maxDuration": 0
+  },
+  "s5000": {
+    "rows": 24,
+    "longTaskCount": 0,
+    "maxDuration": 0
+  },
+  "longTasks": {
+    "count": 0,
+    "max": 0
+  },
+  "searchStats": {
+    "matches": 1,
+    "marks": 1
+  },
+  "ts": "2026-10-21T07:00:36.889Z"
+}

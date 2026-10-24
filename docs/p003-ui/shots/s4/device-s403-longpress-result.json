@@ -1,0 +1,15 @@
+{
+  "results": {
+    "browse": {
+      "rows": 21,
+      "viewport": "686x1030"
+    },
+    "longPress": {
+      "multiselectBar": true,
+      "batchButtons": true,
+      "cancel": true
+    },
+    "swipeCancel": true
+  },
+  "ts": "2026-10-21T08:08:42.095Z"
+}
