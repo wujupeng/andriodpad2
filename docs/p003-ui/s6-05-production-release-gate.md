@@ -10,7 +10,7 @@
 **R-1 实测升级：发现实质性凭据暴露——Capacitor 桥 VERBOSE 日志 echo 明文密码**
 
 - **实测证据**（verify-s6-05-r1-credential-safety.mjs，2026-10-24 12:49:30）：
-  `V Capacitor: callback: 37948599, pluginId: SmbPlugin, methodName: connect, methodData: {"host":"192.168.2.3","share":"share","username":"pad2gate3","password":"Gate3-Test-2026"}`
+  `V Capacitor: callback: 37948599, pluginId: SmbPlugin, methodName: connect, methodData: {"host":"192.168.2.3","share":"share","username":"pad2gate3","password":"Gate3-Test-<已轮换-2026-10-24>"}`
 - **根因链**（代码级确证）：Capacitor 框架 `Bridge.java:832-841`——每次原生插件调用都执行 `Logger.verbose("callback: … methodData: " + call.getData())` 打印**全部入参明文**；`CapConfig.java:295-303`——`android.loggingBehavior` 未配置时默认 `debug` → `loggingEnabled = isDebug` → **debug 构建（本发布候选即 assembleDebug 产物）恒为 true**。
 - **影响面**：所有经 Capacitor bridge 传输的凭据（SmbPlugin connect 的 password 参数）以 VERBOSE 级写入设备 logcat。读取前提：USB 调试连接、持 READ_LOGS 特权的组件、或日志被收集/粘贴共享时。**产品自身代码未打印任何凭据**（C05 断言 A.3/A.4/D 层面的 PAD2 代码与持久化层均无明文）。
 - **伴随披露——历史 C05 结论假阴性修正**：S6-01/FIX-01/S6-04 各报告"logcat 0 处密码明文"结论**不成立**（成因：全量 `logcat -d` 事后扫描时 echo 条目已被 Chrome 渲染日志洪流滚动出缓冲区；本次 `logcat -c` 清空→连接→立即扫描才命中）。历史报告该单项结论按本发现修正，其余结论不受影响。

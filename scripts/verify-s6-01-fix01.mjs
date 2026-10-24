@@ -36,17 +36,38 @@ function adbShell(cmd) {
 function ssh(cmd) {
   return execFileSync('ssh', ['-i', SSH_KEY, 'debian@192.168.2.3', cmd], { encoding: 'utf8', timeout: 180000 });
 }
-/** profiles XML 原文（run-as） */
+/** profiles XML 原文（run-as——仅 debug 构建可用） */
 function profilesXml() {
   return String(adbShell('run-as com.pad2.filemanager cat shared_prefs/CapacitorStorage.xml 2>/dev/null'));
 }
-/** profiles 解析（S5-09 模式） */
-function readProfiles() {
-  const xml = profilesXml();
-  const m = xml.match(/pad2\.profiles\.v1">([^<]*)</);
-  if (!m) return [];
-  const decoded = m[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-  try { return JSON.parse(decoded).profiles || []; } catch { return []; }
+/**
+ * profiles 解析（TASK-S6-05-FIX 适配：release 构建 run-as 不可用 not debuggable——
+ * fallback CDP Preferences API 通道，App 自身 API 权威等价）
+ */
+async function readProfiles() {
+  try {
+    const xml = profilesXml();
+    const m = xml.match(/pad2\.profiles\.v1">([^<]*)</);
+    if (m) {
+      const decoded = m[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+      try { return JSON.parse(decoded).profiles || []; } catch { return []; }
+    }
+  } catch { /* run-as 不可用走 CDP */ }
+  if (ws && ws.readyState === 1) {
+    const v = await evalPage(`(async () => { try { const r = await window.Capacitor.Plugins.Preferences.get({ key: 'pad2.profiles.v1' }); return r.value || ''; } catch (e) { return ''; } })()`, true);
+    if (v) { try { return JSON.parse(String(v)).profiles || []; } catch { return []; } }
+  }
+  return [];
+}
+/** bridge connect 调用计数器（TASK-S6-05-FIX 适配：桥日志已关闭——logcat 计数失效；
+ * 注入点=window.Capacitor.nativePromise（registerPlugin proxy 的必经底层通道——
+ * patch window.Capacitor.Plugins.* 无效因 adapter 持有独立 proxy 实例） */
+async function injectConnectCounter() {
+  await evalPage(`(() => { if (!window.__pad2ConnectCalls) { window.__pad2ConnectCalls = 0; const cap = window.Capacitor; const orig = cap.nativePromise.bind(cap); cap.nativePromise = function(pluginId, method, options) { if (pluginId === 'SmbPlugin' && method === 'connect') window.__pad2ConnectCalls++; return orig(pluginId, method, options); }; } return 'INJECTED'; })()`);
+}
+async function readConnectCounter() {
+  const n = await evalPage(`window.__pad2ConnectCalls`);
+  return Number(n) || 0;
 }
 function countConnectCalls() {
   const pid = adbShell('pidof com.pad2.filemanager').trim();
@@ -243,13 +264,13 @@ async function s1() {
   assert(flow.firstMs !== null && flow.firstMs <= 1000, `S1① 提交后 ≤1s 出现反馈（${flow.firstMs}ms——F-01 基线为 30s 零反馈）`);
   assert(flow.final === 'connected', `S1③ 终态"已连接"（采样无空窗持续，${flow.final}）`);
   await screenshot('s601fix01-s1-connected.png');
-  // ④ profiles 落盘（XML+解析双断言）
-  const xml = profilesXml();
-  assert(/192\.168\.2\.247/.test(xml), 'S1④a profiles 落盘含 247 条目（F-01 基线未落盘）');
-  assert(/passwordEmpty&quot;\s*:\s*true/.test(xml), 'S1④b passwordEmpty:true 落盘（空密码凭据语义标记）');
-  const entry247 = readProfiles().find((p) => p.host === '192.168.2.247');
+  // ④ profiles 落盘（TASK-S6-05-FIX 适配：release 构建 run-as 不可用——CDP Preferences API 权威通道）
+  const raw = await evalPage(`(async () => { try { const r = await window.Capacitor.Plugins.Preferences.get({ key: 'pad2.profiles.v1' }); return r.value || ''; } catch (e) { return ''; } })()`, true);
+  const entry247 = (await readProfiles()).find((p) => p.host === '192.168.2.247');
+  assert(/192\.168\.2\.247/.test(String(raw)), 'S1④a profiles 落盘含 247 条目（F-01 基线未落盘）');
+  assert(/"passwordEmpty"\s*:\s*true/.test(String(raw)), 'S1④b passwordEmpty:true 落盘（空密码凭据语义标记）');
   assert(!!entry247 && !entry247.passwordEncrypted, 'S1④c 247 条目无密文（空密码不产密文，R09）');
-  assert(!/Gate3-Test|WRONG|pad2gate3%/.test(xml), 'S1④d 落盘无明文密码（C05）');
+  assert(!/Gate3-Test|WRONG-S2|pad2gate3%/.test(String(raw)), 'S1④d 落盘无明文密码（C05）');
   // ⑤ 服务器端核验：App 会话读目录 + ssh 独立 ls
   const lst = await evalPage(`(async () => { const BS = String.fromCharCode(92); try { const r = await window.Capacitor.Plugins.SmbPlugin.listDirectory({ path: 'AutoFileBackup' + BS + 'PAD2-S6-01' }); return 'OK:' + (r.files || []).length + ' entries'; } catch (e) { return 'ERR:' + String(e.message || e).substring(0, 60); } })()`, true);
   assert(String(lst).startsWith('OK'), `S1⑤ App 会话可读服务器目录（${lst}——连接事实）`);
@@ -293,6 +314,7 @@ async function s4() {
   await setField('用户名', 'guest');
   await setField('密码', '');
   adbShell('logcat -c');
+  await injectConnectCounter();
   await clickEl('main button', '保存并连接');
   for (let i = 0; i < 3; i++) {
     await sleep(300);
@@ -300,8 +322,8 @@ async function s4() {
   }
   const flow = await sampleConnectFlow(30000);
   assert(flow.final === 'connected', `S4.1 三连点后终态唯一（已连接，${flow.final}）`);
-  const calls = countConnectCalls();
-  assert(calls === 1, `S4.2 logcat SmbPlugin connect 调用恰 1 次（实际 ${calls}——双层防重入生效）`);
+  const calls = await readConnectCounter();
+  assert(calls === 1, `S4.2 bridge connect 调用恰 1 次（实际 ${calls}——双层防重入生效；TASK-S6-05-FIX 适配：桥日志关闭后改页面层注入计数）`);
   results.S4 = { connectCalls: calls, final: flow.final };
 }
 
@@ -395,7 +417,7 @@ async function s6() {
 // ============ S7 upsert 命中 ============
 async function s7() {
   soft('S7 同身份再次保存（upsert 命中——条目不增+归属正确，R11）');
-  const before = readProfiles().filter((p) => p.host === '192.168.2.247').length;
+  const before = (await readProfiles()).filter((p) => p.host === '192.168.2.247').length;
   await resetForm();
   await setField('连接名称', 'S6-01-WinSrv-B');
   await setField('服务器地址', '192.168.2.247');
@@ -406,7 +428,7 @@ async function s7() {
   if (clickS7 === 0) throw new Error('S7 保存并连接点击未触发（3 次重试）');
   const flow = await sampleConnectFlow(30000);
   assert(flow.final === 'connected', `S7.1 同身份保存并连接成功（${flow.final}）`);
-  const after = readProfiles().filter((p) => p.host === '192.168.2.247');
+  const after = (await readProfiles()).filter((p) => p.host === '192.168.2.247');
   assert(after.length === before, `S7.2 条目数不增（upsert 命中：${before}→${after.length}）`);
   assert(after.every((p) => !p.passwordEncrypted && p.passwordEmpty === true), 'S7.3 条目三态标记保持（passwordEmpty=true 无密文）');
   const badge = await evalPage(`(() => { const rows = [...document.querySelectorAll('main div')].filter((e) => String(e.className).includes('row') && !String(e.className).includes('row__') && (e.textContent || '').includes('S6-01-WinSrv')); return rows.length ? (rows[0].textContent || '').includes('已连接') : false; })()`);
@@ -428,7 +450,7 @@ async function s8() {
   if (clickS8 === 0) throw new Error('S8 保存并连接点击未触发（3 次重试）');
   const flow = await sampleConnectFlow(30000);
   assert(flow.final === 'connected', `S8.0 unset 配置创建并连接成功（${flow.final}）`);
-  const unsetEntry = readProfiles().find((p) => p.host === '192.168.2.3');
+  const unsetEntry = (await readProfiles()).find((p) => p.host === '192.168.2.3');
   assert(unsetEntry && !unsetEntry.passwordEncrypted && unsetEntry.passwordEmpty === undefined, 'S8.0b 落盘为 unset 态（无密文无 empty 标记）');
   // 冷启动后两卡对照
   await coldBoot();
@@ -460,7 +482,7 @@ async function cleanup() {
   await sleep(1400);
   for (const n of names) {
     try {
-      const still = readProfiles().some((p) => p.name === n || (n === 'S6-01-WinSrv' && p.host === '192.168.2.247'));
+      const still = (await readProfiles()).some((p) => p.name === n || (n === 'S6-01-WinSrv' && p.host === '192.168.2.247'));
       if (still) {
         await deleteCardByName(n);
         console.log(`  [CLEAN] 已删除 ${n}`);
@@ -469,7 +491,7 @@ async function cleanup() {
       console.log(`  [CLEAN] ${n} 清理跳过：${e.message.substring(0, 50)}`);
     }
   }
-  const remain = readProfiles().filter((p) => p.host === '192.168.2.247' || /S2错误|S3不可达|S8-Samba|S6-01-Diag/.test(p.name));
+  const remain = (await readProfiles()).filter((p) => p.host === '192.168.2.247' || /S2错误|S3不可达|S8-Samba|S6-01-Diag/.test(p.name));
   console.log(`  [CLEAN] 残留测试卡：${remain.length} 张`);
   results.cleanup = { remaining: remain.length };
 }

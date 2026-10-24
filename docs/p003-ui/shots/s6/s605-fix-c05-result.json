@@ -1,0 +1,32 @@
+{
+  "results": {
+    "cdpOnRelease": true,
+    "S1": {
+      "total": 891,
+      "bridgeLines": 0,
+      "pwEcho": 0,
+      "methodData": 0,
+      "plaintext": 0,
+      "plaintextPartial": 0
+    },
+    "S2": {
+      "total": 891,
+      "bridgeLines": 0,
+      "pwEcho": 0,
+      "methodData": 0,
+      "plaintext": 0,
+      "plaintextPartial": 0
+    },
+    "S3": {
+      "total": 547,
+      "bridgeLines": 0,
+      "pwEcho": 0,
+      "methodData": 0,
+      "plaintext": 0,
+      "plaintextPartial": 0
+    },
+    "allPass": true,
+    "apk": "d6d75d2028bae7600ecf388ea8602c0001d9d36108e93d14617a71d823f099e8"
+  },
+  "ts": "2026-10-24T06:28:42.732Z"
+}

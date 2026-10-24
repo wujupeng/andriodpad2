@@ -45,7 +45,7 @@
 | OFF-2.1 网络恢复→重试→已连接 | **PASS** | wifi enable+重试→connected |
 | OFF-2.2 会话真实可用 | **PASS** | listDirectory 服务器目录 OK:11（连接事实非 UI 宣称） |
 
-**C05 安全扫描**：验证会话 logcat 全文 0 处密码明文/密文泄露（`Gate3-Test-2026`/`WRONG-S2-FIX01`/密文模式零匹配）。
+**C05 安全扫描**：验证会话 logcat 全文 0 处密码明文/密文泄露（`Gate3-Test-<已轮换-2026-10-24>`/`WRONG-S2-FIX01`/密文模式零匹配）。
 
 ## 三、步骤 3：双格式写回终判（服务器端内容+SHA+重新打开）——全 PASS
 

@@ -1,0 +1,31 @@
+{
+  "results": [
+    {
+      "round": 1,
+      "attempt": "first-click",
+      "outcome": {
+        "connected": true,
+        "connecting": false,
+        "failed": false,
+        "badge": "已连接"
+      },
+      "elapsedMs": 1057,
+      "bridge": {
+        "preferencesToNative": 5,
+        "preferencesCallbacks": 10,
+        "smbToNative": 1
+      },
+      "logTail": [
+        "10-23 11:07:55.587  6585  6585 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 19060385, pluginId: Preferences, methodName: get\r",
+        "10-23 11:07:55.587  6585  6585 V Capacitor: callback: 19060385, pluginId: Preferences, methodName: get, methodData: {\"key\":\"pad2.prefs.v1\"}\r",
+        "10-23 11:08:00.907  6585  6585 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 19060387, pluginId: Preferences, methodName: get\r",
+        "10-23 11:08:00.907  6585  6585 V Capacitor: callback: 19060387, pluginId: Preferences, methodName: get, methodData: {\"key\":\"pad2.profiles.v1\"}\r",
+        "10-23 11:08:02.249  6585  6585 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 19060388, pluginId: Preferences, methodName: get\r",
+        "10-23 11:08:02.249  6585  6585 V Capacitor: callback: 19060388, pluginId: Preferences, methodName: get, methodData: {\"key\":\"pad2.crypto.master.v1\"}\r",
+        "10-23 11:08:02.394  6585  6585 V Capacitor/Plugin: To native (Capacitor plugin): callbackId: 19060389, pluginId: SmbPlugin, methodName: connect\r",
+        "10-23 11:08:02.394  6585  6585 V Capacitor: callback: 19060389, pluginId: SmbPlugin, methodName: connect, methodData: {\"host\":\"192.168.2.3\",\"share\":\"share\",\"username\":\"pad2gate3\",\"password\":\"Gate3-Test-<已轮换-2026-10-24>\"}"
+      ]
+    }
+  ],
+  "ts": "2026-10-23T03:08:05.939Z"
+}
