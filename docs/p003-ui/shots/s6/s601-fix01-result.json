@@ -6,7 +6,7 @@
       "remaining": 0
     },
     "S1": {
-      "firstFeedbackMs": 6,
+      "firstFeedbackMs": 8,
       "final": "connected",
       "persisted": true
     },
@@ -30,7 +30,7 @@
       "persistent": true
     },
     "S3": {
-      "firstMs": 13,
+      "firstMs": 10,
       "finalText": "连接失败：操作失败，请重试",
       "retryable": true
     },
@@ -54,5 +54,5 @@
     },
     "allPass": true
   },
-  "ts": "2026-10-24T04:02:39.289Z"
+  "ts": "2026-10-24T04:31:11.996Z"
 }
