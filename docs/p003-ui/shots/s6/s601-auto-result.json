@@ -1,0 +1,62 @@
+{
+  "results": {
+    "apk": "e7a67ee5d5f537c59784cbf90453d5137d3c13b7cfe0c0d95cda0b20aaf1ee7b",
+    "server": "192.168.2.247 soft (Windows Server, SMB 3.1.1)",
+    "WS01_form": {
+      "btnExists": true,
+      "disabled": false
+    },
+    "WS01_ui": {
+      "connected": true,
+      "failMode": "N/A"
+    },
+    "WS02": {
+      "entries": 4
+    },
+    "WS03": {
+      "sha": "4e313e3f65fb3d031a5ecf2a9c2c4d761bbef76428cdbf2217ea4ab31426b47c"
+    },
+    "WS04": {
+      "sha": "dddea581a85cbcd2d5667b53ab88e19e1ad9619b045dac1055069a8cfe558463"
+    },
+    "WS05_06": {
+      "xlsx": true,
+      "xls": true
+    },
+    "WS07": true,
+    "WS08": true,
+    "WS09": {
+      "rejected": true
+    },
+    "WS10": {
+      "rejected": true
+    },
+    "WS12": true,
+    "WS11": {
+      "deleted": true,
+      "cacheIsolated": true
+    },
+    "WS15": {
+      "conflictDetected": true
+    },
+    "WS16": {
+      "rename": "UNLOCKED"
+    },
+    "WS17": {
+      "serverRefusesRO": true,
+      "smbJDeletesRO": false,
+      "finding": "一致拒绝"
+    },
+    "WS18": {
+      "honestFail": true
+    },
+    "WS19": {
+      "refreshed": true
+    },
+    "WS20": {
+      "shaOk": true,
+      "seconds": 37.3
+    }
+  },
+  "ts": "2026-10-24T04:08:06.170Z"
+}

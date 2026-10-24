@@ -1,0 +1,58 @@
+{
+  "results": {
+    "apk": "016be5f6245b35d6474443ec0509b1a25a4d7ed609bbf4b380cbe31e337458e6",
+    "baseline": "e7a67ee5d5f537c59784cbf90453d5137d3c13b7cfe0c0d95cda0b20aaf1ee7b",
+    "cleanup": {
+      "remaining": 0
+    },
+    "S1": {
+      "firstFeedbackMs": 6,
+      "final": "connected",
+      "persisted": true
+    },
+    "S9": true,
+    "S10": true,
+    "S1b": {
+      "reenter": false,
+      "final": "connected"
+    },
+    "S1c": {
+      "reenter": false,
+      "final": "connected"
+    },
+    "S4": {
+      "connectCalls": 1,
+      "final": "connected"
+    },
+    "S2": {
+      "banner": "连接失败：用户名或密码不正确",
+      "inline": true,
+      "persistent": true
+    },
+    "S3": {
+      "firstMs": 13,
+      "finalText": "连接失败：操作失败，请重试",
+      "retryable": true
+    },
+    "S5": {
+      "retriggered": true,
+      "newFinal": "连接失败：操作失败，请重试"
+    },
+    "S6": {
+      "reenter": false,
+      "final": "connected",
+      "badge": true
+    },
+    "S7": {
+      "countBefore": 1,
+      "countAfter": 1,
+      "badge": true
+    },
+    "S8": {
+      "unsetReenter": true,
+      "emptyDirect": true
+    },
+    "allPass": true
+  },
+  "ts": "2026-10-24T04:02:39.289Z"
+}
