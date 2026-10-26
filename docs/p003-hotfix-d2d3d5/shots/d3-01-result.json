@@ -1,0 +1,16 @@
+{
+  "scenario": "d3-01",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "已点击「另存为检测」",
+    "另存为检测: saveAsDiscovered=true（盲区修复生效）",
+    "候选路径指向 Documents/: /storage/emulated/0/Documents/test-render.docx",
+    "logcat: Candidate level=A 行存在（A1 同名准入）",
+    "logcat: Scanning paths 声明行存在（审计行①）",
+    "logcat: 候选清单可检索（E4 排除经候选缺席验证）",
+    "logcat: 缓存原文件自身不在候选（E4 生效）"
+  ]
+}

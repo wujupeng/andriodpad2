@@ -1,0 +1,21 @@
+--------- beginning of (HKS)46DF39A195AD118F3DC78514286C811A748B8C501D1BA7328230F62C080708C794B405E25A3AAE71B13A03EB4215C1BC1F849A7D36E479480BE8137D94DF7E5714E71B45727E07CFE8315AAF2209C1D960908A81EBA7109887EAD550526930AD7422FC9553F2A3E64F0A56B5A8F9DE024DE2843FD236C546A2B2EA1DF59E68A4FCEEB1F7980385781AFE20D712D94E62BA38127B2E5B22E65783105E0EB27029ABC95E1C7EBB74E71052B57731BE55D921792CB24F7DE024CB68E5BCD76C1B7B366E4F1B12F4A441500BC51404F409D631FE2EB58180F63424A0F2F8BE7DE6C5FA50FA05836DC5F8F6633E05B2EDB3C4F073B39504D227BBAE12BDBB775E45BB(HKE)
+--------- beginning of main
+10-21 11:48:51.452 10657 17148 I WpsSaveDetector: Monitoring paused for writeback
+10-21 11:48:51.714 10657 17148 I WpsDeliveryHandler: Writeback verified: remote SHA-256 matches local
+10-21 11:48:51.715 10657 17148 I WpsSaveDetector: Baseline updated: SHA-256=5beb889a36fd4ae2... mtime=1792554525543
+10-21 11:48:51.716 10657 17148 I WpsSaveDetector: Monitoring resumed after writeback
+10-21 11:48:57.511 10657 17148 I WpsSaveDetector: Monitoring paused for writeback
+10-21 11:48:57.836 10657 17148 I WpsDeliveryHandler: Writeback verified: remote SHA-256 matches local
+10-21 11:48:57.837 10657 17148 I WpsSaveDetector: Baseline updated: SHA-256=5beb889a36fd4ae2... mtime=1792554525543
+10-21 11:48:57.837 10657 17148 I WpsSaveDetector: Monitoring resumed after writeback
+10-21 11:49:21.153 16094 17346 I WpsDeliveryHandler: Opening file in WPS: test-render.docx
+10-21 11:49:21.246 16094 17346 I WpsDeliveryHandler: Remote file size: 9164 bytes
+10-21 11:49:21.392 16094 17346 I WpsDeliveryHandler: Delivery strategy: DeliveryStrategy{uriScheme=FILE_URI_FIRST, mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document', intentAction='ACTION_VIEW'}
+10-21 11:49:21.395 16094 17346 I WpsSaveDetector: Stopped monitoring
+10-21 11:49:21.397 16094 17346 I WpsSaveDetector: Parent dir observer started on: /storage/emulated/0/PAD2
+10-21 11:49:21.397 16094 17346 I WpsSaveDetector: Started monitoring: /storage/emulated/0/PAD2/smb_cache/test-render.docx
+10-21 11:49:21.503 16094 17346 I WpsDeliveryHandler: File delivered via file:// (android.intent.action.VIEW): test-render.docx -> /storage/emulated/0/PAD2/smb_cache/test-render.docx
+10-21 11:49:27.202 16094 17346 I WpsSaveDetector: Monitoring paused for writeback
+10-21 11:49:27.492 16094 17346 I WpsDeliveryHandler: Writeback verified: remote SHA-256 matches local
+10-21 11:49:27.492 16094 17346 I WpsSaveDetector: Baseline updated: SHA-256=5beb889a36fd4ae2... mtime=1792554561311
+10-21 11:49:27.492 16094 17346 I WpsSaveDetector: Monitoring resumed after writeback

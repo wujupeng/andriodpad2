@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.pad2.filemanager.smb.WpsSaveDetectorIsTempFileTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-21T01:08:05.564Z" hostname="debian" time="0.002">
+  <properties/>
+  <testcase name="pureDigitsNoSeparator_isFiltered" classname="com.pad2.filemanager.smb.WpsSaveDetectorIsTempFileTest" time="0.0"/>
+  <testcase name="pureDateNoExtension_isFiltered" classname="com.pad2.filemanager.smb.WpsSaveDetectorIsTempFileTest" time="0.0"/>
+  <testcase name="multiSegmentVariant_isFiltered" classname="com.pad2.filemanager.smb.WpsSaveDetectorIsTempFileTest" time="0.0"/>
+  <testcase name="chineseNamedDocument_notFiltered" classname="com.pad2.filemanager.smb.WpsSaveDetectorIsTempFileTest" time="0.0"/>
+  <testcase name="datedNameWithExtension_notFiltered" classname="com.pad2.filemanager.smb.WpsSaveDetectorIsTempFileTest" time="0.0"/>
+  <testcase name="nullAndEmpty_notFiltered" classname="com.pad2.filemanager.smb.WpsSaveDetectorIsTempFileTest" time="0.0"/>
+  <testcase name="digitPrefixedNameWithExtension_notFiltered" classname="com.pad2.filemanager.smb.WpsSaveDetectorIsTempFileTest" time="0.0"/>
+  <testcase name="legacyTwoSegmentForm_isFiltered" classname="com.pad2.filemanager.smb.WpsSaveDetectorIsTempFileTest" time="0.0"/>
+  <testcase name="measuredIntermediateFile_isFiltered" classname="com.pad2.filemanager.smb.WpsSaveDetectorIsTempFileTest" time="0.001"/>
+  <testcase name="wpsLockAndTempPrefixes_areFiltered" classname="com.pad2.filemanager.smb.WpsSaveDetectorIsTempFileTest" time="0.0"/>
+  <testcase name="regularDocument_notFiltered" classname="com.pad2.filemanager.smb.WpsSaveDetectorIsTempFileTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

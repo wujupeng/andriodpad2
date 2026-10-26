@@ -1,0 +1,14 @@
+{
+  "scenario": "d5-06",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "前置 V4=pass（d5-01 结束态）: V4 | 回写成功 | 通过 | 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2... 历史 1 条·最近 [11:50:25] fail(执行回写) Writeback failed: STATUS_ACCESS_DENIED (0xc0000022): Create failed for \\\\192.168.2.3\\share\\test-render.docx.tmp179255462",
+    "前置 V4 history 含 fail 记录（d5-01 产物）",
+    "已点击「导出日志到共享」",
+    "导出成功提示出现",
+    "导出文件: m2a-log-2026-10-21T03-50-58.txt",
+    "导出门禁段 V4 行=pass（与页面终态一致）",
+    "导出历史段含 fail(执行回写) 记录（同源快照）"
+  ]
+}

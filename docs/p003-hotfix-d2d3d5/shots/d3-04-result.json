@@ -1,0 +1,13 @@
+{
+  "scenario": "d3-04",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "已点击「另存为检测」",
+    "saveAsDiscovered=false + 安全回退提示",
+    "logcat: none found (safe fallback)（空结果与扫描失败可区分）",
+    "logcat: skipped 跳过记录存在（审计行②）"
+  ]
+}

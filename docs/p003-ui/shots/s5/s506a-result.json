@@ -1,0 +1,42 @@
+{
+  "results": {
+    "v1": [
+      {
+        "round": 1,
+        "earlyFeedback": false,
+        "connected": true,
+        "elapsedMs": 789
+      },
+      {
+        "round": 2,
+        "earlyFeedback": false,
+        "connected": true,
+        "elapsedMs": 781
+      },
+      {
+        "round": 3,
+        "earlyFeedback": false,
+        "connected": true,
+        "elapsedMs": 787
+      }
+    ],
+    "v0": {
+      "timeoutBanner": "连接失败：凭据读取失败（超时 8000ms），请重试",
+      "retryRecovered": true,
+      "elapsedMs": 12131
+    },
+    "v2": {
+      "pluginAuthFail": "FAILED:Connection failed: STATUS_LOGON_FAILURE (0xc000006d): Authen"
+    },
+    "v3": {
+      "singleConnectCall": true
+    },
+    "v4": {
+      "banner": "连接失败：服务器无法连接，请检查网络或地址"
+    },
+    "v5": {
+      "reconnected": true
+    }
+  },
+  "ts": "2026-10-23T03:33:31.861Z"
+}

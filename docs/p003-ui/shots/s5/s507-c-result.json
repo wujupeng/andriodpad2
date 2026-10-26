@@ -1,0 +1,15 @@
+{
+  "results": {
+    "C1": {
+      "offlineFail": true,
+      "srcKept": true,
+      "retrySuccess": true,
+      "contentVerified": true
+    },
+    "C2": {
+      "remoteChanged": true,
+      "extSha": "84118bc48b934a9e"
+    }
+  },
+  "ts": "2026-10-23T07:56:40.930Z"
+}

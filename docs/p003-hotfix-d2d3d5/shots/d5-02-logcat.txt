@@ -1,0 +1,15 @@
+--------- beginning of (HKS)3E9EFEE7658097F3241E3B5BD3E64A2A8B0FB8427EFFA476FD581B996FDE60D4CB74DB61AB0D7193F9C6E4C97BB92DA5D062BB71F6424C73C9025E0DD2409371FDE3618567839F2AC2925E1681EE0DC46E312D507678456C7343E169ED224548F020D57CAD40EAF4816DAC81CA4BABC1B4DD35848C396672DC5B326FF51C4374BFB467ADAAADFF4086259339F246B0858115666CB1C9A0120A4D593F94B36B4D370E720BD86F4B3EF5E13725EE05EA0543A759FFFD353C9BED58796ADAFC40B4A8E62A11BA1A20AFBCB2F5FBE924A3715016AA93AB372610D5BA8E0273B97DD7CFC28ED936DEBD80D2971923E809E249C0A8B40147F457126AA919243D056E7F(HKE)
+--------- beginning of main
+10-21 11:41:35.278 10348 16277 I WpsDeliveryHandler: Opening file in WPS: test-render.docx
+10-21 11:41:35.346 10348 16277 I WpsDeliveryHandler: Remote file size: 9164 bytes
+10-21 11:41:35.492 10348 16277 I WpsDeliveryHandler: Delivery strategy: DeliveryStrategy{uriScheme=FILE_URI_FIRST, mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document', intentAction='ACTION_VIEW'}
+10-21 11:41:35.494 10348 16277 I WpsSaveDetector: Stopped monitoring
+10-21 11:41:35.498 10348 16277 I WpsSaveDetector: Parent dir observer started on: /storage/emulated/0/PAD2
+10-21 11:41:35.498 10348 16277 I WpsSaveDetector: Started monitoring: /storage/emulated/0/PAD2/smb_cache/test-render.docx
+10-21 11:41:35.655 10348 16277 I WpsDeliveryHandler: File delivered via file:// (android.intent.action.VIEW): test-render.docx -> /storage/emulated/0/PAD2/smb_cache/test-render.docx
+10-21 11:41:41.328 10348 16277 I WpsSaveDetector: Monitoring paused for writeback
+10-21 11:41:41.453 10348 16277 I WpsSaveDetector: Monitoring resumed after writeback
+10-21 11:42:52.637 10348 16277 I WpsSaveDetector: Monitoring paused for writeback
+10-21 11:42:52.982 10348 16277 I WpsDeliveryHandler: Writeback verified: remote SHA-256 matches local
+10-21 11:42:52.982 10348 16277 I WpsSaveDetector: Baseline updated: SHA-256=5beb889a36fd4ae2... mtime=1792554095395
+10-21 11:42:52.982 10348 16277 I WpsSaveDetector: Monitoring resumed after writeback

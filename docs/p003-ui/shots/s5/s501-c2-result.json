@@ -1,0 +1,14 @@
+{
+  "v2": {
+    "v2Pass": false,
+    "saveSuccess": false,
+    "v2Detail": "V2"
+  },
+  "v4": {
+    "v4Pass": false,
+    "v4Detail": "V4"
+  },
+  "serverSha": "8b7e3208dc794b1874765a2e219a9dcff8bd1a842dc6a7cff74cc61d5179b83b  /mnt/share/gate4-test/年度报告.docx",
+  "baseline": "b5c8aa5499e0ac1809105a2d960eeaac32c1878fe521eabc2964359ec6a8dd2a",
+  "ts": "2026-10-22T04:46:09.799Z"
+}

@@ -1,0 +1,12 @@
+{
+  "results": {
+    "s7": {
+      "honestFail": true,
+      "srcKept": true
+    },
+    "s8": {
+      "permissionDenied": true
+    }
+  },
+  "ts": "2026-10-22T09:15:52.622Z"
+}

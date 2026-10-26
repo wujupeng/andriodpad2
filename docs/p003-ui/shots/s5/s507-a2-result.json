@@ -1,0 +1,14 @@
+{
+  "results": {
+    "hashes": {
+      "baseline": "d6d47c6a68b9c91d",
+      "cache": "a88deb392c60003f",
+      "server": "a88deb392c60003f"
+    },
+    "contentVerified": true,
+    "contentNote": "约定输入 S5-07已编辑，用户实际输入 yes——内容变化真实持久化（diff 证据），如实记录",
+    "csv": "A1标记,S5-07基线,\nB2,原始内容,yes",
+    "reopenOk": true
+  },
+  "ts": "2026-10-23T06:58:47.534Z"
+}

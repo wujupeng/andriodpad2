@@ -1,0 +1,14 @@
+--------- beginning of (HKS)3514CB3F0C195F4E6E90B2D39FD3D4ADA15DACE827D8B586165C5BDAA4323584FD77695F3762280F51B5C17277D4B3BFFF1361E78BCA6D9F482BB2E8C492B2F188A2658F39488FE7DFF6B21F9C28166A0C77849C41731212B761CD201E02769789F99A03BF96E076DEDB1ED17554A0D1248DA5B4F070466F9062E0DD1337DDE1F31F84CF17CD0F562F085A1820C76DB6D983E735FA51E05FEF837AFD61B89BEC68D74718795F7F9714A7ACB70A23426C0550EFCA883D030E4D5BBCD84C55C0D1535A7D6F5934728F73814F22C7BCB3CBC2422D12EBBD9BA97A061E5DCC6B5107636CEE89B82D4F7623270AF93F8787359401737339C74E789F5C37BC473391C9(HKE)
+--------- beginning of main
+10-21 10:50:56.714  2898 10611 I WpsDeliveryHandler: Foreground check for missed events
+10-21 10:50:56.714  2898 10611 I WpsSaveDetector: Foreground check triggered
+10-21 10:50:56.716  2898 10611 I WpsSaveDetector: Verdict: DETECTION_UNCERTAIN — mtime unchanged (no file modification detected)
+10-21 10:50:56.716  2898 10611 I SaveAsDiscoveryService: Scanning for save-as results: original=test-render.docx, window=[1792549083254, 1792551056716], cacheSizeKnown=true
+10-21 10:50:56.717  2898 10611 I SaveAsDiscoveryService: Scanning paths: [/storage/emulated/0/, /storage/emulated/0/Documents/, /storage/emulated/0/Download/, /storage/emulated/0/PAD2/smb_cache/, /storage/emulated/0/Download/WPS Office/] (declared scan scope)
+10-21 10:50:56.758  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/ files=120 skipped=-
+10-21 10:50:56.761  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Documents/ files=0 skipped=-
+10-21 10:50:56.766  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Download/ files=6 skipped=-
+10-21 10:50:56.770  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/PAD2/smb_cache/ files=6 skipped=-
+10-21 10:50:56.772  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Download/WPS Office/ files=0 skipped=-
+10-21 10:50:56.772  2898 10611 I SaveAsDiscoveryService: Scan complete: none found (safe fallback)
+10-21 10:50:56.772  2898 10611 I WpsDeliveryHandler: Save-as not auto-discovered, prompting manual select

@@ -1,0 +1,11 @@
+{
+  "results": {
+    "connected": {
+      "connectedBadge": true,
+      "listCard": true,
+      "noFail": true,
+      "connectingSeen": true
+    }
+  },
+  "ts": "2026-10-21T05:56:08.456Z"
+}

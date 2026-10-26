@@ -1,0 +1,32 @@
+{
+  "scenario": "d3-03",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "已点击「另存为检测」",
+    "扫描路径行覆盖: /storage/emulated/0/Documents/",
+    "候选发现（Documents/）",
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "已点击「另存为检测」",
+    "扫描路径行覆盖: /storage/emulated/0/Download/",
+    "候选发现（Download/）",
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "已点击「另存为检测」",
+    "扫描路径行覆盖: /storage/emulated/0/",
+    "候选发现（根路径 /storage/emulated/0/）",
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "已点击「另存为检测」",
+    "扫描路径行覆盖: /storage/emulated/0/Download/WPS Office/",
+    "候选发现（Download/WPS Office/）",
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "已点击「另存为检测」",
+    "扫描路径行覆盖: /storage/emulated/0/PAD2/smb_cache/",
+    "候选发现（smb_cache/（监听目录同目录另存为））"
+  ]
+}

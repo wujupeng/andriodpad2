@@ -1,0 +1,14 @@
+{
+  "scenario": "d5-05",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "App 重启后已重连 SMB",
+    "①全新会话回写后 V4=pass: V4 | 回写成功 | 通过 | 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2...",
+    "②终态后再次回写被拒（拒绝隐式重置，保持 pass）: V4 | 回写成功 | 通过 | 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2... 历史 1 条·最近 [11:48:57] pass(执行回写) 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2...",
+    "②history 追加被挡事件: [11:48:57] pass(执行回写) 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2...",
+    "App 重启后已重连 SMB",
+    "③页面重载后 V1-V7 全部回到 pending（显式重置等价物）",
+    "④重跑 V4 场景正确推进 pass: V4 | 回写成功 | 通过 | 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2..."
+  ]
+}

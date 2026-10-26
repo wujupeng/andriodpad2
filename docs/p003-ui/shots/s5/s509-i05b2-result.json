@@ -1,0 +1,13 @@
+{
+  "results": {
+    "hashes": {
+      "baseline": "44acba56f9ced3d6",
+      "cache": "aa27563072644229",
+      "server": "aa27563072644229"
+    },
+    "contentVerified": true
+  },
+  "log": "10-24 07:53:48.606 18239 24422 I WpsSaveDetector: Verdict: SAVE_SUCCESS — 44acba56f9ced3d6... -> aa27563072644229...\r\n10-24 07:53:48.619 18239 18239 I Capacitor/Console: File:  - Line 333 - Msg: {\"contentChanged\":true,\"evidence\":\"mtime changed AND SHA-256 changed — three-factor correlation confirmed\",\"baselineHash\":\"44acba56f9ced3d6c6271473da157a0c7a8217082ca51867fa99a77b4aeec6f0\",\"originalFilePath\":\"/storage/emulated/0/PAD2/smb_cache/表格I5B.xls\",\"saveAsDetected\":false,\"currentMtime\":179279934300",
+  "csv": "I5标记,集成回归xls,\nR2,行2,yes",
+  "ts": "2026-10-23T23:54:23.658Z"
+}

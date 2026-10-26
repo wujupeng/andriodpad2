@@ -1,0 +1,28 @@
+{
+  "results": {
+    "TA2": {
+      "ok": true,
+      "elapsedMs": 12,
+      "beforeMtime": 1792712672574
+    },
+    "TA2_server": "p2已存在.txt\np2改名A.txt\np2源C.txt\np2目标D.txt\n1792712672 p2改名A.txt",
+    "TB2": {
+      "ok": false,
+      "err": "Rename probe failed: STATUS_OBJECT_NAME_COLLISION (0xc0000035): SetInfo failed for SMB2FileId{persistentHandle=e3 28 09 24 00 00 00 00}"
+    },
+    "TB2_server": "9 p2已存在.txt\n6 p2改名A.txt",
+    "TC2": {
+      "ok": true,
+      "elapsedMs": 46,
+      "beforeMtime": 1792712672574
+    },
+    "TC2_server": "p2已存在.txt\np2改名A.txt\np2改名C.txt\np2目标D.txt",
+    "TD2": {
+      "ok": true,
+      "elapsedMs": 36,
+      "beforeMtime": 1792712672574
+    },
+    "TD2_server": "ls: cannot access 'p2改名C.txt': No such file or directory\np2目标D.txt\nC2-src"
+  },
+  "ts": "2026-10-22T23:45:47.898Z"
+}

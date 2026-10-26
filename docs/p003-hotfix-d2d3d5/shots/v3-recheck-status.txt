@@ -1,0 +1,6 @@
+V3 复测（T10.7）判定记录
+判定时刻: 2026-10-21 11:1x（D3 六场景全 PASS 后采集）
+组合覆盖: D2-02 类 SAVE_AS 识别（d3-01 另存为至监听外 Documents 触发 SAVE_AS_DETECTED + 三路决策提示）+ D3-01~03 另存为发现（level=A/B + 5 路径覆盖）
+同一验证会话: smb_cache/test-render.docx 编辑会话（10:18 建立，全程未中断）
+V3 行状态: 通过（HOLD → PASS）
+V3 行详情: V3保存行为识别通过另存为已识别: / torage/emulated/0/Document /te t-render.docx 历史 8 条·最近 [10:45:44] pa (另存为检测) 另存为已识别: / torage/emulated/0/Document /te t-render-v2.docx

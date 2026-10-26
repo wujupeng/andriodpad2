@@ -1,0 +1,79 @@
+--------- beginning of (HKS)3ACC90748A4F89CA73A33ABE01C403FD3CF31F20D5E99E48582067BBA9AAA7E31B849FFEA646FB56B0D492DA4852577F91A5624BFBBE6D1917308151257007F8123635B123A9E71A5B0EB4A90F24B3CAE1BE92D0CEB9B665843D6622B7F196928FD98565C5DBA9F649EDE9E4FDB58FD1C97952DFA6DFDC1CCBD1DE9559AD092F828514A0BB7CCD28240CB62463B791E625F404CABDD79D3F20C3B28690CE8063B8B40FF84B3943198B6880CA3839DB3FBC768818F56CBD790054410A206A15EACA7C04E2E6044F44014A1CA34CB25BBC3513A5F666364BF10423CC6778D9E58ACAEDAF2B99CA4E0467C2BEB38E26CE956EE5FC176F3E5A343878154B22F129AD(HKE)
+--------- beginning of main
+10-21 10:03:23.162 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check1043194563
+10-21 10:03:23.163 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check1043194563
+10-21 10:03:23.406 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check1862488925
+10-21 10:03:23.407 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check1862488925
+10-21 10:03:23.684 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1899959938
+10-21 10:03:23.685 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1899959938
+10-21 10:03:23.966 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-473371547
+10-21 10:03:23.966 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-473371547
+10-21 10:03:24.227 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1904043793
+10-21 10:03:24.228 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1904043793
+10-21 10:03:24.439 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-412101502
+10-21 10:03:24.440 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-412101502
+10-21 10:03:26.309 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check617829729
+10-21 10:03:26.310 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check617829729
+10-21 10:03:26.337 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1810676348
+10-21 10:03:26.338 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1810676348
+10-21 10:03:26.364 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1974227746
+10-21 10:03:26.365 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1974227746
+10-21 10:03:26.385 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check1688981587
+10-21 10:03:26.386 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check1688981587
+10-21 10:03:26.404 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check1258566818
+10-21 10:03:26.405 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check1258566818
+10-21 10:03:26.424 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check1778459260
+10-21 10:03:26.425 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check1778459260
+10-21 10:03:26.443 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check125425497
+10-21 10:03:26.444 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check125425497
+10-21 10:03:26.462 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check2002229948
+10-21 10:03:26.463 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check2002229948
+10-21 10:03:26.483 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1539534046
+10-21 10:03:26.484 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1539534046
+10-21 10:03:26.504 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1004821167
+10-21 10:03:26.505 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1004821167
+10-21 10:03:26.523 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check1246446698
+10-21 10:03:26.523 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check1246446698
+10-21 10:03:26.543 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-514737645
+10-21 10:03:26.543 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-514737645
+10-21 10:03:26.562 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1431141613
+10-21 10:03:26.562 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1431141613
+10-21 10:03:26.580 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1981892178
+10-21 10:03:26.581 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1981892178
+10-21 10:03:26.601 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1291003510
+10-21 10:03:26.602 31144  2033 I WpsSaveDetector: Temp file filtered: .moffice_wr_check-1291003510
+10-21 10:03:31.392 31144  2033 I WpsSaveDetector: Temp file filtered: 1706105006.-1908999883354819177
+10-21 10:03:31.393 31144  2033 I WpsSaveDetector: Temp file filtered: 1706105006.-1908999883354819177
+10-21 10:03:31.394 31144  2033 I WpsSaveDetector: Temp file filtered: 1706105006.-1908999883354819177
+10-21 10:03:31.394 31144  2033 I WpsSaveDetector: Temp file filtered: 1706105006.-1908999883354819177
+10-21 10:03:31.394 31144  2033 I WpsSaveDetector: Temp file filtered: 1706105006.-1908999883354819177
+10-21 10:03:31.394 31144  2033 I WpsSaveDetector: Temp file filtered: 1706105006.-1908999883354819177
+10-21 10:03:31.495 31144  2033 I WpsSaveDetector: Save-as evidence recorded: d2-02-inlisten2.docx
+10-21 10:03:31.496 31144  2033 I WpsSaveDetector: Save-as evidence recorded: d2-02-inlisten2.docx
+10-21 10:03:31.497 31144  2033 I WpsSaveDetector: Save-as evidence recorded: d2-02-inlisten2.docx
+10-21 10:05:24.977 31144  1710 I WpsSaveDetector: Foreground check triggered
+10-21 10:05:24.978 31144  1710 I WpsSaveDetector: Verdict: SAVE_AS_DETECTED — d2-02-inlisten2.docx (existence verified)
+10-21 10:05:24.978 31144  1710 I SaveAsDiscoveryService: Scanning for save-as results: original=test-render.docx, window=[1792547612830, 1792548324978], cacheSizeKnown=true
+10-21 10:05:24.978 31144  1710 I SaveAsDiscoveryService: Scanning paths: [/storage/emulated/0/, /storage/emulated/0/Documents/, /storage/emulated/0/Download/, /storage/emulated/0/PAD2/smb_cache/, /storage/emulated/0/Download/WPS Office/] (declared scan scope)
+10-21 10:05:24.993 31144  1710 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/ files=120 skipped=-
+10-21 10:05:24.998 31144  1710 I SaveAsDiscoveryService: Candidate: /storage/emulated/0/Documents/d2-02-saveas2.docx level=B signals=[ext=docx, sizeRatio=1.00, tight-window mtime=1792547711000]
+10-21 10:05:24.998 31144  1710 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Documents/ files=2 skipped=-
+10-21 10:05:25.002 31144  1710 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Download/ files=5 skipped=-
+10-21 10:05:25.005 31144  1710 I SaveAsDiscoveryService: Candidate: /storage/emulated/0/PAD2/smb_cache/d2-02-inlisten.docx level=B signals=[ext=docx, sizeRatio=1.00, tight-window mtime=1792548038000]
+10-21 10:05:25.005 31144  1710 I SaveAsDiscoveryService: Candidate: /storage/emulated/0/PAD2/smb_cache/d2-02-inlisten2.docx level=B signals=[ext=docx, sizeRatio=1.00, tight-window mtime=1792548211000]
+10-21 10:05:25.005 31144  1710 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/PAD2/smb_cache/ files=8 skipped=-
+10-21 10:05:25.006 31144  1710 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Download/WPS Office/ files=0 skipped=not-found
+10-21 10:05:25.006 31144  1710 I SaveAsDiscoveryService: Scan complete: 3 candidate(s) [A=0, B=3]
+10-21 10:05:46.110 31144  1710 I WpsSaveDetector: Foreground check triggered
+10-21 10:05:46.110 31144  1710 I WpsSaveDetector: Verdict: SAVE_AS_DETECTED — d2-02-inlisten2.docx (existence verified)
+10-21 10:05:46.110 31144  1710 I SaveAsDiscoveryService: Scanning for save-as results: original=test-render.docx, window=[1792547612830, 1792548346110], cacheSizeKnown=true
+10-21 10:05:46.110 31144  1710 I SaveAsDiscoveryService: Scanning paths: [/storage/emulated/0/, /storage/emulated/0/Documents/, /storage/emulated/0/Download/, /storage/emulated/0/PAD2/smb_cache/, /storage/emulated/0/Download/WPS Office/] (declared scan scope)
+10-21 10:05:46.125 31144  1710 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/ files=120 skipped=-
+10-21 10:05:46.127 31144  1710 I SaveAsDiscoveryService: Candidate: /storage/emulated/0/Documents/d2-02-saveas2.docx level=B signals=[ext=docx, sizeRatio=1.00, tight-window mtime=1792547711000]
+10-21 10:05:46.127 31144  1710 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Documents/ files=2 skipped=-
+10-21 10:05:46.129 31144  1710 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Download/ files=5 skipped=-
+10-21 10:05:46.132 31144  1710 I SaveAsDiscoveryService: Candidate: /storage/emulated/0/PAD2/smb_cache/d2-02-inlisten.docx level=B signals=[ext=docx, sizeRatio=1.00, tight-window mtime=1792548038000]
+10-21 10:05:46.132 31144  1710 I SaveAsDiscoveryService: Candidate: /storage/emulated/0/PAD2/smb_cache/d2-02-inlisten2.docx level=B signals=[ext=docx, sizeRatio=1.00, tight-window mtime=1792548211000]
+10-21 10:05:46.132 31144  1710 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/PAD2/smb_cache/ files=8 skipped=-
+10-21 10:05:46.132 31144  1710 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Download/WPS Office/ files=0 skipped=not-found
+10-21 10:05:46.132 31144  1710 I SaveAsDiscoveryService: Scan complete: 3 candidate(s) [A=0, B=3]

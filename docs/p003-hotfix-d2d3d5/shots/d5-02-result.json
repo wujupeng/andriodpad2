@@ -1,0 +1,13 @@
+{
+  "scenario": "d5-02",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "App 重启后已重连 SMB",
+    "重启后会话重建（已打开）",
+    "①只读回写后 V4=fail: V4 | 回写成功 | 失败 | Writeback failed: STATUS_ACCESS_DENIED (0xc0000022): Create failed for \\\\192.168.2.3\\share\\test-render.docx.tmp1792554101414",
+    "SMB 断开重连成功（树连接刷新，smb reload 生效）",
+    "②回写成功后 V4 仍=fail（失败态防覆盖，对称保护）: V4 | 回写成功 | 失败 | Writeback failed: STATUS_ACCESS_DENIED (0xc0000022): Create failed for \\\\192.168.2.3\\share\\test-render.docx.tmp1792554101414 历史 1 条·最近 [11:42:52] pass(执行回写) 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2...",
+    "③history 含追加 pass(执行回写) 记录: [11:42:52] pass(执行回写) 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2..."
+  ]
+}

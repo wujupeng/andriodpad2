@@ -1,0 +1,38 @@
+{
+  "evidence": {
+    "beforeOffline": {
+      "connected": false,
+      "netInterrupted": false,
+      "reconnectBtn": false,
+      "rows": 4,
+      "emptyDir": false,
+      "path": "Gate3编辑后gate4-test"
+    },
+    "afterOfflineOp": {
+      "connected": false,
+      "netInterrupted": true,
+      "reconnectBtn": true,
+      "rows": 0,
+      "emptyDir": true,
+      "path": "Gate3编辑后gate4-test"
+    },
+    "afterReconnect": {
+      "connected": false,
+      "netInterrupted": false,
+      "reconnectBtn": false,
+      "rows": 0,
+      "emptyDir": true,
+      "path": "Gate3编辑后gate4-test"
+    },
+    "afterWaitWindow": {
+      "connected": false,
+      "netInterrupted": false,
+      "reconnectBtn": false,
+      "rows": 0,
+      "emptyDir": true,
+      "path": "Gate3编辑后gate4-test"
+    },
+    "listDirectoryCalls": "0"
+  },
+  "ts": "2026-10-23T05:49:02.308Z"
+}

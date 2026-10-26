@@ -1,0 +1,12 @@
+{
+  "scenario": "d3-06",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "已点击「另存为检测」",
+    "logcat: Temp file filtered 行存在（D2/D3 双保险之 D2 侧）",
+    "候选清单不含数字形态文件（E2 口径一致）"
+  ]
+}

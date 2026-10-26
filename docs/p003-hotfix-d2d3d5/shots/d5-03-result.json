@@ -1,0 +1,15 @@
+{
+  "scenario": "d5-03",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "前置 V4 终态记录: V4 | 回写成功 | 失败 | Writeback failed: STATUS_ACCESS_DENIED (0xc0000022): Create failed for \\\\192.168.2.3\\share\\test-render.docx.tmp1792554101414 历史 1 条·最近 [11:42:52] pass(执行回写) 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2...",
+    "①V5/V6 类操作（检查远程变更）后 V4 行不变",
+    "②服务器冲突模拟后 V4 行不变",
+    "V6 自身正确推进: V6 | 并发冲突 | 通过 | 远程 mtime=1792554174437 ≠ 基线=1792553645007 历史 1 条·最近 [11:45:08] pass(检查远程变更) 远程 mtime=1792554174437 ≠ 基线=1792553645007",
+    "③断网恢复（svc wifi disable/enable）后 V4 行不变",
+    "V1 行状态合法（smoke）: V1 | WPS 可打开 | 通过 | URI: file:///storage/emulated/0/PAD2/smb_cache/test-render.docx, 基线SHA-256: 5beb889a36fd4ae2..."
+  ]
+}

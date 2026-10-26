@@ -1,0 +1,16 @@
+{
+  "scenario": "d3-02",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "已点击「另存为检测」",
+    "①基名相关候选已发现",
+    "①logcat: level=A（基名关联准入）",
+    "已点击「另存为检测」",
+    "②全新名候选已发现（B 级组合信号）",
+    "②logcat: level=B（组合信号准入）",
+    "②logcat: B 级 signals 明细（sizeRatio 可审计）"
+  ]
+}

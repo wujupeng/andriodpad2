@@ -1,0 +1,13 @@
+{
+  "results": {
+    "newUiEdit": {
+      "skeletonMsg": true,
+      "banner": "编辑会话功能将在后续版本交付（当前为分发骨架）"
+    },
+    "newUiOpen": {
+      "skeletonMsg": true,
+      "noWps": true
+    }
+  },
+  "ts": "2026-10-22T00:41:32.413Z"
+}

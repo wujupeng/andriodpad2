@@ -1,0 +1,34 @@
+{
+  "results": {
+    "TA": {
+      "ok": true,
+      "elapsedMs": 16,
+      "beforeMtime": 1792712250501,
+      "beforeSize": 21
+    },
+    "TA_server": "pr已存在.txt",
+    "TC": {
+      "ok": true,
+      "elapsedMs": 14,
+      "beforeMtime": 1792712542574,
+      "beforeSize": 7
+    },
+    "TC_server": "pr已存在.txt",
+    "TB": {
+      "ok": true,
+      "elapsedMs": 19,
+      "beforeMtime": 1792712543686,
+      "beforeSize": 7
+    },
+    "TB_server": "pr已存在.txt\n12 pr已存在.txt",
+    "TD": {
+      "ok": true,
+      "elapsedMs": 44,
+      "beforeMtime": 1792712544818,
+      "beforeSize": 17
+    },
+    "TD_server": "ls: cannot access 'pr源D.txt': No such file or directory\npr目标D.txt\nNEW-CONTENT-override",
+    "mtimeCheck": "GONE"
+  },
+  "ts": "2026-10-22T23:42:26.449Z"
+}

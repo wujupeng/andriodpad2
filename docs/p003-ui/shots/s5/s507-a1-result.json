@@ -1,0 +1,11 @@
+{
+  "results": {
+    "v1": {
+      "baseline": "d6d47c6a68b9c91d",
+      "uri": true
+    },
+    "serverBaseline": "d6d47c6a68b9c91d2ca5920246fa4b0f8a49a5a1eea5bb846270f457191308a9",
+    "file": "表格测试A.xlsx"
+  },
+  "ts": "2026-10-23T06:46:15.477Z"
+}

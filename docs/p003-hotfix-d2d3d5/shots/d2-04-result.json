@@ -1,0 +1,13 @@
+{
+  "scenario": "d2-04",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "已点击「检查本地变更」",
+    "基线检测: changed=false",
+    "logcat: Verdict: DETECTION_UNCERTAIN（无证据诚实回退）",
+    "logcat: mtime unchanged 证据行存在"
+  ]
+}

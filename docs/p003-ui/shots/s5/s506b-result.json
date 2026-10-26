@@ -1,0 +1,35 @@
+{
+  "results": {
+    "stockDuplicate": {
+      "count": 4,
+      "dupCount": 0
+    },
+    "B1": {
+      "count": 2
+    },
+    "B2": {
+      "upsert": true
+    },
+    "B4": {
+      "count": 2
+    },
+    "B6": {
+      "count": 4,
+      "allUnique": true
+    },
+    "B3": {
+      "count": 4
+    },
+    "B5": {
+      "count": 4,
+      "stable": true
+    },
+    "finalState": [
+      {
+        "name": "Gate3编辑后",
+        "host": "192.168.2.3"
+      }
+    ]
+  },
+  "ts": "2026-10-23T04:55:41.239Z"
+}

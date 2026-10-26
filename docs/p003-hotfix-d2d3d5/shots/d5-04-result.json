@@ -1,0 +1,16 @@
+{
+  "scenario": "d5-04",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "前置 V4=fail 态（d5-02 结束态）: V4 | 回写成功 | 失败 | Writeback failed: STATUS_ACCESS_DENIED (0xc0000022): Create failed for \\\\192.168.2.3\\share\\test-render.docx.tmp1792554101414 历史 6 条·最近 [11:46:50] pass(执行回写) 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2...",
+    "①快速连续触发回写 ×5（并发竞态注入）",
+    "②5 次成功回写未将 fail 覆盖为 pass（反向路径封闭）: V4 | 回写成功 | 失败 | Writeback failed: STATUS_ACCESS_DENIED (0xc0000022): Create failed for \\\\192.168.2.3\\share\\test-render.docx.tmp1792554101414 历史 11 条·最近 [11:47:39] pass(执行回写) 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2...",
+    "②无卡死中间态",
+    "③history 承载被挡成功事件: [11:47:39] pass(执行回写) 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2...",
+    "④交错触发后 V4 终态不变（details 一致，history 正常追加）",
+    "④终态与 history 自洽（同源快照）"
+  ]
+}

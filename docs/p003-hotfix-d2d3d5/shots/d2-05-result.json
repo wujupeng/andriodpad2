@@ -1,0 +1,14 @@
+{
+  "scenario": "d2-05",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "touch 前 stat: 1792548936 9143",
+    "touch 后 stat 已变化: 1792548937 9143",
+    "已点击「检查本地变更」",
+    "logcat: Verdict: MTIME_FALSE_POSITIVE（mtime 变 + SHA 同）",
+    "logcat: 假阳性证据行存在"
+  ]
+}

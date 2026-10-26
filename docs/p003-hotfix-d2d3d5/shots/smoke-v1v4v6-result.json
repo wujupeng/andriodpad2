@@ -1,0 +1,11 @@
+{
+  "scenario": "smoke-v1v4v6",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "门禁表格 7 行完整（V1-V7 回归冒烟）",
+    "V1 行存在: V1 | WPS 可打开 | 通过 | URI: file:///storage/emulated/0/PAD2/smb_cache/test-render.docx, 基线SHA-256: 5beb889a36fd4ae2...",
+    "V4 行存在: V4 | 回写成功 | 通过 | 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2... 历史 1 条·最近 [11:50:25] fail(执行回写) Writeback failed: STATUS_ACCESS_DENIED (0xc0000022): Create failed for \\\\192.168.2.3\\share\\test-render.docx.tmp179255462",
+    "V6 行存在: V6 | 并发冲突 | 待验证 | -"
+  ]
+}

@@ -1,0 +1,36 @@
+=== PAD2 M2-A 技术验证日志 ===
+导出时间: 2026/10/21 11:50:58
+SMB 服务器: 192.168.2.3/share (用户: debian)
+当前路径: 
+选中文件: test-render.docx
+
+=== V1-V7 验证门禁状态 ===
+V1 WPS 可打开: pass URI: file:///storage/emulated/0/PAD2/smb_cache/test-render.docx, 基线SHA-256: 5beb889a36fd4ae2...
+V2 WPS 可保存: pending 
+V3 保存行为识别: pending 
+V4 回写成功: pass 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2...
+  历史(1): [11:50:25] fail(执行回写) Writeback failed: STATUS_ACCESS_DENIED (0xc0000022): Create failed for \\192.168.2.3\share\test-render.docx.tmp179255462
+V5 回写失败不破坏: pending 
+V6 并发冲突: pending 
+V7 断网恢复: pending 
+
+=== 操作日志 ===
+[11:49:18] 连接 SMB 服务器: 192.168.2.3/share
+[11:49:18] SMB 连接成功
+[11:49:18] 浏览目录: (root)
+[11:49:21] 在 WPS 中打开: test-render.docx
+[11:49:21] WPS 打开成功, URI: file:///storage/emulated/0/PAD2/smb_cache/test-render.docx
+[11:49:21] 基线 SHA-256: 5beb889a36fd4ae2d76c828b860109bdaeb53142ffcd25861c7f9d4a12eef7ca
+[11:49:27] 执行回写...
+[11:49:27] 回写成功! SHA-256 校验通过
+[11:49:27] 本地: 5beb889a36fd4ae2d76c828b860109bdaeb53142ffcd25861c7f9d4a12eef7ca
+[11:49:27] 远程: 5beb889a36fd4ae2d76c828b860109bdaeb53142ffcd25861c7f9d4a12eef7ca
+[11:50:25] 执行回写...
+[11:50:25] 回写失败: Writeback failed: STATUS_ACCESS_DENIED (0xc0000022): Create failed for \\192.168.2.3\share\test-render.docx.tmp1792554625249
+
+=== 详细结果 ===
+WPS 打开结果: intentLaunched=true, intentAction=android.intent.action.VIEW, uriScheme=file, uri=file:///storage/emulated/0/PAD2/smb_cache/test-render.docx
+  baselineHash=5beb889a36fd4ae2d76c828b860109bdaeb53142ffcd25861c7f9d4a12eef7ca, baselineMtime=1792554561311
+回写结果: success=true
+  localHash=5beb889a36fd4ae2d76c828b860109bdaeb53142ffcd25861c7f9d4a12eef7ca
+  verifyHash=5beb889a36fd4ae2d76c828b860109bdaeb53142ffcd25861c7f9d4a12eef7ca

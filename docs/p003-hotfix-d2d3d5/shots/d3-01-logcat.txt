@@ -1,0 +1,15 @@
+--------- beginning of (HKS)1B5ADEAF5A1E1CAA3FC1ED7FCB1E388D3713790DC8949A9418D2DA91880D19013D013033CB4DAF3B889B04624F3BA7F9C2CF2D78D690528D2D1C57E2A2981233AC4A32B3BFAFAC7030D3897169887626432441560C04564C2789AC0E6391664D4AD667017173EE598A7A7F61A6DAF218D50772805EF748013BF30E5FCB51FC4C0754FD9B9A1A64BF43E065C21BAF84FB2D1934F7790DED3D764B1855917258625344ACCBCE1168206866C6EF07F7D4DC5E3802D2D5C81CA52B32B802E60837D86A8B84797B427F908A2EBD5AC6B86850BBDD8D11C5F031DD6B3538DCEE263E22C75FE17EC3ACB117718B7FCFAA6814FD9C50E536FB6BE7E16279B795C7DFDA19(HKE)
+--------- beginning of main
+10-21 10:29:18.101  2898 10611 I WpsDeliveryHandler: Foreground check for missed events
+10-21 10:29:18.101  2898 10611 I WpsSaveDetector: Foreground check triggered
+10-21 10:29:18.102  2898 10611 I WpsSaveDetector: Verdict: DETECTION_UNCERTAIN — mtime unchanged (no file modification detected)
+10-21 10:29:18.102  2898 10611 I SaveAsDiscoveryService: Scanning for save-as results: original=test-render.docx, window=[1792549083254, 1792549758102], cacheSizeKnown=true
+10-21 10:29:18.103  2898 10611 I SaveAsDiscoveryService: Scanning paths: [/storage/emulated/0/, /storage/emulated/0/Documents/, /storage/emulated/0/Download/, /storage/emulated/0/PAD2/smb_cache/, /storage/emulated/0/Download/WPS Office/] (declared scan scope)
+10-21 10:29:18.126  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/ files=120 skipped=-
+10-21 10:29:18.128  2898 10611 I SaveAsDiscoveryService: Candidate: /storage/emulated/0/Documents/test-render.docx level=A signals=[exact-name, mtime=1792549170000, size=9126]
+10-21 10:29:18.128  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Documents/ files=3 skipped=-
+10-21 10:29:18.130  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Download/ files=5 skipped=-
+10-21 10:29:18.133  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/PAD2/smb_cache/ files=8 skipped=-
+10-21 10:29:18.133  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Download/WPS Office/ files=0 skipped=not-found
+10-21 10:29:18.133  2898 10611 I SaveAsDiscoveryService: Scan complete: 1 candidate(s) [A=1, B=0]
+10-21 10:29:18.133  2898 10611 I WpsDeliveryHandler: Save-as discovered: /storage/emulated/0/Documents/test-render.docx

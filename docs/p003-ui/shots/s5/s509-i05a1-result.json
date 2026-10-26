@@ -1,0 +1,11 @@
+{
+  "results": {
+    "v1": {
+      "baseline": "b2af51a349f1afba",
+      "uri": true
+    },
+    "serverBaseline": "d6d47c6a68b9c91d2ca5920246fa4b0f8a49a5a1eea5bb846270f457191308a9",
+    "file": "表格I5A.xlsx"
+  },
+  "ts": "2026-10-23T11:02:57.028Z"
+}

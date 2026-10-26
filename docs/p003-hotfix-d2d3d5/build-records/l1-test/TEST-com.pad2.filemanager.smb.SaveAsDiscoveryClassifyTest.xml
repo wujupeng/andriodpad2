@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-10-21T01:08:05.559Z" hostname="debian" time="0.003">
+  <properties/>
+  <testcase name="b_sizeRatioBoundaries" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.001"/>
+  <testcase name="b_tightWindowBoundaries" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.0"/>
+  <testcase name="e2_intermediateFile_excludedTemp" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.0"/>
+  <testcase name="a2_baseNameRelated_extensionChanged_levelA" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.001"/>
+  <testcase name="e3_outsideToleranceWindow_excludedWindow" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.0"/>
+  <testcase name="a1_sameNameSameExtension_documentsPath_levelA" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.0"/>
+  <testcase name="b_extensionChangedWithoutNameRelation_notCandidate" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.0"/>
+  <testcase name="a2_baseNameRelated_sameExtension_levelA" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.0"/>
+  <testcase name="a_level_toleranceWindowBeforeStart_levelA" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.001"/>
+  <testcase name="e4_doesNotExcludeSameNameInOtherDirectories" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.0"/>
+  <testcase name="b_sizeUnknown_degradesHonestly_aLevelUnaffected" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.0"/>
+  <testcase name="b_extensionCaseInsensitive_levelB" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.0"/>
+  <testcase name="b_newNameSameExtension_inTightWindow_levelB" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.0"/>
+  <testcase name="e4_cacheOriginalSelf_excludedSelf" classname="com.pad2.filemanager.smb.SaveAsDiscoveryClassifyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

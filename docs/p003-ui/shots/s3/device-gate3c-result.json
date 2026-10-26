@@ -1,0 +1,13 @@
+{
+  "results": {
+    "tamper": {
+      "decryptFailBanner": true,
+      "reenterForm": true,
+      "noConnected": true,
+      "appAlive": true,
+      "noPlaintext": true
+    },
+    "encCleared": true
+  },
+  "ts": "2026-10-21T06:12:07.246Z"
+}

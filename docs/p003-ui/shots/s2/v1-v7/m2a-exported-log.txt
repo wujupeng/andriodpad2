@@ -1,0 +1,69 @@
+=== PAD2 M2-A 技术验证日志 ===
+导出时间: 2026/10/20 16:17:00
+SMB 服务器: 192.168.2.3/share (用户: debian)
+当前路径: 
+选中文件: test-render.docx
+
+=== V1-V7 验证门禁状态 ===
+V1 WPS 可打开: pass URI: file:///storage/emulated/0/PAD2/smb_cache/test-render.docx, 基线SHA-256: b5c8aa5499e0ac18...
+V2 WPS 可保存: pending 
+V3 保存行为识别: pending 
+V4 回写成功: fail Writeback failed: STATUS_ACCESS_DENIED (0xc0000022): Create failed for \\192.168.2.3\share\test-render.docx.tmp1792484081569
+V5 回写失败不破坏: pending 
+V6 并发冲突: pass 远程 mtime=1792483938866 ≠ 基线=1792146025640
+V7 断网恢复: pending 
+
+=== 操作日志 ===
+[15:54:35] 连接 SMB 服务器: 192.168.2.3/share
+[15:54:35] SMB 连接成功
+[15:54:35] 浏览目录: (root)
+[15:54:50] 在 WPS 中打开: test-render.docx
+[15:54:50] WPS 打开成功, URI: file:///storage/emulated/0/PAD2/smb_cache/test-render.docx
+[15:54:50] 基线 SHA-256: b5c8aa5499e0ac1809105a2d960eeaac32c1878fe521eabc2964359ec6a8dd2a
+[16:00:47] 检查本地文件变更...
+[16:00:47] 文件未变更
+[16:02:45] 执行另存为检测 foregroundCheck()...
+[16:02:45] 未发现另存为候选文件 (安全回退)
+[16:02:45] 提示: 未自动发现另存为文件，请手动选择文件
+[16:09:37] 检查本地文件变更...
+[16:09:37] 文件未变更
+[16:11:01] 执行另存为检测 foregroundCheck()...
+[16:11:01] 未发现另存为候选文件 (安全回退)
+[16:11:01] 提示: 未自动发现另存为文件，请手动选择文件
+[16:11:22] 执行回写...
+[16:11:22] 回写成功! SHA-256 校验通过
+[16:11:22] 本地: df4b123bde512ded7fc44f11045b48e947176bce9ec8e35bdb7b2460ade8f670
+[16:11:22] 远程: df4b123bde512ded7fc44f11045b48e947176bce9ec8e35bdb7b2460ade8f670
+[16:12:34] 检查远程文件变更...
+[16:12:34] 远程文件已变更 (mtime: 1792483938866)
+[16:13:53] 执行回写...
+[16:13:53] 回写成功! SHA-256 校验通过
+[16:13:53] 本地: df4b123bde512ded7fc44f11045b48e947176bce9ec8e35bdb7b2460ade8f670
+[16:13:53] 远程: df4b123bde512ded7fc44f11045b48e947176bce9ec8e35bdb7b2460ade8f670
+[16:14:17] 已断开连接
+[16:14:20] 连接 SMB 服务器: 192.168.2.3/share
+[16:14:20] SMB 连接成功
+[16:14:20] 浏览目录: (root)
+[16:14:41] 执行回写...
+[16:14:41] 回写失败: Writeback failed: STATUS_ACCESS_DENIED (0xc0000022): Create failed for \\192.168.2.3\share\test-render.docx.tmp1792484081569
+[16:15:42] 检查远程文件变更...
+[16:15:42] 检查失败: Check remote changed failed: failed to connect to /192.168.2.3 (port 445) from /:: (port 0) after 5000ms: connect failed: ENETUNREACH (Network is unreachable)
+[16:16:11] 已断开连接
+[16:16:13] 连接 SMB 服务器: 192.168.2.3/share
+[16:16:14] SMB 连接成功
+[16:16:14] 浏览目录: (root)
+
+=== 详细结果 ===
+WPS 打开结果: intentLaunched=true, intentAction=android.intent.action.VIEW, uriScheme=file, uri=file:///storage/emulated/0/PAD2/smb_cache/test-render.docx
+  baselineHash=b5c8aa5499e0ac1809105a2d960eeaac32c1878fe521eabc2964359ec6a8dd2a, baselineMtime=1792482890579
+本地变更: changed=false, contentChanged=false
+  newHash=undefined, baselineHash=b5c8aa5499e0ac1809105a2d960eeaac32c1878fe521eabc2964359ec6a8dd2a
+  observerDetectedChange=undefined, observerEventLog=(无)
+回写结果: success=true
+  localHash=df4b123bde512ded7fc44f11045b48e947176bce9ec8e35bdb7b2460ade8f670
+  verifyHash=df4b123bde512ded7fc44f11045b48e947176bce9ec8e35bdb7b2460ade8f670
+远程变更: remoteChanged=true
+  remoteMtime=1792483938866, baselineMtime=1792146025640
+另存为检测: saveAsDiscovered=false
+  saveAsFilePath=(无)
+  saveAsPrompt=未自动发现另存为文件，请手动选择文件

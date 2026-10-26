@@ -1,0 +1,18 @@
+--------- beginning of (HKS)60BF991455304B7EE5669AC33B4FBBE8A2BC4D6036BC19B3B0CB634EB1D6416DC0E7540CD64822B134207961360CD43CB068CFBFCD74E84C6BFD89D4B086C998091E85837B282E94CC49335458E9E7DB4771F4A490ED2A289F240F5CADEBB893380770B65971388A177838391D0E11AB2D401CF40574C3C4BA41F72C908A139C194882DB620C40591F48ABECB72FC637BE547424A956C22C08625743A6B8C6AA8D4FC25ED11EA4AC44FCC7C7FF38485830971129E48D05864C1D88B957CA03BFA7ECA4321C24B9A871CAF69F1346B3FDA73B122E7ABCC793EB73D36FF90C4B453A3C5037418EA6B2CF36E804A5222F1713CACD53C81492B96345BA175C44DAB8(HKE)
+--------- beginning of main
+10-21 10:43:08.423  2898 10611 I WpsDeliveryHandler: Foreground check for missed events
+10-21 10:43:08.424  2898 10611 I WpsSaveDetector: Foreground check triggered
+10-21 10:43:08.424  2898 10611 I WpsSaveDetector: Verdict: DETECTION_UNCERTAIN — mtime unchanged (no file modification detected)
+10-21 10:43:08.425  2898 10611 I SaveAsDiscoveryService: Scanning for save-as results: original=test-render.docx, window=[1792549083254, 1792550588424], cacheSizeKnown=true
+10-21 10:43:08.425  2898 10611 I SaveAsDiscoveryService: Scanning paths: [/storage/emulated/0/, /storage/emulated/0/Documents/, /storage/emulated/0/Download/, /storage/emulated/0/PAD2/smb_cache/, /storage/emulated/0/Download/WPS Office/] (declared scan scope)
+10-21 10:43:08.455  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/ files=120 skipped=-
+10-21 10:43:08.459  2898 10611 I SaveAsDiscoveryService: Candidate: /storage/emulated/0/Documents/test-render.docx level=A signals=[exact-name, mtime=1792549170000, size=9126]
+10-21 10:43:08.460  2898 10611 I SaveAsDiscoveryService: Candidate: /storage/emulated/0/Documents/test-render-v2.docx level=A signals=[base-name, mtime=1792549954000, size=9130]
+10-21 10:43:08.460  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Documents/ files=4 skipped=-
+10-21 10:43:08.468  2898 10611 I SaveAsDiscoveryService: Candidate: /storage/emulated/0/Download/final-review.docx level=B signals=[ext=docx, sizeRatio=1.00, tight-window mtime=1792550230000]
+10-21 10:43:08.469  2898 10611 I SaveAsDiscoveryService: Candidate: /storage/emulated/0/Download/docs-a3.docx level=B signals=[ext=docx, sizeRatio=1.00, tight-window mtime=1792550405000]
+10-21 10:43:08.469  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Download/ files=8 skipped=-
+10-21 10:43:08.473  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/PAD2/smb_cache/ files=8 skipped=-
+10-21 10:43:08.475  2898 10611 I SaveAsDiscoveryService: Scan path=/storage/emulated/0/Download/WPS Office/ files=0 skipped=-
+10-21 10:43:08.476  2898 10611 I SaveAsDiscoveryService: Scan complete: 4 candidate(s) [A=2, B=2]
+10-21 10:43:08.476  2898 10611 I WpsDeliveryHandler: Save-as discovered: /storage/emulated/0/Documents/test-render-v2.docx

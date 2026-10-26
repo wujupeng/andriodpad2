@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.pad2.filemanager.smb.WpsSaveDetectorVerdictTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-21T01:08:05.567Z" hostname="debian" time="0.002">
+  <properties/>
+  <testcase name="mtimeAndSha_yieldsSaveSuccess" classname="com.pad2.filemanager.smb.WpsSaveDetectorVerdictTest" time="0.0"/>
+  <testcase name="mtimeChanged_overridesStaleSaveAsEvidence_falsePositive" classname="com.pad2.filemanager.smb.WpsSaveDetectorVerdictTest" time="0.0"/>
+  <testcase name="mtimeAndSha_overridesSaveAsEvidence_saveSuccess" classname="com.pad2.filemanager.smb.WpsSaveDetectorVerdictTest" time="0.0"/>
+  <testcase name="noEvidence_fallsBackToUncertain" classname="com.pad2.filemanager.smb.WpsSaveDetectorVerdictTest" time="0.0"/>
+  <testcase name="mtimeOnly_yieldsMtimeFalsePositive" classname="com.pad2.filemanager.smb.WpsSaveDetectorVerdictTest" time="0.0"/>
+  <testcase name="saveAsEvidenceOnly_yieldsSaveAsDetected" classname="com.pad2.filemanager.smb.WpsSaveDetectorVerdictTest" time="0.0"/>
+  <testcase name="shaCalcFailed_overridesEverything_uncertain_8combinations" classname="com.pad2.filemanager.smb.WpsSaveDetectorVerdictTest" time="0.0"/>
+  <testcase name="shaChangedWithoutMtime_fallsBackToUncertain" classname="com.pad2.filemanager.smb.WpsSaveDetectorVerdictTest" time="0.0"/>
+  <testcase name="shaChangedWithSaveAsOnly_saveAsDetected" classname="com.pad2.filemanager.smb.WpsSaveDetectorVerdictTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,34 @@
+{
+  "results": {
+    "D2": {
+      "cancelled": true,
+      "pathShown": true
+    },
+    "D7": {
+      "uiGreyed": true,
+      "nativeReject": "REJECTED:Delete remote file failed: 不支持删除文件夹（本版本仅支持单文件删除）"
+    },
+    "D1": {
+      "deleted": true,
+      "othersKept": true
+    },
+    "D3": "FAILED:Delete remote file failed: 文件不存在: gate4-test\\待删除.txt",
+    "D4": {
+      "honestFail": true
+    },
+    "D6": {
+      "singleDelete": true,
+      "noCollateral": true
+    },
+    "D5": {
+      "honestFail": true,
+      "serverKept": true
+    },
+    "D8": {
+      "cacheIsolated": true,
+      "cacheFiles": 3
+    },
+    "D9": "capabilities.deleteRemote=true（启用）；回滚=改 false 一行（useActionAvailability notAvailable 灰显菜单+executeDelete notAvailable 禁用——双入口禁用）；无运行时 UI 开关（如实披露）"
+  },
+  "ts": "2026-10-23T02:26:14.518Z"
+}

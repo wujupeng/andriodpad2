@@ -1,0 +1,23 @@
+{
+  "results": {
+    "restored": {
+      "listCard": true,
+      "notConnected": true,
+      "cardCount": 2
+    },
+    "offline": {
+      "failBanner": "连接失败：服务器无法连接，请检查网络或地址\n已保存的连接\nG",
+      "noConnected": true,
+      "appAlive": true
+    },
+    "recovered": {
+      "connected": true,
+      "noFail": true
+    },
+    "afterDelete": {
+      "remaining": 1,
+      "banner": true
+    }
+  },
+  "ts": "2026-10-21T06:08:24.450Z"
+}

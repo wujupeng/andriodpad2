@@ -1,0 +1,13 @@
+{
+  "scenario": "d2-03",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "已点击「检查本地变更」",
+    "检测: changed=false（未变更）",
+    "logcat: 无 SAVE_AS_DETECTED（取消场景诚实回退）",
+    "logcat: 无 SAVE_SUCCESS（无原地保存）"
+  ]
+}

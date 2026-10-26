@@ -1,0 +1,24 @@
+{
+  "results": {
+    "s1": {
+      "dst": "8c0641758b4440d8",
+      "srcKept": true
+    },
+    "s2": {
+      "keepBoth": true
+    },
+    "s3": {
+      "overwrite": true
+    },
+    "s4": {
+      "moved": true
+    },
+    "s5": {
+      "batch2": true
+    },
+    "s6": {
+      "skip": true
+    }
+  },
+  "ts": "2026-10-22T08:38:47.070Z"
+}

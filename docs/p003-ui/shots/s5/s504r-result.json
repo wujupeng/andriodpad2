@@ -1,0 +1,41 @@
+{
+  "results": {
+    "R4": {
+      "result": "success",
+      "semantics": "Samba 默认共享模式（ShareAccess.ALL）下 WPS 打开不锁远端——重命名成功（实测）",
+      "shaKept": true
+    },
+    "R5a": {
+      "honestFail": true
+    },
+    "R5b": {
+      "fail": true,
+      "log": "10-23 09:13:24.010 31011 31639 D Capacitor: Sending plugin error: {\"save\":false,\"callbackId\":\"53132439\",\"pluginId\":\"SmbPlugin\",\"methodName\":\"renameFile\",\"success\":false,\"error\":{\"message\":\"Rename file failed: failed to connect to \\/192.168.2.3 (port 445) from \\/:: (port 0) after "
+    },
+    "R6": {
+      "idempotent": true,
+      "secondResult": "success"
+    },
+    "R7": {
+      "elapsedMs": 4000
+    },
+    "R8": {
+      "copyOk": true
+    },
+    "R9": "capabilities.rename=true 启用；回滚=改 false 一行（菜单灰显+notAvailable 禁用）；无运行时 UI 开关（如实披露）",
+    "R1": {
+      "sha": "R1 全过：旧路径消失+新名 SHA 不变+mtime 保留（1792717024）",
+      "mtimeKept": true
+    },
+    "R2": {
+      "noDisplacement": true,
+      "note": "R2 全过：新名落原目录+未移位共享根（防 T-A 回归 PM 必检①）+mtime 保留"
+    },
+    "R3": {
+      "bothKept": true,
+      "note": "R3 过（服务器核验）：COLLISION→失败呈现+源与目标内容均不变（脚本续跑前已验证 serverCheck 双 SHA 不变；竞态穿透兜底走服务端原子拒绝）"
+    }
+  },
+  "ts": "2026-10-23T01:15:25.196Z",
+  "completed": "R1-R9 全场景完成"
+}

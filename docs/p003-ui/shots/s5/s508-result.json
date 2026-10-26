@@ -1,0 +1,92 @@
+{
+  "results": {
+    "B0": {
+      "rows": 2
+    },
+    "S1": {
+      "durationSec": 64,
+      "offState": {
+        "visibility": "hidden",
+        "hidden": true,
+        "rows": 2,
+        "connected": false,
+        "netInterrupted": false,
+        "loadFail": false,
+        "emptyDir": false,
+        "path": "Gate3编辑后gate4-test",
+        "timerState": "running"
+      },
+      "wakeState": {
+        "visibility": "visible",
+        "hidden": false,
+        "rows": 2,
+        "connected": false,
+        "netInterrupted": false,
+        "loadFail": false,
+        "emptyDir": false,
+        "path": "Gate3编辑后gate4-test"
+      }
+    },
+    "S2": {
+      "durationSec": 304,
+      "offState": {
+        "visibility": "hidden",
+        "hidden": true,
+        "rows": 2,
+        "connected": false,
+        "netInterrupted": false,
+        "loadFail": false,
+        "emptyDir": false,
+        "path": "Gate3编辑后gate4-test",
+        "timerState": "running"
+      },
+      "wakeState": {
+        "visibility": "visible",
+        "hidden": false,
+        "rows": 2,
+        "connected": false,
+        "netInterrupted": false,
+        "loadFail": false,
+        "emptyDir": false,
+        "path": "Gate3编辑后gate4-test"
+      }
+    },
+    "S3": {
+      "wakeState": {
+        "visibility": "visible",
+        "hidden": false,
+        "rows": 0,
+        "connected": false,
+        "netInterrupted": false,
+        "loadFail": true,
+        "emptyDir": true,
+        "path": "Gate3编辑后gate4-test"
+      },
+      "observation": "唤醒后即已如实失败呈现：rows=0+loadError Banner（熄屏期间断网 60s——唤醒时刻列表已清空并呈现加载失败，非旧列表冒充；机制疑与唤醒 visibilitychange 触发的自动加载相关，timer 未冻结前提下熄屏中即可能已触发失败回流——净效果符合 S5-06-C 门禁：不冒充）",
+      "wakeStateActual": {
+        "rows": 0,
+        "loadFail": true
+      }
+    },
+    "S4": {
+      "rows": 3,
+      "newFileSeen": true,
+      "finalStateNote": "重试刷新成功（rows=3 含服务器新增文件）但 connectionState 仍 network_interrupted（状态条如实提醒会话不稳）——数据一致性达成，状态呈现保守安全"
+    },
+    "S5": {
+      "pendingObserved": false,
+      "afterWake": {
+        "connected": true,
+        "feedback": true
+      }
+    }
+  },
+  "device": "NDL2_W09 / Android 16 / WPS 14.25.0",
+  "ts": "2026-10-23T08:34:05.187Z",
+  "findings": {
+    "F1": "熄屏（keyevent 26 方式，60s/300s）下 Chromium 不冻结 timer（visibility=hidden 但 setTimeout 正常 fire）——修正 S4-07 方案B时点观察的适用范围（彼时冻结或为自然长时熄屏/Doze 深度休眠等特定条件，非本方式短/中时熄屏的普遍行为）",
+    "F2": "SMB 连接经 300s 熄屏仍存活（S2.e 唤醒后 listDirectory 真实成功 1 次）",
+    "F3": "S5：熄屏中点击连接卡→timer 未冻结→解密+连接在熄屏中正常完成（connected=true）——S5-06-A 超时防御在本熄屏方式下非必需（未触发）",
+    "F4": "S3 净效果：熄屏断网唤醒后已 loadError 如实呈现（无旧列表冒充路径）"
+  }
+}

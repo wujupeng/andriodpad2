@@ -1,0 +1,17 @@
+{
+  "scenario": "d2-01",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "已点击「检查本地变更」",
+    "检测结果: 文件已变更（changed=true）",
+    "FileObserver 检测到变更",
+    "logcat: Verdict: SAVE_SUCCESS（双因子直接证据）",
+    "logcat: 无旧结论行 \"Save-as detected:\"（文案已改证据记录）",
+    "logcat: 无 SAVE_AS_DETECTED 结论（中间文件不再误判）",
+    "logcat: 无数字形态候选误报",
+    "adb stat 缓存文件 mtime/size: 1792546840 9167"
+  ]
+}

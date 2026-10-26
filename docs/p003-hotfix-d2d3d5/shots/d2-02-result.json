@@ -1,0 +1,9 @@
+{
+  "scenario": "d2-02",
+  "passed": false,
+  "failureRootCause": [
+    "页面未连接（先在 M2 页执行连接）",
+    "不存在已打开会话（先打开 test-render.docx）"
+  ],
+  "evidence": []
+}

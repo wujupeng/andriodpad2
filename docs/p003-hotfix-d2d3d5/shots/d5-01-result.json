@@ -1,0 +1,15 @@
+{
+  "scenario": "d5-01",
+  "passed": true,
+  "failureRootCause": [],
+  "evidence": [
+    "页面已连接 SMB",
+    "存在已打开的编辑会话",
+    "①首次回写后 V4=pass: V4 | 回写成功 | 通过 | 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2... 历史 5 条·最近 [11:34:03] pass(执行回写) 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2...",
+    "SMB 断开重连成功（树连接刷新，smb reload 生效）",
+    "②只读回写失败后 V4 仍=pass（终态防覆盖）: V4 | 回写成功 | 通过 | 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2... 历史 6 条·最近 [11:35:07] fail(执行回写) Writeback failed: STATUS_ACCESS_DENIED (0xc0000022): Create failed for \\\\192.168.2.3\\share\\test-render.docx.tmp179255370",
+    "②details 保持首次终态证据快照",
+    "③history 含追加 fail(执行回写) 记录: [11:21:07] pass(执行回写) 本地SHA-256=5beb889a36fd4ae2..., 远程校验SHA-256=5beb889a36fd4ae2...",
+    "④服务器侧 SHA-256: 5beb889a36fd4ae2..."
+  ]
+}

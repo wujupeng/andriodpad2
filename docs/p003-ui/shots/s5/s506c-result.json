@@ -1,0 +1,28 @@
+{
+  "results": {
+    "V5": {
+      "calls": 1
+    },
+    "V1": {
+      "rows": 3,
+      "calls": 1,
+      "serverNewFileSeen": true
+    },
+    "V2": {
+      "ok": true
+    },
+    "V3": {
+      "callsPerRound": 1
+    },
+    "V4": {
+      "bannerShown": true,
+      "retryRecovered": true
+    },
+    "regression": {
+      "A": true,
+      "B": true,
+      "fileOps": true
+    }
+  },
+  "ts": "2026-10-23T06:31:48.294Z"
+}
