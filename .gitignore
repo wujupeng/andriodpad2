@@ -55,3 +55,18 @@ android-custom/.gradle/
 
 # Tool artifacts (keep docs)
 !.codeartsdoer/specs/
+# Temp debug scripts and artifacts (root level only)
+/.arts/
+/apk-check/
+/google_usb_driver/
+/test-screenshots/
+/apkpure_page.html
+/cookies.txt
+/*.mjs
+/*.bat
+/*.ps1
+/*.sh
+/*.png
+/*.xml
+/*.txt
+/regression-test-results*.json
