@@ -105,7 +105,19 @@ export interface EditSessionStoreState {
   manualStep(action: ManualStepAction): Promise<void>;
 }
 
-export const useEditSessionStore = create<EditSessionStoreState>()(() => ({
+function transition(
+  set: (partial: Partial<EditSessionStoreState>) => void,
+  get: () => EditSessionStoreState,
+  nextState: EditSessionState,
+  detail?: string,
+): void {
+  set({
+    state: nextState,
+    timeline: [...get().timeline, { state: nextState, timestamp: Date.now(), detail }],
+  });
+}
+
+export const useEditSessionStore = create<EditSessionStoreState>()((set, get) => ({
   state: 'idle',
   baseline: null,
   timeline: [],
@@ -113,27 +125,159 @@ export const useEditSessionStore = create<EditSessionStoreState>()(() => ({
   pendingSaveAs: null,
   conflictInfo: null,
   lastError: null,
-  openFile: async (_profileId, filePath) => {
-    await SmbPlugin.openInWps({ path: filePath });
-    const listener = await App.addListener('appStateChange', async ({ isActive }) => {
-      if (!isActive) return;
-      try {
-        const checkResult = await SmbPlugin.checkLocalFileChanged();
-        if (checkResult.changed) {
-          await SmbPlugin.writeback();
+
+  openFile: async (profileId, filePath) => {
+    transition(set, get, 'opening');
+    try {
+      const result = await SmbPlugin.openInWps({ path: filePath });
+      const baseline: BaselineInfo = {
+        remotePath: filePath,
+        fileName: filePath.split('/').pop() || filePath,
+        baselineMtime: result.baselineMtime,
+        baselineSha256: result.baselineHash,
+        localCachePath: result.localPath,
+        sourceProfileId: profileId,
+      };
+      set({ baseline });
+      transition(set, get, 'opened');
+      const listener = await App.addListener('appStateChange', async ({ isActive }) => {
+        if (!isActive) return;
+        try {
+          const checkResult = await SmbPlugin.checkLocalFileChanged();
+          get().applyForegroundCheckResult(checkResult);
+          if (checkResult.changed && get().state === 'editing') {
+            transition(set, get, 'writeback_pending');
+            const wbResult = await SmbPlugin.writeback();
+            get().applyWritebackResult(wbResult);
+          }
+        } catch (err) {
+          get().applyError({ category: 'unknown', message: String(err) });
         }
-      } catch { /* 写回失败不阻塞用户操作 */ }
-      await listener.remove();
-    });
+        await listener.remove();
+      });
+    } catch (err) {
+      set({ lastError: { category: 'unknown', userMessage: String(err) } });
+      transition(set, get, 'open_failed', String(err));
+    }
   },
-  applyForegroundCheckResult: () => undefined,
-  applyWritebackResult: () => undefined,
-  applyRemoteCheckResult: () => undefined,
-  applySaveAsDiscovery: () => undefined,
-  resolveSaveAs: async () => undefined,
-  resolveConflict: async () => undefined,
-  applyError: () => undefined,
-  notifyAppStateChange: () => undefined,
-  closeSession: () => undefined,
-  manualStep: async () => undefined,
+
+  applyForegroundCheckResult: (result) => {
+    const cur = get();
+    if (cur.state !== 'opened' && cur.state !== 'editing') return;
+    if (result.saveAsDiscovered) {
+      set({
+        pendingSaveAs: result.saveAsFilePath
+          ? { candidatePath: result.saveAsFilePath, prompt: result.saveAsPrompt || '' }
+          : null,
+      });
+      transition(set, get, 'saveas_detected');
+    } else if (result.changed) {
+      transition(set, get, 'editing');
+    }
+  },
+
+  applyWritebackResult: (result) => {
+    if (result.writebackSuccess) {
+      transition(set, get, 'writeback_success');
+    } else {
+      set({
+        lastError: result.error
+          ? { category: 'unknown', userMessage: result.error }
+          : null,
+      });
+      transition(set, get, 'writeback_failed', result.error);
+    }
+  },
+
+  applyRemoteCheckResult: (result) => {
+    if (result.remoteChanged) {
+      set({
+        conflictInfo: { remoteMtime: result.remoteMtime, baselineMtime: result.baselineMtime },
+      });
+      transition(set, get, 'conflict');
+    }
+  },
+
+  applySaveAsDiscovery: (result) => {
+    set({
+      pendingSaveAs: result.saveAsFilePath
+        ? { candidatePath: result.saveAsFilePath, prompt: result.saveAsPrompt || '' }
+        : null,
+    });
+    transition(set, get, 'saveas_detected');
+  },
+
+  resolveSaveAs: async (choice) => {
+    const cur = get();
+    if (choice === 'DISCARD') {
+      set({ pendingSaveAs: null });
+      transition(set, get, 'session_terminated', 'saveas discarded');
+      return;
+    }
+    try {
+      await SmbPlugin.resolveSaveAs({ choice, saveAsFilePath: cur.pendingSaveAs?.candidatePath });
+      set({ pendingSaveAs: null });
+      transition(set, get, 'opened', `saveas resolved: ${choice}`);
+    } catch (err) {
+      get().applyError({ category: 'unknown', message: String(err) });
+    }
+  },
+
+  resolveConflict: async (choice) => {
+    set({ conflictInfo: null });
+    if (choice === 'DISCARD') {
+      transition(set, get, 'session_terminated', 'conflict discarded');
+      return;
+    }
+    if (choice === 'OVERWRITE_CONFIRMED') {
+      transition(set, get, 'writeback_pending');
+      try {
+        const wbResult = await SmbPlugin.writeback();
+        get().applyWritebackResult(wbResult);
+      } catch (err) {
+        get().applyError({ category: 'unknown', message: String(err) });
+      }
+      return;
+    }
+    transition(set, get, 'opened', `conflict resolved: ${choice}`);
+  },
+
+  applyError: (error) => {
+    const nextState: EditSessionState =
+      error.category === 'network_lost' || error.category === 'unreachable'
+        ? 'network_interrupted'
+        : 'session_invalid';
+    set({ lastError: { category: error.category, userMessage: error.message } });
+    transition(set, get, nextState, error.message);
+  },
+
+  notifyAppStateChange: (active) => {
+    if (!active) return;
+    const cur = get();
+    if (cur.state === 'network_interrupted') {
+      transition(set, get, 'opened', 'network restored');
+    }
+  },
+
+  closeSession: () => {
+    set({ baseline: null, pendingSaveAs: null, conflictInfo: null });
+    transition(set, get, 'session_terminated');
+  },
+
+  manualStep: async (action) => {
+    try {
+      if (action === 'check-change') {
+        get().applyForegroundCheckResult(await SmbPlugin.checkLocalFileChanged());
+      } else if (action === 'writeback') {
+        transition(set, get, 'writeback_pending');
+        get().applyWritebackResult(await SmbPlugin.writeback());
+      } else if (action === 'check-remote') {
+        get().applyRemoteCheckResult(await SmbPlugin.checkRemoteChanged());
+      } else if (action === 'foreground-check') {
+        get().applyForegroundCheckResult(await SmbPlugin.foregroundCheck());
+      }
+    } catch (err) {
+      get().applyError({ category: 'unknown', message: String(err) });
+    }
+  },
 }));
