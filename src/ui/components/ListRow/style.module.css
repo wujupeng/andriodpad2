@@ -1,0 +1,107 @@
+/* C-03 ListRow（行高基准 64px；防破版 min-height） */
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-3);
+  min-height: var(--pad2-size-list-row);
+  padding-inline: var(--pad2-space-3);
+  border-radius: var(--pad2-radius-md);
+  background: var(--pad2-color-bg-surface);
+}
+
+.row--pressable {
+  cursor: pointer;
+  transition: background var(--pad2-duration-fast) var(--pad2-easing-standard);
+}
+
+.row--pressable:active {
+  background: var(--pad2-color-bg-hover);
+}
+
+.row--selected {
+  background: var(--pad2-color-brand-50);
+}
+
+.row--selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--pad2-space-2);
+  bottom: var(--pad2-space-2);
+  width: 3px;
+  border-radius: var(--pad2-radius-full);
+  background: var(--pad2-color-brand-500);
+}
+
+.row__icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.row__check {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--pad2-radius-sm);
+  border: 1.5px solid var(--pad2-color-text-tertiary);
+  background: var(--pad2-color-bg-surface);
+}
+
+.row__check--on {
+  border-color: var(--pad2-color-brand-500);
+  background: var(--pad2-color-brand-500);
+  position: relative;
+}
+
+.row__check--on::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 3.5px;
+  width: 6px;
+  height: 11px;
+  border: solid var(--pad2-color-bg-surface);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.row__texts {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.row__title {
+  font-size: var(--pad2-font-size-title);
+  font-weight: var(--pad2-font-weight-medium);
+  line-height: var(--pad2-line-height-tight);
+  color: var(--pad2-color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row__subtitle {
+  font-size: var(--pad2-font-size-caption);
+  line-height: var(--pad2-line-height-tight);
+  color: var(--pad2-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row__trailing {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-2);
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-secondary);
+}

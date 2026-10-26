@@ -1,0 +1,29 @@
+/* C-10 EmptyState */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--pad2-space-2);
+  padding: var(--pad2-space-8) var(--pad2-space-6);
+  color: var(--pad2-color-text-tertiary);
+}
+
+.empty__title {
+  margin-top: var(--pad2-space-2);
+  font-size: var(--pad2-font-size-body);
+  font-weight: var(--pad2-font-weight-semibold);
+  color: var(--pad2-color-text-primary);
+}
+
+.empty__description {
+  font-size: var(--pad2-font-size-caption);
+  line-height: var(--pad2-line-height-relaxed);
+  color: var(--pad2-color-text-secondary);
+  max-width: 320px;
+}
+
+.empty__action {
+  margin-top: var(--pad2-space-3);
+}

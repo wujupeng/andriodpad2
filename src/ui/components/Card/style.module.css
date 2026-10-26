@@ -1,0 +1,48 @@
+/* C-02 Card */
+
+.card {
+  background: var(--pad2-color-bg-surface);
+  border-radius: var(--pad2-radius-lg);
+  box-shadow: var(--pad2-shadow-sm);
+  padding: var(--pad2-space-4);
+}
+
+.card--interactive {
+  cursor: pointer;
+  transition: background var(--pad2-duration-fast) var(--pad2-easing-standard);
+}
+
+.card--interactive:active {
+  background: var(--pad2-color-bg-hover);
+}
+
+.card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pad2-space-2);
+  margin-bottom: var(--pad2-space-3);
+}
+
+.card__title {
+  font-size: var(--pad2-font-size-title-lg);
+  font-weight: var(--pad2-font-weight-semibold);
+  line-height: var(--pad2-line-height-tight);
+  color: var(--pad2-color-text-primary);
+  /* 字体缩放防破版（design.md 2.3.3-F）：单行截断 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-2);
+  flex-shrink: 0;
+}
+
+.card__content {
+  font-size: var(--pad2-font-size-body);
+  color: var(--pad2-color-text-primary);
+}

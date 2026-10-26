@@ -1,0 +1,39 @@
+/* 连接卡片（design.md 2.4.3，TASK-S3-04）：ListRow 变体 trailing 区排布 */
+
+.iconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--pad2-radius-md);
+  background: var(--pad2-color-bg-surface-alt);
+  color: var(--pad2-color-text-secondary);
+}
+
+.trailing {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-2);
+  flex-shrink: 0;
+}
+
+.menuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--pad2-radius-sm);
+  color: var(--pad2-color-text-tertiary);
+}
+
+.menuButton:hover {
+  color: var(--pad2-color-text-secondary);
+  background: var(--pad2-color-bg-hover);
+}
+
+.menuButton:focus-visible {
+  outline: 2px solid var(--pad2-color-brand-500);
+  outline-offset: 1px;
+}

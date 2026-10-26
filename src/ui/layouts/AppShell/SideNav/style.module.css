@@ -1,0 +1,178 @@
+/* SideNav：三断点形态 + 三分区布局（design.md 2.4.1） */
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  background: var(--pad2-color-bg-surface);
+  border-right: 1px solid var(--pad2-color-border);
+  width: var(--pad2-size-sidenav-collapsed);
+  flex-shrink: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-5);
+  padding: var(--pad2-space-4) var(--pad2-space-2);
+  flex: 1;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-1);
+}
+
+.sectionTitle {
+  font-size: var(--pad2-font-size-micro);
+  color: var(--pad2-color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 var(--pad2-space-3);
+  min-height: var(--pad2-space-5);
+  display: flex;
+  align-items: center;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-3);
+  width: 100%;
+  min-height: var(--pad2-size-touch-min);
+  padding: 0 var(--pad2-space-3);
+  border: none;
+  border-radius: var(--pad2-radius-md);
+  background: transparent;
+  color: var(--pad2-color-text-secondary);
+  font-family: inherit;
+  font-size: var(--pad2-font-size-body);
+  cursor: pointer;
+  transition: background-color var(--pad2-duration-fast) var(--pad2-easing-standard);
+}
+
+.item:hover {
+  background: var(--pad2-color-bg-hover);
+}
+
+.itemActive,
+.itemActive:hover {
+  background: var(--pad2-color-brand-50);
+  color: var(--pad2-color-brand-600);
+}
+
+.itemIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.itemLabel {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--pad2-radius-full);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.dotSuccess {
+  background: var(--pad2-color-success);
+}
+
+.dotInfo {
+  background: var(--pad2-color-info);
+}
+
+.dotIdle {
+  background: var(--pad2-color-text-disabled);
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-1);
+  padding: var(--pad2-space-3) var(--pad2-space-2);
+  border-top: 1px solid var(--pad2-color-divider);
+}
+
+/* 抽屉关闭按钮：仅窄屏抽屉态渲染 */
+.drawerClose {
+  display: none;
+}
+
+/* ===== <600px 抽屉式 ===== */
+@media (max-width: 599px) {
+  .nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--pad2-size-sidenav);
+    z-index: calc(var(--pad2-z-nav) + 1);
+    transform: translateX(-100%);
+    transition: transform var(--pad2-duration-base) var(--pad2-easing-standard);
+    box-shadow: var(--pad2-shadow-lg);
+  }
+
+  .navOpen {
+    transform: translateX(0);
+  }
+
+  .drawerClose {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: var(--pad2-space-3);
+    right: var(--pad2-space-3);
+    width: var(--pad2-size-touch-min);
+    height: var(--pad2-size-touch-min);
+    border: none;
+    border-radius: var(--pad2-radius-md);
+    background: transparent;
+    color: var(--pad2-color-text-secondary);
+    cursor: pointer;
+  }
+
+  .item {
+    padding-right: var(--pad2-space-7);
+  }
+}
+
+/* ===== 600-899px 常驻收起 72px 图标栏 ===== */
+@media (min-width: 600px) and (max-width: 899px) {
+  .sectionTitle,
+  .itemLabel {
+    display: none;
+  }
+
+  .item {
+    position: relative;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .dot {
+    position: absolute;
+    margin-left: 18px;
+    margin-top: -18px;
+  }
+}
+
+/* ===== ≥900px 常驻展开 240px ===== */
+@media (min-width: 900px) {
+  .nav {
+    width: var(--pad2-size-sidenav);
+  }
+}

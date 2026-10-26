@@ -1,0 +1,53 @@
+/* TopBar：页面标题 + 工具位 */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-3);
+  min-height: 56px;
+  padding: 0 var(--pad2-space-5);
+  background: var(--pad2-color-bg-surface);
+  border-bottom: 1px solid var(--pad2-color-border);
+  flex-shrink: 0;
+}
+
+.drawerTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--pad2-size-touch-min);
+  height: var(--pad2-size-touch-min);
+  border: none;
+  border-radius: var(--pad2-radius-md);
+  background: transparent;
+  color: var(--pad2-color-text-secondary);
+  cursor: pointer;
+}
+
+.drawerTrigger:hover {
+  background: var(--pad2-color-bg-hover);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--pad2-font-size-title);
+  font-weight: var(--pad2-font-weight-semibold);
+  color: var(--pad2-color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-2);
+  margin-left: auto;
+  min-height: var(--pad2-size-touch-min);
+}
+
+@media (max-width: 599px) {
+  .bar {
+    padding: 0 var(--pad2-space-4);
+  }
+}

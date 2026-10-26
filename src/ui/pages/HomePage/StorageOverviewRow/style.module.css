@@ -1,0 +1,59 @@
+/* StorageOverviewRow：12 列栅格每卡 span 4，窄屏降级单列 */
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--pad2-space-5);
+  grid-column: span 12 / span 12;
+}
+
+.row > * {
+  grid-column: span 4 / span 4;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-2);
+  margin-bottom: var(--pad2-space-3);
+}
+
+.cardIcon {
+  display: flex;
+  align-items: center;
+  color: var(--pad2-color-text-secondary);
+}
+
+.cardTitle {
+  font-size: var(--pad2-font-size-title);
+  font-weight: var(--pad2-font-weight-semibold);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-2);
+}
+
+.cardMeta {
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-secondary);
+  line-height: var(--pad2-line-height-relaxed);
+}
+
+.cardAction {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--pad2-space-3);
+}
+
+@media (max-width: 899px) {
+  .row > * {
+    grid-column: span 12 / span 12;
+  }
+}

@@ -228,6 +228,77 @@ public class SmbPlugin extends Plugin {
         }
     }
 
+    // ===== TASK-S5-03：复制与移动桥接（s5-02 设计 §B-1；conflict 走 reject 传播，
+    // 前端 smbErrorMapper 归 conflict 类 → ConflictDialog 决策/失败清单）=====
+
+    @PluginMethod
+    public void copyFile(PluginCall call) {
+        String sourcePath = call.getString("sourcePath", "");
+        String destinationDir = call.getString("destinationDir", "");
+        String destFileName = call.getString("destFileName");
+        Boolean overwrite = call.getBoolean("overwrite", false);
+        try {
+            Map<String, Object> result = smbClient.copyFile(sourcePath, destinationDir, destFileName, overwrite);
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            ret.put("bytesCopied", result.get("bytesCopied"));
+            ret.put("sha256", result.get("sha256"));
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Copy file failed: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void moveFile(PluginCall call) {
+        String sourcePath = call.getString("sourcePath", "");
+        String destinationDir = call.getString("destinationDir", "");
+        String destFileName = call.getString("destFileName");
+        Boolean overwrite = call.getBoolean("overwrite", false);
+        try {
+            Map<String, Object> result = smbClient.moveFile(sourcePath, destinationDir, destFileName, overwrite);
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            ret.put("bytesCopied", result.get("bytesCopied"));
+            ret.put("sha256", result.get("sha256"));
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Move file failed: " + e.getMessage());
+        }
+    }
+
+
+    // ===== TASK-S5-04-R：远端重命名桥接（s5-04 设计方案 A；COLLISION 走 reject
+    // 传播→前端 conflict 类→RenameDialog 内联/失败清单，与 copyFile 同语义）=====
+    @PluginMethod
+    public void renameFile(PluginCall call) {
+        String path = call.getString("path", "");
+        String newName = call.getString("newName", "");
+        try {
+            smbClient.renameFile(path, newName);
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+             call.reject("Rename file failed: " + e.getMessage());
+         }
+     }
+
+    // ===== TASK-S5-05：远端单文件删除桥接（s5-02 设计 §E；目录拒绝/不存在明确失败/
+    // 删除后核验走 reject 传播——前端 mapSmbError 分类呈现）=====
+    @PluginMethod
+    public void deleteRemoteFile(PluginCall call) {
+        String path = call.getString("path", "");
+        try {
+            smbClient.deleteRemoteFile(path);
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Delete remote file failed: " + e.getMessage());
+        }
+    }
+
     @PluginMethod
     public void exportLog(PluginCall call) {
         String logDir = call.getString("logDir", "apk/log");

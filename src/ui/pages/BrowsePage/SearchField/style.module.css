@@ -1,0 +1,59 @@
+/* 搜索输入（design.md 2.4.4，TASK-S4-03） */
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 200px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: var(--pad2-space-3);
+  display: flex;
+  align-items: center;
+  color: var(--pad2-color-text-tertiary);
+  pointer-events: none;
+}
+
+.input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--pad2-space-8) 0 var(--pad2-space-7);
+  border: 1px solid var(--pad2-color-border);
+  border-radius: var(--pad2-radius-full);
+  background: var(--pad2-color-bg-surface);
+  font-size: var(--pad2-font-size-body);
+  color: var(--pad2-color-text-primary);
+  box-sizing: border-box;
+  transition:
+    border-color 120ms var(--pad2-easing-standard),
+    box-shadow 120ms var(--pad2-easing-standard);
+}
+
+.input::placeholder {
+  color: var(--pad2-color-text-tertiary);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--pad2-color-brand-500);
+  box-shadow: 0 0 0 3px var(--pad2-color-brand-50);
+}
+
+.clearButton {
+  position: absolute;
+  right: var(--pad2-space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--pad2-radius-full);
+  color: var(--pad2-color-text-tertiary);
+}
+
+.clearButton:hover {
+  color: var(--pad2-color-text-secondary);
+  background: var(--pad2-color-bg-hover);
+}

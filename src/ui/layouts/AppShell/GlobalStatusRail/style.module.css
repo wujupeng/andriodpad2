@@ -1,0 +1,8 @@
+/* GlobalStatusRail：Shell 层最高层级容器（内容填充于 TASK-S5-05） */
+
+.rail {
+  position: relative;
+  z-index: var(--pad2-z-rail);
+  background: var(--pad2-color-bg-surface);
+  flex-shrink: 0;
+}

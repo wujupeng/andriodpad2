@@ -33,7 +33,11 @@ public class StreamCacheService {
             cacheDir.mkdirs();
         }
 
-        String localFileName = new File(remotePath).getName();
+        // SMB 风格路径以 '\' 分隔——Java File 分隔符为 '/'，getName() 会把
+        // "dir\file.ext" 整串当文件名，缓存文件名含 '\' 被存储层拒（EPERM），
+        // 子目录文件无法缓存打开（TASK-S5-01 发现的可复现阻断缺陷最小修复：
+        // 归一分隔符后取末段文件名）。
+        String localFileName = new File(remotePath.replace('\\', '/')).getName();
         File localFile = new File(cacheDir, localFileName);
 
         long startTime = System.currentTimeMillis();
@@ -90,6 +94,12 @@ public class StreamCacheService {
 
     public boolean checkCacheSpace(long requiredBytes) {
         File cacheDir = getCacheDir();
+        // 自愈：缓存目录被外部删除时 getUsableSpace() 对不存在路径返回 0，
+        // 误报"缓存空间不足"并挡在 streamToCache 的 mkdirs 之前（死锁）。
+        // 先确保目录存在再检查空间（TASK-S5-01 真机发现的可复现阻断缺陷最小修复）。
+        if (!cacheDir.exists()) {
+            cacheDir.mkdirs();
+        }
         long available = cacheDir.getUsableSpace();
         return available >= requiredBytes;
     }

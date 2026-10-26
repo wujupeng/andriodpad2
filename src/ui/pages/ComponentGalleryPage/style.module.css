@@ -1,0 +1,74 @@
+/* 组件演示页布局（仅布局组装，视觉一律令牌） */
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-5);
+  padding: var(--pad2-space-6);
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.gallery__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pad2-space-4);
+}
+
+.gallery__title {
+  font-size: var(--pad2-font-size-display);
+  font-weight: var(--pad2-font-weight-semibold);
+  line-height: var(--pad2-line-height-tight);
+  color: var(--pad2-color-text-primary);
+}
+
+.gallery__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--pad2-space-3);
+  margin-top: var(--pad2-space-2);
+}
+
+.gallery__stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-3);
+}
+
+.gallery__hint {
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-tertiary);
+}
+
+.gallery__icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: var(--pad2-space-2);
+  margin-top: var(--pad2-space-3);
+}
+
+.gallery__icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--pad2-space-1);
+  padding: var(--pad2-space-3) var(--pad2-space-1);
+  border-radius: var(--pad2-radius-md);
+  color: var(--pad2-color-text-secondary);
+}
+
+.gallery__icon-cell:active {
+  background: var(--pad2-color-bg-hover);
+}
+
+.gallery__icon-name {
+  font-size: var(--pad2-font-size-micro);
+  color: var(--pad2-color-text-tertiary);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}

@@ -1,0 +1,126 @@
+/* C-05 StatusBanner：左缘语义条 + 填充图标 + 文案 + 操作；切换 0ms；入场 200ms 淡入展开 */
+
+.banner {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--pad2-space-2);
+  width: 100%;
+  min-height: var(--pad2-size-touch-min);
+  padding: var(--pad2-space-3) var(--pad2-space-4);
+  padding-left: calc(var(--pad2-space-4) + 4px);
+  border-radius: var(--pad2-radius-md);
+  overflow: hidden;
+  animation: banner-enter var(--pad2-duration-base) var(--pad2-easing-standard);
+}
+
+@keyframes banner-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.banner__bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.banner__texts {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-block: var(--pad2-space-1);
+}
+
+.banner__title {
+  font-size: var(--pad2-font-size-body);
+  font-weight: var(--pad2-font-weight-semibold);
+  line-height: var(--pad2-line-height-tight);
+}
+
+.banner__description {
+  font-size: var(--pad2-font-size-caption);
+  line-height: var(--pad2-line-height-relaxed);
+}
+
+.banner__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-1);
+  flex-shrink: 0;
+}
+
+.banner__action {
+  min-height: 44px;
+  padding-inline: var(--pad2-space-3);
+  border-radius: var(--pad2-radius-sm);
+  font-size: var(--pad2-font-size-caption);
+  font-weight: var(--pad2-font-weight-semibold);
+  cursor: pointer;
+}
+
+.banner__action--primary {
+  background: var(--pad2-color-brand-500);
+  color: var(--pad2-color-bg-surface);
+}
+
+.banner__action--text {
+  color: inherit;
+}
+
+/* 语义变体：浅底 + 深语义字 + 左缘实色条 */
+
+.banner--success {
+  background: var(--pad2-color-success-bg);
+  color: var(--pad2-color-success-text);
+}
+
+.banner--success .banner__bar {
+  background: var(--pad2-color-success);
+}
+
+.banner--warning {
+  background: var(--pad2-color-warning-bg);
+  color: var(--pad2-color-warning-text);
+}
+
+.banner--warning .banner__bar {
+  background: var(--pad2-color-warning);
+}
+
+.banner--danger {
+  background: var(--pad2-color-danger-bg);
+  color: var(--pad2-color-danger-text);
+}
+
+.banner--danger .banner__bar {
+  background: var(--pad2-color-danger);
+}
+
+.banner--info {
+  background: var(--pad2-color-info-bg);
+  color: var(--pad2-color-info);
+}
+
+.banner--info .banner__bar {
+  background: var(--pad2-color-info);
+}
+
+.banner--neutral {
+  background: var(--pad2-color-bg-hover);
+  color: var(--pad2-color-text-secondary);
+}
+
+.banner--neutral .banner__bar {
+  background: var(--pad2-color-text-tertiary);
+}

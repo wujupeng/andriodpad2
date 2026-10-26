@@ -1,0 +1,8 @@
+/* QuickActionsRow：横向排列，窄屏换行 */
+
+.row {
+  display: flex;
+  gap: var(--pad2-space-4);
+  flex-wrap: wrap;
+  grid-column: span 12 / span 12;
+}

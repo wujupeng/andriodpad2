@@ -1,0 +1,97 @@
+/* 表单字段（design.md 2.4.3，TASK-S3-03）：48px 触控目标 + brand 聚焦反馈 */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-2);
+}
+
+.fieldLabel {
+  font-size: var(--pad2-font-size-caption);
+  font-weight: var(--pad2-font-weight-semibold);
+  line-height: var(--pad2-line-height-tight);
+  color: var(--pad2-color-text-secondary);
+}
+
+.fieldRequired {
+  margin-left: var(--pad2-space-1);
+  color: var(--pad2-color-danger);
+}
+
+.inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--pad2-space-4);
+  border: 1px solid var(--pad2-color-border);
+  border-radius: var(--pad2-radius-md);
+  background: var(--pad2-color-bg-surface);
+  font-size: var(--pad2-font-size-body);
+  color: var(--pad2-color-text-primary);
+  box-sizing: border-box;
+  transition:
+    border-color 120ms var(--pad2-easing-standard),
+    box-shadow 120ms var(--pad2-easing-standard);
+}
+
+.input::placeholder {
+  color: var(--pad2-color-text-tertiary);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--pad2-color-brand-500);
+  box-shadow: 0 0 0 3px var(--pad2-color-brand-50);
+}
+
+.input--error {
+  border-color: var(--pad2-color-danger);
+}
+
+.input--error:focus {
+  border-color: var(--pad2-color-danger);
+  box-shadow: 0 0 0 3px var(--pad2-color-danger-bg);
+}
+
+.input[type='password'] {
+  letter-spacing: 0.08em;
+}
+
+.toggleButton {
+  position: absolute;
+  right: var(--pad2-space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--pad2-color-text-tertiary);
+  border-radius: var(--pad2-radius-sm);
+}
+
+.toggleButton:hover {
+  color: var(--pad2-color-text-secondary);
+  background: var(--pad2-color-bg-surface-alt);
+}
+
+.toggleButton:focus-visible {
+  outline: 2px solid var(--pad2-color-brand-500);
+  outline-offset: 1px;
+}
+
+.errorText {
+  font-size: var(--pad2-font-size-caption);
+  line-height: var(--pad2-line-height-normal);
+  color: var(--pad2-color-danger-text);
+}
+
+.hintText {
+  font-size: var(--pad2-font-size-caption);
+  line-height: var(--pad2-line-height-normal);
+  color: var(--pad2-color-text-tertiary);
+}

@@ -88,7 +88,7 @@ public class WpsSaveDetector {
                     }
 
                     if (!path.equals(monitoredFileName)) {
-                        Log.i(TAG, "Save-as detected: " + path);
+                        Log.i(TAG, "Save-as evidence recorded: " + path);
                         recordEvent("dir_save_as", getEventName(event), path);
                         saveAsDetected = true;
                         saveAsFileName = path;
@@ -123,7 +123,7 @@ public class WpsSaveDetector {
                         recordEvent("parent_dir", getEventName(event), path);
 
                         if (!path.equals(monitoredFileName)) {
-                            Log.i(TAG, "Save-as detected (parent dir): " + path);
+                            Log.i(TAG, "Save-as evidence recorded (parent dir): " + path);
                             saveAsDetected = true;
                             saveAsFileName = path;
                         }
@@ -181,54 +181,56 @@ public class WpsSaveDetector {
         long currentMtime = monitoredFile.lastModified();
         result.setFinalMtime(currentMtime);
 
-        if (saveAsDetected) {
-            result.setVerdict(SaveDetectionVerdict.SAVE_AS_DETECTED);
-            result.setResultFilePath(saveAsFileName != null ? new File(monitoredFile.getParentFile(), saveAsFileName).getAbsolutePath() : null);
-            result.setEvidence("Save-as detected by FileObserver: " + saveAsFileName);
-            Log.i(TAG, "Verdict: SAVE_AS_DETECTED — " + saveAsFileName);
-            return result;
-        }
-
         boolean mtimeChangedNow = currentMtime != baselineMtime;
 
-        if (!mtimeChangedNow) {
-            result.setVerdict(SaveDetectionVerdict.DETECTION_UNCERTAIN);
-            result.setEvidence("mtime unchanged (no file modification detected)");
+        if (mtimeChangedNow) {
+            this.mtimeChanged = true;
+            this.newMtime = currentMtime;
+
+            try {
+                String hash = StreamCacheService.calculateSHA256(monitoredFile);
+                this.newSha256 = hash;
+                result.setFinalSha256(hash);
+                result.setResultFilePath(monitoredFile.getAbsolutePath());
+
+                boolean shaChanged = !hash.equals(baselineSha256);
+                result.setVerdict(resolveVerdict(true, shaChanged, false, false));
+
+                if (shaChanged) {
+                    this.contentChanged = true;
+                    result.setEvidence("mtime changed AND SHA-256 changed — three-factor correlation confirmed");
+                    Log.i(TAG, "Verdict: SAVE_SUCCESS — " + baselineSha256.substring(0, 16) + "... -> " + hash.substring(0, 16) + "...");
+                } else {
+                    result.setEvidence("mtime changed but SHA-256 unchanged (false positive)");
+                    Log.i(TAG, "Verdict: MTIME_FALSE_POSITIVE — mtime changed but content identical");
+                }
+            } catch (Exception e) {
+                result.setVerdict(resolveVerdict(false, false, false, true));
+                result.setEvidence("SHA-256 calculation failed: " + e.getMessage());
+                Log.e(TAG, "SHA-256 calculation failed", e);
+            }
+
             return result;
         }
 
-        this.mtimeChanged = true;
-        this.newMtime = currentMtime;
-
-        try {
-            String hash = StreamCacheService.calculateSHA256(monitoredFile);
-            this.newSha256 = hash;
-            result.setFinalSha256(hash);
-            result.setResultFilePath(monitoredFile.getAbsolutePath());
-
-            if (hash.equals(baselineSha256)) {
-                result.setVerdict(SaveDetectionVerdict.MTIME_FALSE_POSITIVE);
-                result.setEvidence("mtime changed but SHA-256 unchanged (false positive)");
-                Log.i(TAG, "Verdict: MTIME_FALSE_POSITIVE — mtime changed but content identical");
-            } else {
-                result.setVerdict(SaveDetectionVerdict.SAVE_SUCCESS);
-                this.contentChanged = true;
-                result.setEvidence("mtime changed AND SHA-256 changed — three-factor correlation confirmed");
-                Log.i(TAG, "Verdict: SAVE_SUCCESS — " + baselineSha256.substring(0, 16) + "... -> " + hash.substring(0, 16) + "...");
-            }
-        } catch (Exception e) {
-            result.setVerdict(SaveDetectionVerdict.DETECTION_UNCERTAIN);
-            result.setEvidence("SHA-256 calculation failed: " + e.getMessage());
-            Log.e(TAG, "SHA-256 calculation failed", e);
+        if (saveAsDetected && saveAsCandidateExists()) {
+            result.setVerdict(resolveVerdict(false, false, true, false));
+            result.setResultFilePath(new File(monitoredFile.getParentFile(), saveAsFileName).getAbsolutePath());
+            result.setEvidence("Save-as evidence recorded by FileObserver: " + saveAsFileName + " (candidate existence verified)");
+            Log.i(TAG, "Verdict: SAVE_AS_DETECTED — " + saveAsFileName + " (existence verified)");
+            return result;
         }
 
+        result.setVerdict(resolveVerdict(false, false, false, false));
+        result.setEvidence("mtime unchanged (no file modification detected)");
+        Log.i(TAG, "Verdict: DETECTION_UNCERTAIN — mtime unchanged (no file modification detected)");
         return result;
     }
 
     public SaveDetectionResult foregroundCheck() {
         Log.i(TAG, "Foreground check triggered");
         SaveDetectionResult result = checkChange();
-        if (result.getVerdict() == SaveDetectionVerdict.DETECTION_UNCERTAIN && !saveAsDetected) {
+        if (result.getVerdict() == SaveDetectionVerdict.DETECTION_UNCERTAIN) {
             result.setEvidence(result.getEvidence() + " [foregroundCheck: may need save-as scan]");
         }
         return result;
@@ -247,12 +249,19 @@ public class WpsSaveDetector {
         this.baselineMtime = newMtime;
         this.contentChanged = false;
         this.mtimeChanged = false;
+        this.saveAsDetected = false;
+        this.saveAsFileName = null;
         this.newSha256 = null;
         this.newMtime = 0;
         Log.i(TAG, "Baseline updated: SHA-256=" + newSha256.substring(0, 16) + "... mtime=" + newMtime);
     }
 
-    private static final Pattern NUMERIC_TEMP_PATTERN = Pattern.compile("^-?\\d+\\.-?\\d+$");
+    private boolean saveAsCandidateExists() {
+        return saveAsFileName != null && monitoredFile != null
+                && new File(monitoredFile.getParentFile(), saveAsFileName).exists();
+    }
+
+    private static final Pattern NUMERIC_TEMP_PATTERN = Pattern.compile("^[\\d.\\-]+$");
 
     public static boolean isTempFile(String fileName) {
         if (fileName == null) return false;
@@ -263,6 +272,15 @@ public class WpsSaveDetector {
         if (fileName.startsWith(".~lock")) return true;
         if (NUMERIC_TEMP_PATTERN.matcher(fileName).matches()) return true;
         return false;
+    }
+
+    static SaveDetectionVerdict resolveVerdict(boolean mtimeChanged, boolean shaChanged,
+                                               boolean saveAsEvidenceValid, boolean shaCalcFailed) {
+        if (shaCalcFailed) return SaveDetectionVerdict.DETECTION_UNCERTAIN;
+        if (mtimeChanged && shaChanged) return SaveDetectionVerdict.SAVE_SUCCESS;
+        if (mtimeChanged) return SaveDetectionVerdict.MTIME_FALSE_POSITIVE;
+        if (saveAsEvidenceValid) return SaveDetectionVerdict.SAVE_AS_DETECTED;
+        return SaveDetectionVerdict.DETECTION_UNCERTAIN;
     }
 
     private void recordEvent(String source, String eventType, String path) {

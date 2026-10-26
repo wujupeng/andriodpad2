@@ -1,0 +1,44 @@
+/* C-04 StatusBadge：语义浅底 + 深语义字；切换 0ms（无 transition 属性） */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pad2-space-1);
+  min-height: 28px;
+  padding-inline: var(--pad2-space-3);
+  border-radius: var(--pad2-radius-full);
+  font-size: var(--pad2-font-size-caption);
+  font-weight: var(--pad2-font-weight-semibold);
+  line-height: var(--pad2-line-height-tight);
+  white-space: nowrap;
+}
+
+.badge__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge--success {
+  background: var(--pad2-color-success-bg);
+  color: var(--pad2-color-success-text);
+}
+
+.badge--warning {
+  background: var(--pad2-color-warning-bg);
+  color: var(--pad2-color-warning-text);
+}
+
+.badge--danger {
+  background: var(--pad2-color-danger-bg);
+  color: var(--pad2-color-danger-text);
+}
+
+.badge--info {
+  background: var(--pad2-color-info-bg);
+  color: var(--pad2-color-info);
+}
+
+.badge--neutral {
+  background: var(--pad2-color-bg-hover);
+  color: var(--pad2-color-text-secondary);
+}

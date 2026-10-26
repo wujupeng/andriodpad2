@@ -1,0 +1,316 @@
+/* FileActionSheet 组件组（design.md 2.4.5，TASK-S4-05）
+ * 安全关键：删除 danger 项独立红色（与普通项视觉区分）；双语义三重区分。 */
+
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-3);
+}
+
+/* ===== ContextHeader ===== */
+
+.contextHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-3);
+  padding: var(--pad2-space-2) var(--pad2-space-1);
+}
+
+.contextIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--pad2-radius-md);
+  background: var(--pad2-color-bg-surface-alt);
+  color: var(--pad2-color-text-secondary);
+  flex-shrink: 0;
+}
+
+.contextTexts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.contextTitle {
+  font-size: var(--pad2-font-size-body);
+  font-weight: var(--pad2-font-weight-semibold);
+  color: var(--pad2-color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contextSubtitle {
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== ActionList ===== */
+
+.actionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-1);
+}
+
+.menuItem {
+  cursor: pointer;
+  border-radius: var(--pad2-radius-md);
+}
+
+.menuItemDisabled {
+  cursor: default;
+  opacity: 0.55;
+  border-radius: var(--pad2-radius-md);
+}
+
+.dangerIcon {
+  display: flex;
+  align-items: center;
+  color: var(--pad2-color-danger);
+}
+
+.dangerText {
+  color: var(--pad2-color-danger);
+}
+
+/* ===== RenameDialog ===== */
+
+.renameBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-2);
+}
+
+.renameHint {
+  margin: 0;
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-tertiary);
+}
+
+/* ===== DeleteConfirmDialog（双语义三重区分） ===== */
+
+.deleteBody {
+  margin: 0;
+  font-size: var(--pad2-font-size-body);
+  line-height: var(--pad2-line-height-relaxed);
+  color: var(--pad2-color-text-secondary);
+}
+
+.deleteBodyDanger {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-3);
+}
+
+.deleteDangerText {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--pad2-space-2);
+  margin: 0;
+  font-size: var(--pad2-font-size-body);
+  line-height: var(--pad2-line-height-relaxed);
+  color: var(--pad2-color-danger-text);
+}
+
+.ackRow {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-2);
+  font-size: var(--pad2-font-size-body);
+  color: var(--pad2-color-text-primary);
+  cursor: pointer;
+}
+
+.ackCheckbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--pad2-color-danger);
+  border-radius: var(--pad2-radius-sm);
+  background: var(--pad2-color-bg-surface);
+  position: relative;
+}
+
+.ackCheckbox:checked {
+  background: var(--pad2-color-danger);
+}
+
+.ackCheckbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--pad2-color-bg-surface);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* ===== ConflictDialog ===== */
+
+.conflictBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-3);
+}
+
+.conflictFile {
+  margin: 0;
+  font-size: var(--pad2-font-size-body);
+  line-height: var(--pad2-line-height-relaxed);
+  color: var(--pad2-color-text-secondary);
+}
+
+.conflictOptions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-2);
+}
+
+.conflictOption {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--pad2-space-2);
+  padding: var(--pad2-space-2) var(--pad2-space-3);
+  border: 1px solid var(--pad2-color-border);
+  border-radius: var(--pad2-radius-md);
+  cursor: pointer;
+}
+
+.conflictOptionSelected {
+  border-color: var(--pad2-color-brand-500);
+  background: var(--pad2-color-brand-50);
+}
+
+.conflictOptionDanger {
+  border-color: var(--pad2-color-danger);
+}
+
+.conflictOptionDanger.conflictOptionSelected {
+  border-color: var(--pad2-color-danger);
+  background: var(--pad2-color-danger-bg);
+}
+
+.conflictOption input[type='radio'] {
+  margin-top: 3px;
+  accent-color: var(--pad2-color-brand-500);
+}
+
+.conflictOptionDanger input[type='radio'] {
+  accent-color: var(--pad2-color-danger);
+}
+
+.conflictOptionTexts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.conflictOptionLabel {
+  font-size: var(--pad2-font-size-body);
+  font-weight: var(--pad2-font-weight-medium);
+  color: var(--pad2-color-text-primary);
+}
+
+.conflictOptionDesc {
+  font-size: var(--pad2-font-size-caption);
+  line-height: var(--pad2-line-height-normal);
+  color: var(--pad2-color-text-tertiary);
+}
+
+/* ===== DestinationPickerDialog ===== */
+
+.pickerBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-3);
+}
+
+.pickerPath {
+  margin: 0;
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-secondary);
+  word-break: break-all;
+}
+
+.pickerError {
+  margin: 0;
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-danger-text);
+}
+
+.pickerHint {
+  margin: 0;
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-tertiary);
+}
+
+.pickerList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-1);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.pickerNewFolder {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-2);
+}
+
+.pickerInput {
+  flex: 1;
+  min-height: 40px;
+  padding: 0 var(--pad2-space-3);
+  border: 1px solid var(--pad2-color-border);
+  border-radius: var(--pad2-radius-md);
+  background: var(--pad2-color-bg-surface);
+  font-size: var(--pad2-font-size-body);
+  color: var(--pad2-color-text-primary);
+  box-sizing: border-box;
+}
+
+.pickerInput:focus {
+  outline: none;
+  border-color: var(--pad2-color-brand-500);
+  box-shadow: 0 0 0 3px var(--pad2-color-brand-50);
+}
+
+/* ===== FileInfoDialog ===== */
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--pad2-space-2) var(--pad2-space-4);
+  margin: 0;
+}
+
+.infoGrid dt {
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-tertiary);
+  white-space: nowrap;
+}
+
+.infoGrid dd {
+  margin: 0;
+  font-size: var(--pad2-font-size-body);
+  color: var(--pad2-color-text-primary);
+  word-break: break-all;
+}
+
+.infoPath {
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-secondary);
+}

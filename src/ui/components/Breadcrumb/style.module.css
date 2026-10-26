@@ -1,0 +1,66 @@
+/* C-12 Breadcrumb：每段 48px 触控目标 */
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.breadcrumb__group {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.breadcrumb__segment {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pad2-space-1);
+  min-height: var(--pad2-size-touch-min);
+  padding-inline: var(--pad2-space-1);
+  border-radius: var(--pad2-radius-sm);
+  color: var(--pad2-color-text-secondary);
+  font-size: var(--pad2-font-size-body);
+  cursor: pointer;
+  max-width: 200px;
+}
+
+.breadcrumb__segment:active {
+  background: var(--pad2-color-bg-hover);
+}
+
+.breadcrumb__root {
+  color: var(--pad2-color-text-primary);
+  flex-shrink: 0;
+}
+
+.breadcrumb__segment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breadcrumb__ellipsis {
+  flex-shrink: 0;
+  color: var(--pad2-color-text-tertiary);
+  padding-inline: var(--pad2-space-2);
+}
+
+.breadcrumb__sep {
+  color: var(--pad2-color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.breadcrumb__current {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--pad2-size-touch-min);
+  padding-inline: var(--pad2-space-1);
+  font-size: var(--pad2-font-size-body);
+  font-weight: var(--pad2-font-weight-semibold);
+  color: var(--pad2-color-brand-700);
+  max-width: 260px;
+}

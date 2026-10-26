@@ -1,0 +1,98 @@
+/* 操作进度与结果呈现（design.md 2.4.5，TASK-S4-06）：BrowsePage 底部固定条 */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-2);
+  padding: var(--pad2-space-3) var(--pad2-space-4);
+  border-radius: var(--pad2-radius-lg);
+  background: var(--pad2-color-bg-surface);
+  box-shadow: var(--pad2-shadow-md);
+}
+
+.panelMain {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-4);
+}
+
+.panelActions {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-2);
+  flex-shrink: 0;
+}
+
+.targetList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-1);
+  margin: 0;
+  padding: var(--pad2-space-2) var(--pad2-space-3);
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--pad2-color-bg-surface-alt);
+  border-radius: var(--pad2-radius-md);
+}
+
+.targetItem {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-2);
+  min-height: 32px;
+  color: var(--pad2-color-text-secondary);
+}
+
+.targetItemCurrent {
+  color: var(--pad2-color-text-primary);
+  font-weight: var(--pad2-font-weight-medium);
+}
+
+.targetName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--pad2-font-size-caption);
+}
+
+.targetState {
+  flex-shrink: 0;
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-tertiary);
+}
+
+.failureList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.failureItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--pad2-space-2) var(--pad2-space-3);
+  border-radius: var(--pad2-radius-md);
+  background: var(--pad2-color-danger-bg);
+}
+
+.failureName {
+  font-size: var(--pad2-font-size-body);
+  font-weight: var(--pad2-font-weight-medium);
+  color: var(--pad2-color-text-primary);
+  word-break: break-all;
+}
+
+.failureReason {
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-danger-text);
+  word-break: break-all;
+}

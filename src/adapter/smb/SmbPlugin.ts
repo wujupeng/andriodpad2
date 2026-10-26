@@ -126,6 +126,24 @@ export interface SmbPluginInterface {
   cleanup(): Promise<void>;
   writeTextFile(options: { path: string; content: string }): Promise<{ success: boolean; path: string }>;
   ensureDirectory(options: { path: string }): Promise<{ success: boolean; path: string }>;
+  /** TASK-S5-03：远端复制（流式+临时文件+原子落位+SHA-256 校验；目标存在且未授权覆盖走 reject） */
+  copyFile(options: {
+    sourcePath: string;
+    destinationDir: string;
+    destFileName?: string;
+    overwrite?: boolean;
+  }): Promise<{ success: boolean; bytesCopied: number; sha256: string }>;
+  /** TASK-S5-03：远端移动（copy+SHA 校验成功后才删除源；无文件消失窗口） */
+  moveFile(options: {
+    sourcePath: string;
+    destinationDir: string;
+    destFileName?: string;
+    overwrite?: boolean;
+  }): Promise<{ success: boolean; bytesCopied: number; sha256: string }>;
+  /** TASK-S5-04-R：远端重命名（完整共享相对路径+replaceIfExists=false 服务端原子防覆盖；目标存在走 reject→conflict 类） */
+  renameFile(options: { path: string; newName: string }): Promise<{ success: boolean }>;
+  /** TASK-S5-05：远端单文件删除（目录拒绝/不存在明确失败/删除后服务器核验；错误走 reject→mapper 分类） */
+  deleteRemoteFile(options: { path: string }): Promise<{ success: boolean }>;
   exportLog(options: { logDir?: string; content: string; fileName: string }): Promise<{ success: boolean; path: string }>;
   getSessionInfo(): Promise<SessionInfoResult>;
   isWpsInstalled(): Promise<WpsInstallResult>;

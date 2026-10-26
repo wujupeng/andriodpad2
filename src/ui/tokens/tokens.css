@@ -1,0 +1,140 @@
+/*
+ * PAD2 设计令牌单一真源（tokens v1.0.0，Gate-UI-0 冻结基线）
+ * 依据：docs/p003-ui/design.md 2.3.1（T-1~T-6 取值表逐项抄录）
+ * 约束：此文件是全项目唯一允许裸色值的文件（CON-07）；
+ *       深色段与浅色段令牌键名一一对应（spec 4.5-4 前置）。
+ */
+
+:root {
+  /* ===== T-1 色彩令牌（浅色模式默认值）===== */
+
+  /* 品牌（方向 A 专业蓝） */
+  --pad2-color-brand-500: #2563EB;
+  --pad2-color-brand-600: #1D4ED8;
+  --pad2-color-brand-700: #1E40AF;
+  --pad2-color-brand-50: #EFF6FF;
+
+  /* 语义色（专用于状态，禁止装饰用途） */
+  --pad2-color-success: #16A34A;
+  --pad2-color-success-bg: #F0FDF4;
+  --pad2-color-success-text: #15803D;
+  --pad2-color-warning: #D97706;
+  --pad2-color-warning-bg: #FFFBEB;
+  --pad2-color-warning-text: #B45309;
+  --pad2-color-danger: #DC2626;
+  --pad2-color-danger-bg: #FEF2F2;
+  --pad2-color-danger-text: #B91C1C;
+  --pad2-color-info: #0369A1;
+  --pad2-color-info-bg: #F0F9FF;
+
+  /* 中性色（方向 B 浅色基调） */
+  --pad2-color-bg-page: #F5F7FA;
+  --pad2-color-bg-surface: #FFFFFF;
+  --pad2-color-bg-surface-alt: #FAFBFC;
+  --pad2-color-bg-hover: #F0F2F5;
+  --pad2-color-text-primary: #1F2937;
+  --pad2-color-text-secondary: #4B5563;
+  --pad2-color-text-tertiary: #9CA3AF;
+  --pad2-color-text-disabled: #C4C9D0;
+  --pad2-color-border: #E5E7EB;
+  --pad2-color-divider: #F0F1F4;
+  --pad2-color-scrim: rgba(15, 23, 42, 0.45);
+
+  /* ===== T-2 字体令牌 ===== */
+  --pad2-font-family: system-ui, -apple-system, "HarmonyOS Sans", "MiSans",
+    "Microsoft YaHei", sans-serif;
+  --pad2-font-size-display: 24px;
+  --pad2-font-size-title-lg: 20px;
+  --pad2-font-size-title: 17px;
+  --pad2-font-size-body: 15px;
+  --pad2-font-size-caption: 13px;
+  --pad2-font-size-micro: 11px;
+  --pad2-font-weight-regular: 400;
+  --pad2-font-weight-medium: 500;
+  --pad2-font-weight-semibold: 600;
+  --pad2-line-height-tight: 1.25;
+  --pad2-line-height-normal: 1.5;
+  --pad2-line-height-relaxed: 1.65;
+
+  /* ===== T-3 间距令牌（4px 栅格，方向 B 留白）===== */
+  /* 布局栅格：内容区 12 列 Grid（repeat(12, 1fr)），卡片间距 space-5，
+     首页存储概览卡 3 列（每卡 span 4）、最近文件区 span 12 */
+  --pad2-space-1: 4px;
+  --pad2-space-2: 8px;
+  --pad2-space-3: 12px;
+  --pad2-space-4: 16px;
+  --pad2-space-5: 24px;
+  --pad2-space-6: 32px;
+  --pad2-space-7: 48px;
+  --pad2-space-8: 64px;
+
+  /* ===== T-4 圆角与阴影令牌（方向 B 圆角卡片 + 轻阴影）===== */
+  --pad2-radius-sm: 6px;
+  --pad2-radius-md: 10px;
+  --pad2-radius-lg: 14px;
+  --pad2-radius-xl: 20px;
+  --pad2-radius-full: 999px;
+  --pad2-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --pad2-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.1);
+  --pad2-shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.16);
+
+  /* ===== T-5 动效令牌（含安全语义约束）===== */
+  --pad2-duration-fast: 120ms;
+  --pad2-duration-base: 200ms;
+  --pad2-duration-slow: 300ms;
+  --pad2-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --pad2-easing-decelerate: cubic-bezier(0.2, 0, 0.6, 1);
+  /* 状态指示器（色彩+图标）切换：零延迟，禁用过渡动画（spec 4.1.3、5.7.3 异常 1） */
+  --pad2-duration-state-swap: 0ms;
+
+  /* ===== T-6 尺寸与层级令牌 ===== */
+  --pad2-size-touch-min: 48px;
+  --pad2-size-sidenav: 240px;
+  --pad2-size-sidenav-collapsed: 72px;
+  --pad2-size-list-row: 64px;
+  --pad2-z-nav: 100;
+  --pad2-z-sheet: 200;
+  --pad2-z-dialog: 300;
+  /* 全局状态栏最高层，任何遮罩不可覆盖（安全语义不丢失的层级保证） */
+  --pad2-z-rail: 400;
+}
+
+/* ===== 深色模式覆盖值（键名与浅色段一一对应）===== */
+[data-theme="dark"] {
+  /* 品牌 */
+  --pad2-color-brand-500: #60A5FA;
+  --pad2-color-brand-600: #3B82F6;
+  --pad2-color-brand-700: #93C5FD;
+  --pad2-color-brand-50: rgba(96, 165, 250, 0.14);
+
+  /* 语义色 */
+  --pad2-color-success: #4ADE80;
+  --pad2-color-success-bg: rgba(74, 222, 128, 0.12);
+  --pad2-color-success-text: #86EFAC;
+  --pad2-color-warning: #FBBF24;
+  --pad2-color-warning-bg: rgba(251, 191, 36, 0.12);
+  --pad2-color-warning-text: #FCD34D;
+  --pad2-color-danger: #F87171;
+  --pad2-color-danger-bg: rgba(248, 113, 113, 0.12);
+  --pad2-color-danger-text: #FCA5A5;
+  --pad2-color-info: #38BDF8;
+  --pad2-color-info-bg: rgba(56, 189, 248, 0.12);
+
+  /* 中性色 */
+  --pad2-color-bg-page: #111418;
+  --pad2-color-bg-surface: #1C2128;
+  --pad2-color-bg-surface-alt: #232932;
+  --pad2-color-bg-hover: #2A313C;
+  --pad2-color-text-primary: #F3F4F6;
+  --pad2-color-text-secondary: #CBD5E1;
+  --pad2-color-text-tertiary: #6B7280;
+  --pad2-color-text-disabled: #4B5563;
+  --pad2-color-border: #2F3742;
+  --pad2-color-divider: #262D37;
+  --pad2-color-scrim: rgba(0, 0, 0, 0.55);
+
+  /* 深色阴影加深系列（配合 border 提亮区分层级） */
+  --pad2-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --pad2-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --pad2-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+}

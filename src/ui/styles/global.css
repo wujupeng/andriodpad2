@@ -1,0 +1,74 @@
+/*
+ * PAD2 全局样式（design.md 2.3.3-A）
+ * 约束：不含裸色值，全部经令牌引用（CON-07；白名单仅 tokens.css）。
+ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--pad2-color-bg-page);
+  font-family: var(--pad2-font-family);
+  font-size: var(--pad2-font-size-body);
+  line-height: var(--pad2-line-height-normal);
+  color: var(--pad2-color-text-primary);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100%;
+  /* 安全区域 padding（viewport-fit=cover，index.html 已配置） */
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* 滚动条样式（WebView 内呈现，细轨道弱存在感） */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--pad2-color-text-disabled);
+  border-radius: var(--pad2-radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pad2-color-text-tertiary);
+}
+/* 进行中图标旋转动画（仅限"进行中"语义，design.md 2.5.3） */
+@keyframes pad2-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

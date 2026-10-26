@@ -11,6 +11,7 @@ import android.util.Log;
 
 import com.getcapacitor.BridgeActivity;
 import com.pad2.filemanager.smb.SmbPlugin;
+import com.pad2.filemanager.update.UpdatePlugin;
 
 public class MainActivity extends BridgeActivity {
     private static final String TAG = "MainActivity";
@@ -19,6 +20,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().build());
         registerPlugin(SmbPlugin.class);
+        registerPlugin(UpdatePlugin.class);
         super.onCreate(savedInstanceState);
         requestStoragePermission();
     }

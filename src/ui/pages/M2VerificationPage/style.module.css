@@ -1,0 +1,322 @@
+/*
+ * M2 技术验证页样式（TASK-S2-05：存量内联样式令牌化）
+ * 色彩/字体/间距/圆角全部引用设计令牌（CON-07/CON-08）；
+ * 结果块底色 = 语义 bg 令牌；状态文本切换零过渡（安全语义约束）。
+ * 类名约定：本体 camelCase；BEM 修饰符（--）中划线 + 方括号访问。
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-4);
+  grid-column: span 12 / span 12;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  font-family: var(--pad2-font-family);
+}
+
+.page__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-1);
+}
+
+.page__title {
+  margin: 0;
+  font-size: var(--pad2-font-size-title-lg);
+  font-weight: var(--pad2-font-weight-semibold);
+  line-height: var(--pad2-line-height-tight);
+  color: var(--pad2-color-text-primary);
+}
+
+.page__subtitle {
+  margin: 0;
+  font-size: var(--pad2-font-size-body);
+  line-height: var(--pad2-line-height-normal);
+  color: var(--pad2-color-text-secondary);
+}
+
+/* 卡片内容堆叠（Card 内容区为块级，页内自带纵向布局） */
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--pad2-space-3);
+  width: 100%;
+}
+
+/* 连接表单 */
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--pad2-space-2);
+  width: 100%;
+}
+
+.input {
+  padding: var(--pad2-space-2);
+  border: 1px solid var(--pad2-color-border);
+  border-radius: var(--pad2-radius-sm);
+  font-size: var(--pad2-font-size-body);
+  font-family: inherit;
+  color: var(--pad2-color-text-primary);
+  background: var(--pad2-color-bg-surface);
+  min-width: 0;
+}
+
+.input:disabled {
+  color: var(--pad2-color-text-disabled);
+  background: var(--pad2-color-bg-hover);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--pad2-space-2);
+}
+
+.connectedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pad2-space-1);
+  font-size: var(--pad2-font-size-body);
+  color: var(--pad2-color-success-text);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--pad2-radius-full);
+  background: var(--pad2-color-success);
+}
+
+.pathText {
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-tertiary);
+}
+
+/* 文件列表 */
+.loadingText {
+  margin: 0;
+  font-size: var(--pad2-font-size-body);
+  color: var(--pad2-color-text-tertiary);
+}
+
+.fileList {
+  width: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--pad2-color-divider);
+  border-radius: var(--pad2-radius-sm);
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pad2-space-2);
+  padding: var(--pad2-space-2) var(--pad2-space-3);
+  border-bottom: 1px solid var(--pad2-color-divider);
+  cursor: pointer;
+}
+
+.fileRow:last-child {
+  border-bottom: none;
+}
+
+.fileRow:hover {
+  background: var(--pad2-color-bg-hover);
+}
+
+.fileRow--selected {
+  background: var(--pad2-color-brand-50);
+}
+
+.fileRow__name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pad2-space-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--pad2-font-size-body);
+  color: var(--pad2-color-text-primary);
+}
+
+.fileRow__size {
+  flex-shrink: 0;
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-tertiary);
+}
+
+.emptyText {
+  margin: 0;
+  padding: var(--pad2-space-2);
+  font-size: var(--pad2-font-size-body);
+  color: var(--pad2-color-text-tertiary);
+}
+
+/* 信息行与哈希 */
+.infoLine {
+  margin: 0;
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-secondary);
+}
+
+.hash {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: var(--pad2-font-size-micro);
+  color: var(--pad2-color-text-secondary);
+  word-break: break-all;
+}
+
+/* 结果块（语义底色） */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-1);
+  width: 100%;
+  padding: var(--pad2-space-2) var(--pad2-space-3);
+  border-radius: var(--pad2-radius-sm);
+  font-size: var(--pad2-font-size-caption);
+  line-height: var(--pad2-line-height-normal);
+  color: var(--pad2-color-text-primary);
+}
+
+.result--neutral {
+  background: var(--pad2-color-bg-surface-alt);
+}
+
+.result--info {
+  background: var(--pad2-color-info-bg);
+}
+
+.result--warning {
+  background: var(--pad2-color-warning-bg);
+}
+
+.result--success {
+  background: var(--pad2-color-success-bg);
+}
+
+.result--danger {
+  background: var(--pad2-color-danger-bg);
+}
+
+.result__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pad2-space-1);
+  font-weight: var(--pad2-font-weight-semibold);
+}
+
+/* 状态文本（Icon + 文案；切换零过渡，安全语义约束） */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pad2-space-1);
+  transition: none;
+}
+
+.status--pass {
+  color: var(--pad2-color-success-text);
+}
+
+.status--fail {
+  color: var(--pad2-color-danger-text);
+}
+
+.status--running {
+  color: var(--pad2-color-warning-text);
+}
+
+.status--pending {
+  color: var(--pad2-color-text-tertiary);
+}
+
+.textSuccess {
+  color: var(--pad2-color-success-text);
+}
+
+.textDanger {
+  color: var(--pad2-color-danger-text);
+}
+
+.textWarning {
+  color: var(--pad2-color-warning-text);
+}
+
+.textSecondary {
+  color: var(--pad2-color-text-secondary);
+}
+
+.textTertiary {
+  color: var(--pad2-color-text-tertiary);
+}
+
+/* V1-V7 门禁表 */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--pad2-font-size-caption);
+}
+
+.table th {
+  padding: var(--pad2-space-1) var(--pad2-space-2);
+  border-bottom: 2px solid var(--pad2-color-border);
+  text-align: left;
+  font-weight: var(--pad2-font-weight-semibold);
+  color: var(--pad2-color-text-secondary);
+}
+
+.table td {
+  padding: var(--pad2-space-1) var(--pad2-space-2);
+  border-bottom: 1px solid var(--pad2-color-divider);
+  text-align: left;
+  vertical-align: top;
+  color: var(--pad2-color-text-primary);
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table__id {
+  font-weight: var(--pad2-font-weight-semibold);
+  white-space: nowrap;
+}
+
+.table__details {
+  font-size: var(--pad2-font-size-micro);
+  color: var(--pad2-color-text-secondary);
+  word-break: break-all;
+}
+
+/* 错误横幅 */
+.errorBanner {
+  padding: var(--pad2-space-3);
+  border-radius: var(--pad2-radius-md);
+  background: var(--pad2-color-danger-bg);
+  color: var(--pad2-color-danger-text);
+  font-size: var(--pad2-font-size-caption);
+}
+
+/* 日志 */
+.logBox {
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: var(--pad2-space-2);
+  border-radius: var(--pad2-radius-sm);
+  background: var(--pad2-color-bg-surface-alt);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-secondary);
+}
+
+.logLine {
+  margin-bottom: 2px;
+}

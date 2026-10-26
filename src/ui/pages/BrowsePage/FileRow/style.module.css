@@ -1,0 +1,15 @@
+/* 文件行（design.md 2.4.4，TASK-S4-03）：虚拟化固定行高 64px */
+
+.rowFixed {
+  height: 64px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.markHighlight {
+  background: var(--pad2-color-brand-50);
+  color: inherit;
+  border-radius: var(--pad2-radius-sm);
+  padding: 0 1px;
+}

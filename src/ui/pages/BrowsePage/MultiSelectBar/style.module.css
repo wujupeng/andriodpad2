@@ -1,0 +1,29 @@
+/* 多选模式条（design.md 2.4.4，TASK-S4-03）：底部固定 */
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pad2-space-3);
+  flex-wrap: wrap;
+  padding: var(--pad2-space-3) var(--pad2-space-4);
+  border-radius: var(--pad2-radius-lg);
+  background: var(--pad2-color-bg-surface);
+  box-shadow: var(--pad2-shadow-md);
+}
+
+.count {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-2);
+  font-size: var(--pad2-font-size-body);
+  font-weight: var(--pad2-font-weight-semibold);
+  color: var(--pad2-color-text-primary);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-2);
+  flex-wrap: wrap;
+}

@@ -1,0 +1,29 @@
+/* HomePage：方向 A+B 融合布局（display 标题 + 圆角卡片 + 留白） */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-5);
+  grid-column: span 12 / span 12;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pad2-space-4);
+  flex-wrap: wrap;
+}
+
+.header__title {
+  margin: 0;
+  font-size: var(--pad2-font-size-display);
+  font-weight: var(--pad2-font-weight-semibold);
+  line-height: var(--pad2-line-height-tight);
+  color: var(--pad2-color-text-primary);
+}
+
+.header__plus {
+  font-size: var(--pad2-font-size-body);
+  line-height: 1;
+}

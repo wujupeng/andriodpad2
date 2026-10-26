@@ -1,0 +1,85 @@
+/* C-06 ProgressBar：8px 轨道；推进 120ms、回退立即跳变（无回退动画） */
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-1);
+  width: 100%;
+}
+
+.progress__labels {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--pad2-space-2);
+}
+
+.progress__label {
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress__percent {
+  font-size: var(--pad2-font-size-caption);
+  font-weight: var(--pad2-font-weight-semibold);
+  color: var(--pad2-color-text-primary);
+  flex-shrink: 0;
+}
+
+.progress__track {
+  height: 8px;
+  border-radius: var(--pad2-radius-full);
+  background: var(--pad2-color-divider);
+  overflow: hidden;
+}
+
+.progress__fill {
+  height: 100%;
+  border-radius: var(--pad2-radius-full);
+  transition: width var(--pad2-duration-fast) var(--pad2-easing-standard);
+}
+
+.progress__track--brand .progress__fill {
+  background: var(--pad2-color-brand-500);
+}
+
+.progress__track--success .progress__fill {
+  background: var(--pad2-color-success);
+}
+
+.progress__track--warning .progress__fill {
+  background: var(--pad2-color-warning);
+}
+
+.progress__track--danger .progress__fill {
+  background: var(--pad2-color-danger);
+}
+
+/* 不确定态：1.2s 循环位移条纹 */
+.progress__stripes {
+  height: 100%;
+  width: 40%;
+  border-radius: var(--pad2-radius-full);
+  background: var(--pad2-color-brand-500);
+  animation: progress-slide 1.2s linear infinite;
+}
+
+@keyframes progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(350%);
+  }
+}
+
+.progress__sublabel {
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

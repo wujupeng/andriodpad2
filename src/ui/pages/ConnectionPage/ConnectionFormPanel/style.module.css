@@ -1,0 +1,104 @@
+/* 连接表单面板（design.md 2.4.3，TASK-S3-03）：轻盈留白 + 行动区分列 */
+
+.panelTitle {
+  font-size: var(--pad2-font-size-title);
+  font-weight: var(--pad2-font-weight-semibold);
+  color: var(--pad2-color-text-primary);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-4);
+}
+
+.statusRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-2);
+}
+
+.rememberRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--pad2-space-3);
+  cursor: pointer;
+  padding: var(--pad2-space-1) 0;
+}
+
+.rememberRow:has(.rememberCheckbox:disabled) {
+  cursor: default;
+}
+
+.rememberCheckbox {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  border: 1.5px solid var(--pad2-color-border);
+  border-radius: var(--pad2-radius-sm);
+  background: var(--pad2-color-bg-surface);
+  transition:
+    border-color 120ms var(--pad2-easing-standard),
+    background-color 120ms var(--pad2-easing-standard);
+  position: relative;
+}
+
+.rememberCheckbox:hover:not(:disabled) {
+  border-color: var(--pad2-color-brand-500);
+}
+
+.rememberCheckbox:checked:not(:disabled) {
+  border-color: var(--pad2-color-brand-500);
+  background: var(--pad2-color-brand-500);
+}
+
+.rememberCheckbox:checked:not(:disabled)::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 11px;
+  border: solid var(--pad2-color-bg-surface);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.rememberCheckbox:disabled {
+  border-color: var(--pad2-color-text-disabled);
+  background: var(--pad2-color-bg-surface-alt);
+}
+
+.rememberCheckbox:focus-visible {
+  outline: 2px solid var(--pad2-color-brand-500);
+  outline-offset: 2px;
+}
+
+.rememberText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rememberLabel {
+  font-size: var(--pad2-font-size-body);
+  font-weight: var(--pad2-font-weight-medium);
+  color: var(--pad2-color-text-primary);
+}
+
+.rememberHint {
+  font-size: var(--pad2-font-size-caption);
+  line-height: var(--pad2-line-height-normal);
+  color: var(--pad2-color-text-tertiary);
+}
+
+.actions {
+  display: flex;
+  flex-direction: row;
+  gap: var(--pad2-space-3);
+  padding-top: var(--pad2-space-2);
+  border-top: 1px solid var(--pad2-color-divider);
+}

@@ -1,0 +1,36 @@
+/* SMB 连接页（design.md 2.4.3，TASK-S3-03/04）
+ * 双栏：≥900px 左列连接列表 5 列 + 右列表单 7 列；窄屏单栏纵向（列表在上）。 */
+
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-column: span 12 / span 12;
+  gap: var(--pad2-space-5);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .page {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
+}
+
+.listColumn {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.formColumn {
+  display: flex;
+  flex-direction: column;
+  max-width: 560px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .formColumn {
+    margin: 0;
+  }
+}

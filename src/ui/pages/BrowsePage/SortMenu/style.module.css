@@ -1,0 +1,44 @@
+/* 排序菜单（design.md 2.4.4，TASK-S4-03） */
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-1);
+  min-height: 40px;
+  padding: 0 var(--pad2-space-3);
+  border-radius: var(--pad2-radius-full);
+  color: var(--pad2-color-text-secondary);
+  background: var(--pad2-color-bg-surface);
+  border: 1px solid var(--pad2-color-border);
+}
+
+.trigger:hover {
+  background: var(--pad2-color-bg-hover);
+}
+
+.abbrBadge {
+  font-size: var(--pad2-font-size-caption);
+  font-weight: var(--pad2-font-weight-semibold);
+  color: var(--pad2-color-brand-700);
+  background: var(--pad2-color-brand-50);
+  border-radius: var(--pad2-radius-sm);
+  padding: 1px 6px;
+  line-height: var(--pad2-line-height-tight);
+}
+
+.directionIndicator {
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-text-tertiary);
+}
+
+.menuList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-1);
+}
+
+.directionRow {
+  display: flex;
+  justify-content: center;
+  padding: var(--pad2-space-3) 0 var(--pad2-space-2);
+}

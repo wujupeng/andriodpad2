@@ -1,0 +1,108 @@
+/* C-01 BaseButton（design.md 2.3.2；视觉属性一律令牌，无硬编码值） */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pad2-space-1);
+  border-radius: var(--pad2-radius-md);
+  font-size: var(--pad2-font-size-body);
+  font-weight: var(--pad2-font-weight-semibold);
+  line-height: var(--pad2-line-height-tight);
+  padding-inline: 16px;
+  min-height: var(--pad2-size-touch-min);
+  transition: transform var(--pad2-duration-fast) var(--pad2-easing-standard),
+    background var(--pad2-duration-fast) var(--pad2-easing-standard);
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.button:disabled {
+  color: var(--pad2-color-text-disabled);
+  cursor: not-allowed;
+}
+
+.button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+}
+
+.button__icon:empty {
+  display: none;
+}
+
+.button__label {
+  white-space: nowrap;
+}
+
+/* ===== 尺寸 ===== */
+
+.button--lg {
+  min-height: 48px;
+}
+
+.button--md {
+  min-height: 44px;
+}
+
+.button--sm {
+  min-height: 36px;
+  font-size: var(--pad2-font-size-caption);
+}
+
+/* ===== 变体 ===== */
+
+.button--primary {
+  background: var(--pad2-color-brand-500);
+  color: var(--pad2-color-bg-surface);
+}
+
+.button--primary:active:not(:disabled) {
+  background: var(--pad2-color-brand-600);
+}
+
+.button--primary:disabled {
+  background: var(--pad2-color-text-disabled);
+}
+
+.button--secondary {
+  background: var(--pad2-color-bg-surface);
+  color: var(--pad2-color-brand-500);
+  border: 1.5px solid var(--pad2-color-brand-500);
+}
+
+.button--secondary:active:not(:disabled) {
+  background: var(--pad2-color-brand-50);
+}
+
+.button--text {
+  background: transparent;
+  color: var(--pad2-color-brand-500);
+  padding-inline: var(--pad2-space-2);
+}
+
+.button--text:active:not(:disabled) {
+  background: var(--pad2-color-bg-hover);
+}
+
+.button--danger {
+  background: var(--pad2-color-danger);
+  color: var(--pad2-color-bg-surface);
+}
+
+.button--danger:active:not(:disabled) {
+  background: var(--pad2-color-danger-text);
+}
+
+.button--danger:disabled {
+  background: var(--pad2-color-text-disabled);
+}
+
+/* loading 态：图标位 Spinner，文案保留 */
+.button--loading {
+  cursor: wait;
+}
