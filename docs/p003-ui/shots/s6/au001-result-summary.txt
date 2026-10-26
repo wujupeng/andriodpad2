@@ -1,0 +1,18 @@
+AU-001 验证结果
+时间: 2026-10-26T06:02:49.264Z
+设备: AJ7XJV6904H00320
+断言数: 12
+结果: ALL PASS
+
+PASS AU-TC-01: 无更新 Banner 显示
+PASS AU-TC-02: 更新 Banner 显示
+PASS AU-TC-02: 版本号 2.0 呈现
+PASS AU-TC-06: 降级版本不提示更新
+PASS AU-TC-09: App 正常进入主功能（非白屏）
+PASS AU-TC-13: src/core/ 零变更（无 FRZ-EX 授权）
+PASS AU-TC-13: AU-001 update 包不依赖 smb 包（独立连接）
+PASS AU-TC-13: AndroidManifest 变更行数 1 <= 5（FRZ-EX 授权范围）
+PASS AU-TC-14: package.json 无新增依赖（+0 -0）
+PASS AU-TC-15: tsc --noEmit 通过
+PASS AU-TC-15: 设计令牌检查通过
+PASS AU-TC-15: 对比度检查通过

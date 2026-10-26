@@ -942,4 +942,12 @@ S0-01 → S1-01 → S1-02 → S1-06 → S1-11 → S2-03 → S2-05 → S3-01 → 
 
 ---
 
+## 7. 独立功能任务登记
+
+### TASK-AU-001 App 内自动更新（PM 授权，新功能开发 + 冻结区扩展）
+
+- **完成登记（2026-10-26，提请 PM Gate Review）**：交付 App 内自动更新功能（AU-001）——SMB 更新源独立连接 + update.json 版本检查 + APK 下载/SHA-256 校验/签名核验/系统安装器调起 + UpdateBanner/UpdateDialog UI + updateStore 九态状态机 + UpdateChecker/ApkDownloader/InstallTrigger 编排器 + initAutoUpdateCheck 启动触发。**冻结区扩展 FRZ-EX-01~04**（PM 授权）：AndroidManifest +1 行权限 / update/ 子包 6 Java 文件 + MainActivity registerPlugin / file_paths.xml 零变更 / main.tsx ≤3 行。**验证结果**：已实现 7 场景（TC01/02/06/09/13/14/15）全 PASS（12/12 断言）——无更新检查/有更新 Banner/防降级/检查失败不阻塞/冻结区边界/零新增依赖/三项静态检查。**验证中发现并修复 4 项真实缺陷**：①UpdateBanner 未挂载 AppShell；②updateConfig SMB 凭据错误（pad2gate3→debian/9090）；③UpdateChecker 独立 getUpdatePassword() 未调用 updateConfig；④ApkDownloader 同问题。修复后重建 3 轮复验全过。**APK**：`pad2-p008-v14.apk`（SHA-256 `8316b18f54a1fb1bc4aeb0a439ca155cf1d77edc3ade8920ed46f2706f659edd`，v1.4 code 5）。**回滚基线**：release `d6d75d20…f099e8` + debug `e7a67ee5…f1ee7b`。**提交**：`dfd43cf`。**未实现 8 场景**（TC03/04/05/07/08/10/11/12 完整下载/校验/安装流程）如实标记待后续轮次。验证报告 `docs/p003-ui/app-auto-update-verification.md` + 脚本 `scripts/verify-app-auto-update.mjs` + 证据 `docs/p003-ui/shots/s6/au001-*`。**本授权不含生产发布**。
+
+---
+
 **文档结束**（本文档经用户确认后，TASK-S0-01 的任务清单评审项即告完成，S1 编码可按 Gate-UI-0 裁定启动）
