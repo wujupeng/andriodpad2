@@ -10,6 +10,7 @@ import type { ReactNode } from 'react';
 import { SideNav } from './SideNav';
 import { TopBar } from './TopBar';
 import { GlobalStatusRail } from './GlobalStatusRail';
+import { UpdateBanner } from '../../components/UpdateBanner';
 import { useThemeSync } from '../../hooks/useThemeSync';
 import { useNavigationStore } from '../../../state/navigationStore';
 import type { ViewId } from '../../../state/navigationStore';
@@ -105,6 +106,7 @@ export function AppShell() {
       )}
       <div className={styles.main}>
         <GlobalStatusRail />
+        <UpdateBanner />
         <TopBar
           title={VIEW_TITLES[currentView]}
           showDrawerTrigger={isNarrow}

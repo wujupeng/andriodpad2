@@ -1,5 +1,5 @@
 import UpdatePlugin from '../../adapter/update/UpdatePlugin';
-import { UPDATE_SOURCE } from '../../adapter/update/updateConfig';
+import { UPDATE_SOURCE, getUpdateCredentials } from '../../adapter/update/updateConfig';
 import { useUpdateStore } from '../../state/updateStore';
 import { mapUpdateError } from '../../utils/updateErrorMapper';
 
@@ -15,7 +15,7 @@ export async function downloadAndVerify(): Promise<string | null> {
       host: UPDATE_SOURCE.host,
       share: UPDATE_SOURCE.share,
       username: UPDATE_SOURCE.username,
-      password: '',
+      password: getUpdateCredentials(),
       domain: UPDATE_SOURCE.domain,
     });
     const { localPath } = await UpdatePlugin.downloadApk({

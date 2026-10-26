@@ -1,5 +1,5 @@
 import UpdatePlugin from '../../adapter/update/UpdatePlugin';
-import { UPDATE_SOURCE, UPDATE_MANIFEST_FILE, UPDATE_CHECK_INTERVAL_MS, UPDATE_ENABLED } from '../../adapter/update/updateConfig';
+import { UPDATE_SOURCE, UPDATE_MANIFEST_FILE, UPDATE_CHECK_INTERVAL_MS, UPDATE_ENABLED, getUpdateCredentials } from '../../adapter/update/updateConfig';
 import { useUpdateStore } from '../../state/updateStore';
 import { mapUpdateError } from '../../utils/updateErrorMapper';
 import type { UpdateInfo } from '../../adapter/update/types';
@@ -18,7 +18,7 @@ export async function checkForUpdate(): Promise<void> {
       host: UPDATE_SOURCE.host,
       share: UPDATE_SOURCE.share,
       username: UPDATE_SOURCE.username,
-      password: getUpdatePassword(),
+      password: getUpdateCredentials(),
       domain: UPDATE_SOURCE.domain,
     });
     const { manifest } = await UpdatePlugin.readUpdateManifest({ path: `${UPDATE_SOURCE.path}/${UPDATE_MANIFEST_FILE}` });
@@ -46,6 +46,3 @@ export async function checkForUpdate(): Promise<void> {
   }
 }
 
-function getUpdatePassword(): string {
-  return '';
-}
