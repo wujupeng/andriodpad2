@@ -15,6 +15,7 @@ export interface BaseButtonProps {
   icon?: ReactNode;
   children: ReactNode;
   onPress?: () => void;
+  dataAttrs?: Record<string, string | boolean>;
 }
 
 export function BaseButton({
@@ -25,6 +26,7 @@ export function BaseButton({
   icon,
   children,
   onPress,
+  dataAttrs,
 }: BaseButtonProps) {
   const cls = [
     styles.button,
@@ -41,6 +43,7 @@ export function BaseButton({
       className={cls}
       disabled={disabled || loading}
       onClick={onPress}
+      {...(dataAttrs ?? {})}
     >
       <span className={styles.button__icon}>
         {loading ? <Spinner size={size === 'sm' ? 18 : 20} /> : icon}

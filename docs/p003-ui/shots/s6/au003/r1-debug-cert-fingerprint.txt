@@ -1,0 +1,30 @@
+TASK-AU003-A-01: TVF-02 核验 — Debug 证书指纹完整值
+=====================================================
+日期: 2026-10-27
+核验方法: apksigner verify --verbose --print-certs
+核验对象: /mnt/share/apk/dazongli/pad2-v99.apk (远程构建服务器)
+
+apksigner 输出:
+  Verifies
+  Verified using v1 scheme (JAR signing): false
+  Verified using v2 scheme (APK Signature Scheme v2): true
+  Verified using v3 scheme (APK Signature Scheme v3): true
+  Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+  Verified using v4 scheme (APK Signature Scheme v4): false
+  Number of signers: 1
+  Signer #1 certificate DN: C=US, O=Android, CN=Android Debug
+  Signer #1 certificate SHA-256 digest: a41e9a222026def9f7e7ed1106909e6b67bec99cda69b3455dcfad25d4bb5290
+  Signer #1 certificate SHA-1 digest: 979a54040d16ccb582d527386823230bb5922c33
+  Signer #1 certificate MD5 digest: 4a73115c4ddfff5df7fc5d96128033de
+  Signer #1 key algorithm: RSA
+  Signer #1 key size (bits): 2048
+
+完整 SHA-256 指纹:
+  a41e9a222026def9f7e7ed1106909e6b67bec99cda69b3455dcfad25d4bb5290
+
+前 8 字符: a41e9a22 ✅ (与 AU-002 Gate Review 报告匹配)
+后 8 字符: d4bb5290 ✅ (与 AU-002 Gate Review 报告匹配)
+
+结论: TVF-02 已核验。Debug 证书指纹完整值为
+  a41e9a222026def9f7e7ed1106909e6b67bec99cda69b3455dcfad25d4bb5290
+Release 签名证书指纹必须 ≠ 此值。

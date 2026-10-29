@@ -1,0 +1,22 @@
+{
+  "task": "TASK-AU005-E-01",
+  "description": "EARS 覆盖矩阵核验",
+  "timestamp": "2026-10-28T14:30:00Z",
+  "coverage": {
+    "DFX": { "count": 14, "covered": 14, "rate": "100%" },
+    "R-FAS": { "count": 8, "covered": 8, "rate": "100%" },
+    "R-ESS": { "count": 7, "covered": 7, "rate": "100%" },
+    "R-OPS": { "count": 5, "covered": 5, "rate": "100%" },
+    "R-NOTICE": { "count": 5, "covered": 5, "rate": "100%" },
+    "R-KEEP": { "count": 7, "covered": 7, "rate": "100%" },
+    "R-FRZ": { "count": 6, "covered": 6, "rate": "100%" },
+    "R-GATE": { "count": 4, "covered": 4, "rate": "100%" },
+    "dataConstraints": { "count": 6, "covered": 6, "rate": "100%" }
+  },
+  "totalEARS": 56,
+  "totalCovered": 56,
+  "totalDataConstraints": 6,
+  "totalDataConstraintsCovered": 6,
+  "overallRate": "100%",
+  "verification": "PASS"
+}

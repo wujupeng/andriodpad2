@@ -1,0 +1,12 @@
+{
+  "task": "TASK-AU006-P1-02",
+  "timestamp": "2026-10-28T15:35:00Z",
+  "accounts": [
+    { "name": "debian", "uid": 1000, "groups": ["debian"], "shareAccess": "READ+WRITE (valid users)", "passwordStatus": "ACTIVE" },
+    { "name": "winuser", "uid": 1001, "groups": ["winuser"], "shareAccess": "NONE (not in valid users)", "passwordStatus": "EXPOSED-ROTATE-PENDING" },
+    { "name": "pad2gate3", "uid": 1002, "groups": ["pad2gate3"], "shareAccess": "NONE (not in valid users)", "passwordStatus": "EXPOSED-ROTATE-PENDING" }
+  ],
+  "note": "9191 密码已暴露，记录为 EXPOSED-ROTATE-PENDING（不写明文）",
+  "zeroPlaintextPassword": true,
+  "verification": "PASS"
+}

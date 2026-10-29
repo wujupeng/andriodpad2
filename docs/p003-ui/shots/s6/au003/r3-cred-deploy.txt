@@ -1,0 +1,37 @@
+TASK-AU003-C-03: update_cred.json 凭据文件创建 + ADB push 部署
+=====================================================
+日期: 2026-10-27
+凭据方案: 设备受控凭据文件 (DEVICE_FILE, TVF-10 已决策)
+
+凭据文件结构 (update_cred.json):
+  {
+    "host": "192.168.2.3",
+    "share": "share",
+    "path": "apk",
+    "username": "debian",
+    "password": "<REDACTED>",
+    "domain": ""
+  }
+
+部署操作:
+  adb -s AJ7XJV6904H00320 push update_cred.json /sdcard/Android/data/com.pad2.filemanager/files/update_cred.json
+  结果: 1 file pushed, 0 skipped. 0.2 MB/s (102 bytes in 0.001s)
+
+核验结果:
+  设备文件路径: /sdcard/Android/data/com.pad2.filemanager/files/update_cred.json
+  文件大小: 102 bytes
+  文件权限: -rw-rw-rw-
+  JSON 字段: host, share, path, username, password, domain ✅
+  本地临时文件: 已删除 ✅
+  .gitignore 排除: update_cred.json 已添加至 .gitignore ✅
+  git status: 未跟踪 (被 .gitignore 排除) ✅
+
+.gitignore 变更:
+  新增排除模式:
+    - update_cred.json
+    - android/keystore/
+    - gradle.properties
+
+结论: update_cred.json 已成功部署至设备应用私有目录。
+凭据文件不入 git，不打包入 APK，由运维 ADB push 管理。
+本文档不含密码明文。

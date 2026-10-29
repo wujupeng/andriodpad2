@@ -1,0 +1,43 @@
+=== AU-002 冻结区零变更最终核验报告 ===
+日期: 2026-10-27
+基线: a5d3a67 (AU-001 前) / a21fc95 (AU-001 完成后)
+
+--- 1. 冻结区文件清单（须零变更） ---
+
+[src/core/ 递归]
+  a5d3a67..HEAD: 无变更 ✅
+  a21fc95..HEAD: 无变更 ✅
+  工作区未提交: 无变更 ✅
+
+[src/adapter/smb/SmbPlugin.ts]
+  a5d3a67..HEAD: 有变更（来自 a21fc95 AU-001 初始提交，非 AU-002）
+  a21fc95..HEAD: 无变更 ✅
+  工作区未提交: 无变更 ✅
+
+[android/.../smb/ 递归]
+  a5d3a67..HEAD: 有变更（来自 a21fc95 AU-001 初始提交，非 AU-002）
+  a21fc95..HEAD: 无变更 ✅
+  工作区未提交: 无变更 ✅
+
+--- 2. main.tsx 行数核验（≤ 3） ---
+  a21fc95..HEAD: 0 行变更（AU-002 零新增）✅
+  工作区未提交: 0 行变更 ✅
+  注: a5d3a67..a21fc95 的 main.tsx 变更来自 AU-001 初始提交（含 initAutoUpdateCheck 2 行）
+
+--- 3. package.json 依赖核验（CON-01 零新增） ---
+  a5d3a67..HEAD dependencies/devDependencies: 零新增 ✅
+  工作区未提交: 无变更 ✅
+
+--- 4. AndroidManifest.xml 核验 ---
+  a5d3a67..HEAD: 仅 1 行新增（REQUEST_INSTALL_PACKAGES，AU-001 授权）✅
+  工作区未提交: 无变更 ✅
+
+--- 5. file_paths.xml 核验 ---
+  a5d3a67..HEAD: 零变更 ✅
+  工作区未提交: 零变更 ✅
+
+--- 核验结论 ---
+全部 7 项检查 PASS。AU-002 变更严格限制在 update/ 子包范围内，
+冻结区（src/core/、src/adapter/smb/SmbPlugin.ts、android/.../smb/）零变更，
+main.tsx 零新增行，package.json 零新增依赖，AndroidManifest 仅 AU-001 已有变更，
+file_paths.xml 零变更。

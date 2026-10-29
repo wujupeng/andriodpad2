@@ -1,0 +1,16 @@
+TASK-AU003-A-02: TVF-07 核验 — 远程 apksigner 可用性
+=====================================================
+日期: 2026-10-27
+核验方法: SSH 连接远程构建服务器 + ls + apksigner --version + java -version
+远程服务器: debian@192.168.2.3
+
+核验结果:
+  apksigner 路径: /home/debian/android-sdk/build-tools/36.0.0/apksigner
+  apksigner 权限: -rwxrwxr-x (可执行)
+  apksigner 版本: 0.9
+  Java 版本: OpenJDK 21.0.11 (2026-04-21)
+  Java 运行时: OpenJDK Runtime Environment (build 21.0.11+10-1-deb13u2-Debian)
+  Java VM: OpenJDK 64-Bit Server VM (build 21.0.11+10-1-deb13u2-Debian, mixed mode, sharing)
+
+结论: TVF-07 已核验。远程 apksigner 路径可用且可执行，Java 运行时可用。
+apksigner 可用于 Release APK 签名与验证。

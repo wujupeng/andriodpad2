@@ -1,0 +1,19 @@
+{
+  "rotations": [
+    {
+      "timestamp": "2026-10-27T10:13:02.718Z",
+      "status": "SUCCESS",
+      "newCredVerified": true,
+      "oldCredRevoked": true
+    }
+  ],
+  "permissionChanges": [
+    {
+      "timestamp": "2026-10-27T10:24:11.126Z",
+      "status": "SUCCESS",
+      "readVerified": true,
+      "writeDenied": true,
+      "archiveAccessible": true
+    }
+  ]
+}

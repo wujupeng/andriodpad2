@@ -1,0 +1,40 @@
+{
+  "taskId": "TASK-AU004-0-03",
+  "tvf": "TVF-04",
+  "date": "2026-10-27",
+  "account": "debian",
+  "accountExists": true,
+  "accountFlags": "[U          ]",
+  "domain": "DEBIAN13",
+  "shareSection": {
+    "name": "share",
+    "path": "/mnt/share",
+    "writable": true,
+    "readOnly": false,
+    "validUsers": ["debian", "winuser", "pad2gate3"],
+    "forceUser": "debian",
+    "browseable": true,
+    "guestOk": false
+  },
+  "permissionTests": {
+    "readTest": {
+      "command": "smbclient //localhost/share -U debian%<REDACTED> -c 'cd apk;ls'",
+      "result": "SUCCESS",
+      "details": "Listed apk directory contents successfully"
+    },
+    "writeTest": {
+      "command": "smbclient //localhost/share -U debian%<REDACTED> -c 'cd apk;put /tmp/test-tvf04.txt test-tvf04.txt'",
+      "result": "SUCCESS",
+      "details": "Created test-tvf04.txt in apk directory, verified with ls, cleaned up"
+    }
+  },
+  "currentPermissions": {
+    "READ": true,
+    "WRITE": true,
+    "DELETE": true,
+    "LIST": true
+  },
+  "assessment": "Permissions are overly permissive — WRITE is allowed, needs tightening to READ-only",
+  "testFileCleaned": true,
+  "result": "PASS"
+}

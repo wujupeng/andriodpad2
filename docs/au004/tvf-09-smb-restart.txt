@@ -1,0 +1,18 @@
+=== TASK-AU004-0-06: TVF-09 SMB Restart ===
+Date: 2026-10-27
+--- smbcontrol ---
+Path: /usr/bin/smbcontrol
+Available: yes
+Usage: smbcontrol [OPTION...] <destination> <message-type> <parameters>
+
+--- systemctl ---
+Path: /usr/bin/systemctl
+smbd.service - Samba SMB Daemon
+Loaded: loaded (/usr/lib/systemd/system/smbd.service; enabled; preset: enabled)
+Active: active (running) since Mon 2026-10-26 15:10:38 CST; 1 day 1h ago
+
+--- Recommended Approach ---
+Primary: smbcontrol all reload-config (smooth reload, no connection interruption)
+Fallback: systemctl restart smbd (service restart, interrupts connections)
+
+Result: PASS — Both smbcontrol and systemctl available, smbd active (running)

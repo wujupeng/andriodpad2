@@ -1,0 +1,10 @@
+{
+  "task": "TASK-AU006-F-01",
+  "timestamp": "2026-10-28T16:00:00Z",
+  "results": [
+    { "path": "src/adapter/smb/SmbPlugin.ts", "baselineSha256": "cf8ab2d8...", "currentSha256": "cf8ab2d8...", "diffLines": 0, "match": true },
+    { "path": "src/core/", "diffLines": 0, "match": true },
+    { "path": "android/app/src/main/java/com/pad2/filemanager/smb/", "diffLines": 0, "match": true }
+  ],
+  "verification": "PASS"
+}

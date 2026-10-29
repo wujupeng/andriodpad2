@@ -1,0 +1,66 @@
+=== TASK-AU004-0-02: TVF-03 SMB Config ===
+Date: 2026-10-27
+--- smb.conf ---
+[global]
+   workgroup = WORKGROUP
+   server string = Samba Server
+   server role = standalone server
+   passdb backend = tdbsam
+   log file = /var/log/samba/log.%m
+   max log size = 50
+   dns proxy = no
+   security = user
+   map to guest = never
+   veto files = /lost+found/
+
+[share]
+   path = /mnt/share
+   browseable = yes
+   writable = yes
+   guest ok = no
+   valid users = debian winuser pad2gate3
+   force user = debian
+   read only = no
+   create mask = 0666
+   directory mask = 0777
+   force create mode = 0666
+   force directory mode = 0777
+
+[storage]
+   path = /mnt/storage
+   browseable = yes
+   writable = yes
+   guest ok = no
+   valid users = debian
+   force user = debian
+   read only = no
+   create mask = 0666
+   directory mask = 0777
+   force create mode = 0666
+   force directory mode = 0777
+
+[smb]
+   path = /mnt/smb
+   browseable = yes
+   writable = yes
+   guest ok = no
+   valid users = debian winuser
+   force user = debian
+   read only = no
+   create mask = 0666
+   directory mask = 0777
+   force create mode = 0666
+   force directory mode = 0777
+
+--- testparm ---
+testparm -s output valid, no syntax errors.
+
+--- Key Findings ---
+1. [share] section path = /mnt/share (NOT /mnt/share/apk/)
+2. APK directory /mnt/share/apk/ is a SUBDIRECTORY of the share
+3. Current permissions: writable=yes, read only=No → WRITE ALLOWED (needs tightening)
+4. valid users = debian winuser pad2gate3 (3 users have access)
+5. force user = debian
+
+Result: PASS — SMB config exists, testparm valid, [share] section found
+Note: Share path is /mnt/share, APK is at /mnt/share/apk/ subdirectory

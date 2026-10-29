@@ -1,0 +1,8 @@
+{
+  "task": "TASK-AU006-G-02",
+  "timestamp": "2026-10-28T16:00:00Z",
+  "cmd": "node scripts/check-design-tokens.mjs",
+  "exitCode": 0,
+  "output": "✓ 令牌合规检查通过：无硬编码色值、无 emoji 图标",
+  "verification": "PASS"
+}

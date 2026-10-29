@@ -28,6 +28,7 @@ import { useSmbConnectionStore } from '../../../state/smbConnectionStore';
 import { useEditSessionStore } from '../../../state/editSessionStore';
 import { useBrowseStore } from '../../../state/browseStore';
 import type { SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
+import { ReadOnlyNotice } from '../../components/ReadOnlyNotice';
 import styles from './style.module.css';
 
 type SheetView = 'menu' | 'rename' | 'delete' | 'picker' | 'info' | 'conflict';
@@ -140,8 +141,11 @@ export function FileActionSheet({
       if (!state.enabled) return;
       switch (action) {
         case 'open':
+          // AU-005 只读模式：移除 edit 分发（R-FAS-01），open 走只读打开
+          void handleOpenOrEdit('open');
+          break;
         case 'edit':
-          void handleOpenOrEdit(action);
+          // AU-005：edit 不可达（ActionList 已移除 + availability 恒 false），兜底 return
           break;
         case 'copy':
         case 'move':
@@ -282,6 +286,8 @@ export function FileActionSheet({
       >
         <div className={styles.sheetBody}>
           <ContextHeader entries={entries} />
+          {/* AU-005 只读模式：菜单级只读标注（R-FAS-06、R-NOTICE-01） */}
+          <ReadOnlyNotice variant="badge" />
           {statusMessage && (
             <StatusBanner
               semantic={statusMessage.semantic}

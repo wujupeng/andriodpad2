@@ -1,0 +1,230 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-10-28T17:42:00Z",
+  "generatedBy": "WP-P5-21-VERIFICATION-MATRIX",
+  "sourceDocuments": [
+    "wp-p2-account-design.md",
+    "wp-p2-credential-storage-design.md",
+    "wp-p2-rotation-mechanism-design.md",
+    "wp-p2-revocation-mechanism-design.md",
+    "wp-p2-isolation-verification.md",
+    "wp-p3-directory-structure-design.md",
+    "wp-p3-samba-config-change-plan.md",
+    "wp-p3-acl-permission-matrix.md",
+    "wp-p3-path-symlink-defense-design.md",
+    "wp-p3-wps-writeback-permission-analysis.md",
+    "wp-p3-design-completeness-verification.md",
+    "wp-p4-wps-behavior-analysis.md",
+    "wp-p4-path-mapping-design.md",
+    "wp-p4-state-machine-extension-design.md",
+    "wp-p4-defense-compatibility-design.md",
+    "wp-p4-conflict-detection-design.md",
+    "wp-p4-saveas-temp-overwrite-failure-design.md",
+    "wp-p4-frzex-boundary-runtime-control-design.md"
+  ],
+  "verificationMatrix": [
+    {
+      "id": "VM-S-1",
+      "threatId": "S-1",
+      "testName": "凭据窃取防御测试",
+      "testType": "PENETRATION",
+      "procedure": "尝试从 Keystore 提取 pad2_app 密码明文",
+      "expectedResult": "无法提取明文密码",
+      "relatedEARS": "REQ-SEC-001",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-T-5",
+      "threatId": "T-5",
+      "testName": "只读区篡改防御测试",
+      "testType": "PENETRATION",
+      "procedure": "通过 [writable] section 尝试写入 /mnt/share/ 只读区",
+      "expectedResult": "路径映射拒绝 + ACL 拒绝",
+      "relatedEARS": "REQ-SEC-004",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-E-3",
+      "threatId": "E-3",
+      "testName": "路径穿越防御测试",
+      "testType": "UNIT",
+      "procedure": "输入 ../../etc/passwd、%2e%2e%2f、空字节等攻击向量",
+      "expectedResult": "normalizeAndValidatePath 抛 PATH_TRAVERSAL_DETECTED",
+      "relatedEARS": "REQ-SEC-003",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-E-4",
+      "threatId": "E-4",
+      "testName": "符号链接防御测试",
+      "testType": "INTEGRATION",
+      "procedure": "在 writable/ 内创建指向 /etc 的符号链接并尝试写回",
+      "expectedResult": "detectSymlink 返回 safe=false，写回拒绝",
+      "relatedEARS": "REQ-SEC-009",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-E-5",
+      "threatId": "E-5",
+      "testName": "硬链接防御测试",
+      "testType": "INTEGRATION",
+      "procedure": "创建指向 /etc/shadow 的硬链接并尝试写回",
+      "expectedResult": "assertNoHardlink 抛异常",
+      "relatedEARS": "REQ-SEC-009",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-E-6",
+      "threatId": "E-6",
+      "testName": "FRZ-EX 边界测试",
+      "testType": "PENETRATION",
+      "procedure": "对冻结路径尝试 ACTION_EDIT，分别测试三层绕过",
+      "expectedResult": "三层都拒绝，状态机不转移",
+      "relatedEARS": "REQ-FRZ-001",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-S-3",
+      "threatId": "S-3",
+      "testName": "IP 欺骗防御测试",
+      "testType": "NETWORK",
+      "procedure": "从非授权 IP 尝试连接 [writable] share",
+      "expectedResult": "hosts deny=ALL 拒绝",
+      "relatedEARS": "REQ-SEC-004",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-AC-1",
+      "testName": "WP-P3-06 AC-1 目录存在性",
+      "testType": "INTEGRATION",
+      "procedure": "stat /mnt/share/writable/ 校验 owner=pad2_app:pad2_app_group",
+      "expectedResult": "owner 和 mode 正确",
+      "relatedEARS": "REQ-SEC-002",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-AC-2",
+      "testName": "WP-P3-07 AC-6 pad2_app 写入测试",
+      "testType": "INTEGRATION",
+      "procedure": "smbclient //localhost/writable -U pad2_app -c 'put test'",
+      "expectedResult": "写入成功",
+      "relatedEARS": "REQ-SEC-001",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-AC-3",
+      "testName": "WP-P3-08 AC-3 账户白名单",
+      "testType": "UNIT",
+      "procedure": "evaluateWritePermission('debian', path, 'UPDATE_DOCUMENT')",
+      "expectedResult": "allowed=false, reason=ACCOUNT_NOT_AUTHORIZED",
+      "relatedEARS": "REQ-SEC-006",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-AC-4",
+      "testName": "WP-P4-14 AC-4 状态机退化",
+      "testType": "UNIT",
+      "procedure": "globalEnabled=false 后验证状态机 7 态",
+      "expectedResult": "write_pending/write_completed 不可达",
+      "relatedEARS": "REQ-STATE-001",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-AC-5",
+      "testName": "WP-P4-15 AC-6 回滚等价性",
+      "testType": "INTEGRATION",
+      "procedure": "rollbackToAU005() 后校验 AU-005 基线",
+      "expectedResult": "等价 AU-005",
+      "relatedEARS": "REQ-SEC-010",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-AC-6",
+      "testName": "WP-P4-18 AC-1 FRZ-EX ACTION_EDIT 禁止",
+      "testType": "UNIT",
+      "procedure": "对冻结路径调用 evaluateWritePermission ACTION_EDIT",
+      "expectedResult": "allowed=false, reason=FRZ_EX_BOUNDARY",
+      "relatedEARS": "REQ-FRZ-001",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-AC-7",
+      "testName": "WP-P4-18 AC-11 globalEnabled=true 时 FRZ-EX 仍拒绝",
+      "testType": "UNIT",
+      "procedure": "globalEnabled=true + 冻结路径 ACTION_EDIT",
+      "expectedResult": "仍拒绝",
+      "relatedEARS": "REQ-FRZ-002",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-AC-8",
+      "testName": "WP-P3-09 AC-1 路径穿越拒绝",
+      "testType": "UNIT",
+      "procedure": "normalizeAndValidatePath('../../etc/shadow')",
+      "expectedResult": "抛 PATH_TRAVERSAL_DETECTED",
+      "relatedEARS": "REQ-SEC-003",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-AC-9",
+      "testName": "WP-P3-09 AC-7 符号链接检测",
+      "testType": "INTEGRATION",
+      "procedure": "创建符号链接后 detectSymlink",
+      "expectedResult": "safe=false",
+      "relatedEARS": "REQ-SEC-009",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-AC-10",
+      "testName": "WP-P4-16 AC-5 版本冲突检测",
+      "testType": "INTEGRATION",
+      "procedure": "并发保存同一文件不同版本",
+      "expectedResult": "后保存者检测到 VERSION_CONFLICT",
+      "relatedEARS": "REQ-CONFLICT-001",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-AC-11",
+      "testName": "WP-P4-17 AC-1 SaveAs 只读区拒绝",
+      "testType": "INTEGRATION",
+      "procedure": "SaveAs 到非白名单路径",
+      "expectedResult": "返回 READONLY_PATH 错误",
+      "relatedEARS": "REQ-WPS-003",
+      "status": "DESIGN_READY"
+    },
+    {
+      "id": "VM-AC-12",
+      "testName": "WP-P2-05 隔离验证",
+      "testType": "INTEGRATION",
+      "procedure": "校验 pad2_app 不在 debian 组，debian 不在 pad2_app_group",
+      "expectedResult": "组隔离正确",
+      "relatedEARS": "REQ-SEC-001",
+      "status": "DESIGN_READY"
+    }
+  ],
+  "summary": {
+    "totalTests": 18,
+    "byType": {
+      "UNIT": 7,
+      "INTEGRATION": 8,
+      "PENETRATION": 3,
+      "NETWORK": 1
+    },
+    "byStatus": {
+      "DESIGN_READY": 18,
+      "IMPLEMENTED": 0,
+      "PASSED": 0,
+      "FAILED": 0
+    },
+    "coverage": {
+      "earsRequirements": "17/17 (100%)",
+      "threats": "15/15 (100%)",
+      "acceptanceCriteria": "代表性 18 项（全量 AC 见各设计文档）"
+    }
+  },
+  "authorization": {
+    "overall": "NOT_AUTHORIZED",
+    "reason": "测试尚未执行，仅设计就绪",
+    "productionRelease": "BLOCKED"
+  }
+}

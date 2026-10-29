@@ -1,0 +1,26 @@
+{
+  "task": "TASK-AU006-P1-01",
+  "timestamp": "2026-10-28T15:35:00Z",
+  "shareName": "share",
+  "config": {
+    "path": "/mnt/share",
+    "browseable": "yes",
+    "writable": "no",
+    "guest_ok": "no",
+    "valid_users": "debian",
+    "force_user": "debian",
+    "read_only": "yes",
+    "create_mask": "0666",
+    "directory_mask": "0777",
+    "force_create_mode": "0666",
+    "force_directory_mode": "0777",
+    "write_list": "not set",
+    "force_group": "not set",
+    "hosts_allow": "not set",
+    "hosts_deny": "not set"
+  },
+  "otherShares": [
+    { "name": "storage", "path": "/mnt/storage", "writable": "yes", "read_only": "no", "valid_users": "debian" }
+  ],
+  "verification": "PASS"
+}

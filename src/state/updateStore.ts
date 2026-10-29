@@ -18,16 +18,21 @@ interface UpdateState {
   status: UpdateStatus;
   updateInfo: UpdateInfo | null;
   progress: DownloadProgress | null;
-  error: { category: UpdateErrorCategory; message: string } | null;
+  error: { category: UpdateErrorCategory; message: string; detail?: string } | null;
   lastCheckAt: number | null;
+  localApkPath: string | null;
   setStatus: (status: UpdateStatus) => void;
   setUpdateInfo: (info: UpdateInfo | null) => void;
   setProgress: (p: DownloadProgress | null) => void;
-  setError: (e: { category: UpdateErrorCategory; message: string } | null) => void;
+  setError: (e: { category: UpdateErrorCategory; message: string; detail?: string } | null) => void;
   setLastCheckAt: (ts: number) => void;
+  setLocalApkPath: (path: string | null) => void;
   reset: () => void;
   canTransition: (to: UpdateStatus) => boolean;
 }
+
+export const selectBusy = (s: UpdateState): boolean =>
+  s.status === 'checking' || s.status === 'downloading' || s.status === 'verifying' || s.status === 'installing';
 
 export const useUpdateStore = create<UpdateState>((set, get) => ({
   status: 'idle',
@@ -35,6 +40,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
   progress: null,
   error: null,
   lastCheckAt: null,
+  localApkPath: null,
   setStatus: (status) => {
     const current = get().status;
     if (VALID_TRANSITIONS[current]?.includes(status) || status === 'idle') {
@@ -45,9 +51,13 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
   setProgress: (progress) => set({ progress }),
   setError: (error) => set({ error }),
   setLastCheckAt: (lastCheckAt) => set({ lastCheckAt }),
-  reset: () => set({ status: 'idle', updateInfo: null, progress: null, error: null }),
+  setLocalApkPath: (localApkPath) => set({ localApkPath }),
+  reset: () => set({ status: 'idle', updateInfo: null, progress: null, error: null, localApkPath: null }),
   canTransition: (to) => {
     const current = get().status;
     return VALID_TRANSITIONS[current]?.includes(to) || to === 'idle';
   },
 }));
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).__updateStore = useUpdateStore;
+}

@@ -1,0 +1,42 @@
+{
+  "reviewDate": "2026-10-28",
+  "task": "AU-005",
+  "baselineCommit": "3dde2a3fa297a32e0944e2bb333a4df0fecf4b4b",
+  "method": "独立核验（证据审查 + 源码 grep + 静态检查重跑 + SHA-256 比对 + git diff + AU-004 证据复核）",
+  "gates": {
+    "G1_productBaseline": { "result": "PASS", "tasks": "28/28", "earsCoverage": "56/56 + 6/6 = 100%", "changedFiles": 12 },
+    "G2_readOnlyDefense": { "result": "PASS", "layer1_ui": "15 checkpoints", "layer2_store": "4 guards", "layer3_stateMachine": "7 guards", "bypassPaths": "0" },
+    "G3_retainedFunctions": { "result": "PASS", "rKeep": "7/7" },
+    "G4_frozenZone": { "result": "PASS", "sha256Match": true, "gitStatusClean": true, "zeroNewDeps": true },
+    "G5_au004Evidence": { "result": "AU-004 tool capability PASS", "gapClosure": "NOT CLOSED", "reviewerConfirmed": false, "gaps": ["GAP-01", "GAP-02", "GAP-03", "GAP-04"] },
+    "G6_risks": {
+      "blockers": ["BLK-01: AU-004 GAP-01~04 未关闭", "BLK-02: FRZ-EX 未授权", "BLK-03: 生产发布未授权", "BLK-04: SMB 密码 9191 暴露", "BLK-05: read only=yes 与产品范围 A 冲突"],
+      "risks": ["RISK-01: PM 产品范围逆转，AU-005 为过渡", "RISK-02: 代码未提交", "RISK-03: AU-006 设计未完成", "RISK-04: smb.conf immutable", "RISK-05: 9191 密码暴露"],
+      "evidenceGaps": ["GAP-AU004-01~04: reviewer 确认", "GAP-AU005-01: 设备端运行时验证", "GAP-AU006-01: AU-006 设计未完成"]
+    }
+  },
+  "staticChecksIndependent": {
+    "tsc": { "exitCode": 0, "result": "PASS" },
+    "designTokens": { "exitCode": 0, "result": "PASS" },
+    "contrast": { "exitCode": 0, "result": "PASS", "combinations": 12 }
+  },
+  "frozenZoneSha256": {
+    "SmbPlugin.ts": { "baseline": "cf8ab2d8...", "current": "cf8ab2d8...", "match": true },
+    "main.tsx": { "baseline": "729eba51...", "current": "729eba51...", "match": true },
+    "package.json": { "baseline": "919f1b98...", "current": "919f1b98...", "match": true }
+  },
+  "verdict": {
+    "au005_implementation": "PASS",
+    "au005_gateReview": "PASS",
+    "au004_gapClosure": "NOT CLOSED",
+    "frzEx": "NOT AUTHORIZED",
+    "productionRelease": "BLOCKED / NOT AUTHORIZED"
+  },
+  "keyDeclarations": [
+    "AU-005 Gate Review PASS ≠ 生产发布授权",
+    "AU-005 只读防线为过渡措施（PM 已裁定产品范围 A）",
+    "AU-004 READY_FOR_REVIEW ≠ PASS/CLOSED",
+    "AU-005 代码变更未提交",
+    "Production Release: BLOCKED / NOT AUTHORIZED"
+  ]
+}

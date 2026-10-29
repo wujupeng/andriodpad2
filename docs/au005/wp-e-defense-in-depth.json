@@ -1,0 +1,45 @@
+{
+  "task": "TASK-AU005-E-02",
+  "description": "三层防御独立性验证",
+  "timestamp": "2026-10-28T14:30:00Z",
+  "defenseLayers": [
+    {
+      "layer": "第一防线（UI 灰显）",
+      "implementation": "useActionAvailability edit/copy/move/rename/delete(remote) 恒 false + ActionList 移除 edit 项 + MultiSelectBar batchOperationsEnabled=false",
+      "checkPoint": "读取 OPERATION_CAPABILITIES 控制渲染态",
+      "dependency": "仅依赖 OPERATION_CAPABILITIES 常量，不依赖 store 执行器或 editSession 状态机",
+      "blocksProgrammaticCall": false
+    },
+    {
+      "layer": "第二防线（store 执行器）",
+      "implementation": "operationStore enqueueCopy/enqueueMove/executeRename/executeDelete(remote) 入口能力表守卫",
+      "checkPoint": "入口检查 OPERATION_CAPABILITIES，false 时 throw Error",
+      "dependency": "仅依赖 OPERATION_CAPABILITIES 常量，不依赖 UI 态或 editSession 状态机",
+      "blocksProgrammaticCall": true
+    },
+    {
+      "layer": "第三防线（editSession 状态机）",
+      "implementation": "editSessionStore applyWritebackResult/applySaveAsDiscovery/applyRemoteCheckResult/applyForegroundCheckResult/resolveConflict(OVERWRITE)/manualStep(writeback) 入口 READ_ONLY_MODE 守卫",
+      "checkPoint": "入口检查 READ_ONLY_MODE，true 时转入 session_terminated",
+      "dependency": "仅依赖 READ_ONLY_MODE 常量，不依赖 OPERATION_CAPABILITIES 或 UI 态",
+      "blocksProgrammaticCall": true
+    }
+  ],
+  "independenceAnalysis": "三层检查点互不依赖：第一防线仅控制渲染态、第二防线不依赖 UI 态、第三防线不依赖能力表",
+  "bypassScenarios": [
+    {
+      "scenario": "绕过第一防线（程序化调用执行器）",
+      "result": "第二防线拦截——enqueueCopy/enqueueMove/executeRename/executeDelete 入口检查能力表 false 时 throw Error"
+    },
+    {
+      "scenario": "绕过第二防线（遗留路径直调 writeback）",
+      "result": "第三防线拦截——applyWritebackResult/manualStep(writeback) 入口检查 READ_ONLY_MODE 转入 session_terminated"
+    },
+    {
+      "scenario": "绕过第一+第二防线",
+      "result": "第三防线仍拦截——READ_ONLY_MODE 守卫独立于能力表和 UI 态"
+    }
+  ],
+  "verification": "PASS",
+  "tracing": ["REQ-SEC-01"]
+}

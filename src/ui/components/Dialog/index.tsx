@@ -18,6 +18,10 @@ export interface DialogProps {
   danger?: boolean;
   /** 危险确认的确认按钮文案（默认"确认"） */
   confirmVariant?: 'primary' | 'danger';
+  rootDataAttrs?: Record<string, string | boolean>;
+  confirmDataAttrs?: Record<string, string | boolean>;
+  dismissDataAttrs?: Record<string, string | boolean>;
+  dismissLabel?: string;
 }
 
 export function Dialog({
@@ -28,10 +32,14 @@ export function Dialog({
   onDismiss,
   danger = false,
   confirmVariant,
+  rootDataAttrs,
+  confirmDataAttrs,
+  dismissDataAttrs,
+  dismissLabel = '取消',
 }: DialogProps) {
   const variant = confirmVariant ?? (danger ? 'danger' : 'primary');
   return (
-    <div className={styles['dialog-scrim']} onClick={onDismiss}>
+    <div className={styles['dialog-scrim']} onClick={onDismiss} {...(rootDataAttrs ?? {})}>
       <div
         className={`${styles.dialog} ${danger ? styles['dialog--danger'] : ''}`}
         role="alertdialog"
@@ -45,12 +53,12 @@ export function Dialog({
         <div className={styles.dialog__content}>{children}</div>
         <div className={styles.dialog__actions}>
           {onDismiss && (
-            <BaseButton variant="text" size="md" onPress={onDismiss}>
-              取消
+            <BaseButton variant="text" size="md" onPress={onDismiss} dataAttrs={dismissDataAttrs}>
+              {dismissLabel}
             </BaseButton>
           )}
           {onConfirm && confirmLabel && (
-            <BaseButton variant={variant} size="md" onPress={onConfirm}>
+            <BaseButton variant={variant} size="md" onPress={onConfirm} dataAttrs={confirmDataAttrs}>
               {confirmLabel}
             </BaseButton>
           )}

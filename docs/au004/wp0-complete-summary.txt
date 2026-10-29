@@ -1,0 +1,14 @@
+=== TASK-AU004-0-08: Evidence Archive Directory ===
+Date: 2026-10-27
+Directory: docs/au004/
+Created: yes
+Contents:
+  - tvf-02-ssh-availability.txt
+  - tvf-03-smb-config.txt
+  - tvf-04-current-permissions.json
+  - tvf-06-device-cred.json
+  - tvf-07-adb-device.txt
+  - tvf-09-smb-restart.txt
+  - tvf-10-adb-push.txt
+  - wp0-complete-summary.txt (this file)
+Result: PASS

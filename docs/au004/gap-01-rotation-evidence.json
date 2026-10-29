@@ -1,0 +1,31 @@
+{
+  "packId": "AU004-GAP-01-20261027T101303135Z-0c5a96",
+  "timestamp": "2026-10-27T10:13:03.136Z",
+  "operator": "unknown",
+  "gapId": "GAP-01",
+  "rotationRecord": {
+    "oldCredentialFingerprint": "c4876de490dcf38b74d6c0d4f120cf01126c3d6a3a49b93ec81caae38ea1497e",
+    "newCredentialFingerprint": "d5330200931a810748a2a665d5c597676cf92ff5585d9a0287923affd27369bb",
+    "rotationStatus": "SUCCESS",
+    "newCredentialUsable": true,
+    "oldCredentialRevoked": true
+  },
+  "verificationResults": {
+    "newCredentialTest": {
+      "success": true,
+      "output": ".                                   D        0  Tue Oct 27 17:07:29 2026\n  ..                                  D        0  Mon Oct 26 08:53:07 2026\n  pad2-p0-02-ui-fix-v3.apk            N 10490845  Mon Oct 19 14:36:21 2026\n  pad2-p0-02-fix2-debug.apk           N 10492100  Fri Oct 16 13:52:35 2026\n  app-debug.apk                       A 11462605  Fri Oct 16 09:34:35 2026\n  pad2-p0-02-v3.apk                   N 10492440  Fri Oct 16 15:05:28 2026\n  BT                                  D        0  Mon Oct 26 09:06:49 2026\n  lanprxy                             D        0  Wed Aug 26 08:41:44 2026\n  ._.DS_Store                        AH     4096  Mon Oct 26 08:53:54 2026\n  dazongliapp                         D        0  Wed Oct 21 13:13:24 2026\n  pad2-p0-01-debug.apk                N 11462777  Fri Oct 16 10:33:15 2026\n  pad2-v99.apk                        N  9095462  Mon Oct 26 17:45:25 2026\n  pad2-p0-02-ui-fix.apk               N 10724817  Mon Oct 19 13:21:26 2026\n  pad2-p0-02-debug.apk                N 11462777  Fri Oct 16 10:49:38 2026\n  pad2-p003-s6-05-fix.apk             N  9037838  Sun Oct 25 09:08:39 2026\n  pad2-p0-02-r1-v2.apk                N 10508140  Fri Oct 16 17:26:24 2026\n  pad2-p0-02-ui-fix-v4.apk            N 10490865  Mon Oct 19 15:00:26 2026\n  pad2-p0-02-ui-fix-v2.apk            N 10490829  Mon Oct 19 14:13:03 2026\n  com.android.chrome_119.0.6045.194-604519421_minAPI24_maxAPI28(arm64-v8a,armeabi-v7a)(nodpi)_apkmirror.com.apk      A 244362316  Mon Oct 19 16:59:06 2026\n  log                                 D        0  Wed Oct 21 11:51:00 2026\n  pad2-p0-02-r2-final.apk             N 10511812  Mon Oct 19 08:10:14 2026\n  pad2-p0-02-fix-debug.apk            N 10461241  Fri Oct 16 13:43:55 2026\n  pad2-p0-02-r1.apk                   N 10508194  Fri Oct 16 17:34:46 2026\n  lan                                 D        0  Thu Aug 27 08:45:49 2026\n  .DS_Store                          AH     6148  Mon Oct 26 08:53:59 2026\n  update.json                         N      328  Tue Oct 27 13:06:05 2026\n  pad2-p0-02-r2-test.apk              N 10511845  Fri Oct 16 21:56:29 2026\n  pad2-p0-02-r2.apk                   N 10511622  Fri Oct 16 21:04:50 2026\n  dazongli                            D        0  Tue Oct 27 13:05:38 2026\n  debugapp                            D        0  Sat Jul 18 16:40:32 2026\n  smb                                 D        0  Wed Oct 21 13:13:11 2026\n  pad2-p0-02-r3.apk                   N 10516104  Mon Oct 19 09:34:51 2026\n  pad2-v6-release.apk                 N 10130943  Tue Oct 27 13:05:38 2026\n  pad2-p003-s2-ui-debug.apk           N 11463107  Tue Oct 20 14:09:37 2026\n  pad2-v99-diffsign.apk               N  9095460  Mon Oct 26 17:45:25 2026\n\n\t\t491133848 blocks of size 1024. 337347368 blocks available"
+    },
+    "oldCredentialTest": {
+      "success": false,
+      "output": "session setup failed: NT_STATUS_LOGON_FAILURE ",
+      "expectedFailure": true
+    }
+  },
+  "deviceDeployment": {
+    "success": true,
+    "error": null
+  },
+  "closureSuggestion": "READY_FOR_REVIEW",
+  "notice": "This is a closure SUGGESTION, not a GAP closure. GAP closure requires PM and Gate Reviewer independent confirmation.",
+  "reviewerConfirmed": false
+}

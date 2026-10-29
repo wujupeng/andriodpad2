@@ -1,0 +1,57 @@
+=== AU-002 交付物清单核验报告 ===
+日期: 2026-10-27
+
+--- 13 项交付物核验 ---
+
+[1/13] PASS  src/orchestration/update/ApkDownloader.ts (109 lines)
+  内容: tmp 原子落位 + 断点续传 + 节流 + 磁盘检测 + 失败清理 + cancel 竞态修复
+
+[2/13] PASS  src/orchestration/update/InstallTrigger.ts (40 lines)
+  内容: resume 版本检测 + 诚实提示 + checkInstallResult
+
+[3/13] PASS  src/orchestration/update/initAutoUpdateCheck.ts (17 lines)
+  内容: initAutoUpdateCheck + registerResumeListener
+
+[4/13] PASS  src/state/updateStore.ts (62 lines)
+  内容: localApkPath + busy 派生 + error.detail + window.__updateStore
+
+[5/13] PASS  src/ui/components/UpdateBanner/index.tsx (115 lines)
+  内容: 全态 UI + 强制更新约束 + CDP 锚点 (data-update-banner-confirm)
+
+[6/13] PASS  src/ui/components/UpdateDialog/index.tsx (117 lines)
+  内容: 进度/安装/取消 UI + CDP 锚点 (data-update-dialog-install)
+
+[7/13] PASS  src/adapter/update/types.ts (51 lines)
+  内容: downloadApk offset + checkDiskSpace + cleanApk + addListener + size
+
+[8/13] PASS  android/.../update/UpdatePlugin.java (218 lines)
+  内容: tmp/offset/cleanApk/checkDiskSpace/cancelDownload
+
+[9/13] PASS  android/.../update/UpdateSmbClient.java (90 lines)
+  内容: getFileStream(path, offset) 重载 + SmbConfig 超时 30s/60s
+
+[10/13] PASS  scripts/verify-app-auto-update.mjs (535 lines)
+  内容: 15 场景 + ALL_SCENARIOS 注册
+
+[11/13] PASS  docs/p003-ui/shots/s6/au002-result.json (完整)
+  内容: 9 场景结果 + 回归冒烟 + 冻结区核验
+
+[12/13] PASS  .codeartsdoer/specs/au_002/design.md (1017 lines)
+  内容: AU-002 实现方案
+
+[13/13] PASS  .codeartsdoer/specs/au_002/tasks.md (788 lines)
+  内容: AU-002 编码任务清单
+
+--- 核验结论 ---
+13/13 项交付物全部存在且内容完整。
+
+=== AU-002 总体验证结论 ===
+- AU-002 场景: 9/9 PASS (24 断言全通过)
+- AU-001 回归: 7/7 PASS (12 断言全通过)
+- 业务功能冒烟: SMB 连接/浏览/网络恢复 正常
+- 冻结区核验: 7/7 PASS (零变更)
+- 交付物核验: 13/13 PASS
+- 静态检查: tsc + design-tokens + contrast 全通过
+- 零新增 npm 依赖: PASS
+
+AU-002 全部任务完成。

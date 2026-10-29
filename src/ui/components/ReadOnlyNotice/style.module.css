@@ -1,0 +1,10 @@
+/* ReadOnlyNotice（AU-005，R-NOTICE-01）—— banner 形态复用 warning 令牌 */
+
+.banner {
+  padding: var(--pad2-space-2) var(--pad2-space-3);
+  border-radius: var(--pad2-radius-md);
+  background: var(--pad2-color-warning-bg);
+  color: var(--pad2-color-warning-text);
+  font-size: var(--pad2-font-size-caption);
+  line-height: var(--pad2-line-height-tight);
+}

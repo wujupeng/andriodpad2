@@ -11,6 +11,7 @@ import { ListRow } from '../../../components/ListRow';
 import { BaseButton } from '../../../components/BaseButton';
 import { Icon } from '../../../icons/Icon';
 import { operationPluginBridge } from '../../../../state/operationStore';
+import { OPERATION_CAPABILITIES } from '../../../../state/operationStore';
 import type { SmbFileEntry } from '../../../../adapter/smb/SmbPlugin';
 import styles from '../style.module.css';
 
@@ -118,24 +119,27 @@ export function DestinationPickerDialog({
             <p className={styles.pickerHint}>此目录没有子文件夹</p>
           )}
         </div>
-        <div className={styles.pickerNewFolder}>
-          <input
-            type="text"
-            className={styles.pickerInput}
-            value={newFolderName}
-            placeholder="新建文件夹名称"
-            aria-label="新建文件夹名称"
-            onChange={(event) => setNewFolderName(event.target.value)}
-          />
-          <BaseButton
-            variant="secondary"
-            size="sm"
-            disabled={!newFolderName.trim() || creating}
-            onPress={() => void handleCreateFolder()}
-          >
-            新建文件夹
-          </BaseButton>
-        </div>
+        {/* AU-005 只读模式：新建文件夹为远端写操作，createDirectory=false 时不渲染（R-FAS-05） */}
+        {OPERATION_CAPABILITIES.createDirectory && (
+          <div className={styles.pickerNewFolder}>
+            <input
+              type="text"
+              className={styles.pickerInput}
+              value={newFolderName}
+              placeholder="新建文件夹名称"
+              aria-label="新建文件夹名称"
+              onChange={(event) => setNewFolderName(event.target.value)}
+            />
+            <BaseButton
+              variant="secondary"
+              size="sm"
+              disabled={!newFolderName.trim() || creating}
+              onPress={() => void handleCreateFolder()}
+            >
+              新建文件夹
+            </BaseButton>
+          </div>
+        )}
       </div>
     </Dialog>
   );

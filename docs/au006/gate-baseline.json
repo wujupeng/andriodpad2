@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-10-28T15:30:00Z",
+  "checks": {
+    "tsc": {
+      "cmd": "npx tsc --noEmit",
+      "exitCode": 0,
+      "output": ""
+    },
+    "tokens": {
+      "cmd": "node scripts/check-design-tokens.mjs",
+      "exitCode": 0,
+      "output": "✓ 令牌合规检查通过：无硬编码色值、无 emoji 图标"
+    },
+    "contrast": {
+      "cmd": "node scripts/check-contrast.mjs",
+      "exitCode": 0,
+      "output": "✓ 12 组合全部 ≥ 4.5:1（WCAG AA）"
+    }
+  }
+}

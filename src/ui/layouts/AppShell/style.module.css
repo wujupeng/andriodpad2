@@ -34,6 +34,22 @@
   padding: var(--pad2-space-5);
 }
 
+.viewportWrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.mask {
+  position: absolute;
+  inset: 0;
+  background: var(--pad2-color-scrim);
+  z-index: 1;
+  pointer-events: auto;
+}
+
 .viewport__grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);

@@ -1,0 +1,18 @@
+=== TASK-AU004-0-07: TVF-10 ADB Push Permission ===
+Date: 2026-10-27
+--- Push Test ---
+Local: C:/Users/DELL/AppData/Local/Temp/test-tvf10.json
+Remote: /sdcard/Android/data/com.pad2.filemanager/files/test-tvf10.json
+Result: 1 file pushed, 0 skipped. 0.0 MB/s (18 bytes in 0.001s)
+
+--- ls ---
+-rw-rw-rw- 1 shell ext_data_rw 18 2026-10-27 17:04 /sdcard/Android/data/com.pad2.filemanager/files/test-tvf10.json
+
+--- cat ---
+{"test":"tvf-10"}
+
+--- Cleanup ---
+Test file removed successfully.
+
+Result: PASS — ADB push to /sdcard/Android/data/com.pad2.filemanager/files/ is writable
+Note: MSYS_NO_PATHCONV=1 required to prevent git-bash path conversion

@@ -1,8 +1,9 @@
 /**
  * MultiSelectBar —— 多选模式条（design.md 2.4.4，TASK-S4-03）
  * 多选态底部固定条：已选数量 + 批量操作（复制/移动/删除 → FileActionSheet
- * 批量模式，S4-04/S4-05 接线前禁用态）+ 取消（退出多选保留列表与滚动位置，
- * spec 5.4.1-R6）。非多选态不渲染。
+ * 批量模式）+ 取消（退出多选保留列表与滚动位置，spec 5.4.1-R6）。
+ * AU-005 只读模式：batchOperationsEnabled 经 OPERATION_CAPABILITIES 判定（已 false→灰显）；
+ * 多选模式本身保留（R-KEEP-06）；取消按钮始终可用。非多选态不渲染。
  */
 import { BaseButton } from '../../../components/BaseButton';
 import { Icon } from '../../../icons/Icon';

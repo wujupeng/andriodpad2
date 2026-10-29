@@ -1,52 +1,7 @@
 {
-  "timestamp": "2026-10-26T06:02:49.264Z",
+  "timestamp": "2026-10-27T01:13:45.625Z",
   "device": "AJ7XJV6904H00320",
   "scenarios": [
-    {
-      "tc": "AU-TC-01",
-      "pass": true,
-      "message": "无更新 Banner 显示"
-    },
-    {
-      "tc": "AU-TC-02",
-      "pass": true,
-      "message": "更新 Banner 显示"
-    },
-    {
-      "tc": "AU-TC-02",
-      "pass": true,
-      "message": "版本号 2.0 呈现"
-    },
-    {
-      "tc": "AU-TC-06",
-      "pass": true,
-      "message": "降级版本不提示更新"
-    },
-    {
-      "tc": "AU-TC-09",
-      "pass": true,
-      "message": "App 正常进入主功能（非白屏）"
-    },
-    {
-      "tc": "AU-TC-13",
-      "pass": true,
-      "message": "src/core/ 零变更（无 FRZ-EX 授权）"
-    },
-    {
-      "tc": "AU-TC-13",
-      "pass": true,
-      "message": "AU-001 update 包不依赖 smb 包（独立连接）"
-    },
-    {
-      "tc": "AU-TC-13",
-      "pass": true,
-      "message": "AndroidManifest 变更行数 1 <= 5（FRZ-EX 授权范围）"
-    },
-    {
-      "tc": "AU-TC-14",
-      "pass": true,
-      "message": "package.json 无新增依赖（+0 -0）"
-    },
     {
       "tc": "AU-TC-15",
       "pass": true,

@@ -1,0 +1,41 @@
+{
+  "packId": "AU004-GAP-03-20261027T102411119Z-34ecda",
+  "timestamp": "2026-10-27T10:24:11.120Z",
+  "operator": "unknown",
+  "gapId": "GAP-03",
+  "permissionDiff": {
+    "before": {
+      "writable": "yes",
+      "readOnly": "no",
+      "validUsers": "debian winuser pad2gate3"
+    },
+    "after": {
+      "writable": "no",
+      "readOnly": "yes",
+      "validUsers": "debian"
+    },
+    "changes": [
+      {
+        "field": "writable",
+        "from": "yes",
+        "to": "no"
+      },
+      {
+        "field": "read only",
+        "from": "no",
+        "to": "yes"
+      },
+      {
+        "field": "valid users",
+        "from": "debian winuser pad2gate3",
+        "to": "debian"
+      }
+    ]
+  },
+  "archiveDirAccess": {
+    "success": true
+  },
+  "closureSuggestion": "READY_FOR_REVIEW",
+  "notice": "This is a closure SUGGESTION, not a GAP closure.",
+  "reviewerConfirmed": false
+}

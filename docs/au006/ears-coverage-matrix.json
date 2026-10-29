@@ -1,0 +1,21 @@
+{
+  "task": "TASK-AU006-E-01",
+  "timestamp": "2026-10-28T16:05:00Z",
+  "earsCoverage": {
+    "DFX": { "count": 25, "covered": 25, "tasks": ["P2-01","P2-02","P2-03","P2-04","P2-05","P3-02","P3-03","P3-04","P3-05","P4-01","P4-02","P4-04","P4-06","P4-07","P5-01","P5-04","F-01","G-01"] },
+    "WP-P1": { "count": 7, "covered": 7, "tasks": ["P1-01","P1-02","P1-03","P1-04"] },
+    "WP-P2": { "count": 10, "covered": 10, "tasks": ["P2-01","P2-02","P2-03","P2-04","P2-05"] },
+    "WP-P3": { "count": 12, "covered": 12, "tasks": ["P3-01","P3-02","P3-03","P3-04","P3-05","P3-06"] },
+    "WP-P4": { "count": 13, "covered": 13, "tasks": ["P4-01","P4-02","P4-03","P4-04","P4-05","P4-06","P4-07"] },
+    "WP-P5": { "count": 10, "covered": 10, "tasks": ["P5-01","P5-02","P5-03","P5-04","P5-05"] }
+  },
+  "dataConstraints": { "count": 10, "covered": 10 },
+  "totalEARS": 77,
+  "totalCovered": 77,
+  "totalDataConstraints": 10,
+  "totalDataConstraintsCovered": 10,
+  "totalItems": 87,
+  "totalCoveredItems": 87,
+  "overallRate": "100%",
+  "verification": "PASS"
+}

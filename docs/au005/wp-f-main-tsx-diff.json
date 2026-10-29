@@ -1,0 +1,9 @@
+{
+  "task": "TASK-AU005-F-02",
+  "timestamp": "2026-10-28T07:16:32.147Z",
+  "path": "src/main.tsx",
+  "diffLines": 0,
+  "diff": "",
+  "verification": "PASS",
+  "note": "0-line方案（READ_ONLY_MODE集中声明于src/state/readOnlyMode.ts）"
+}

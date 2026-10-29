@@ -1,0 +1,14 @@
+{
+  "packId": "AU004-GAP-02-20261027T101303140Z-b6d9c2",
+  "timestamp": "2026-10-27T10:13:03.140Z",
+  "operator": "unknown",
+  "gapId": "GAP-02",
+  "revocationVerification": {
+    "oldCredentialConnectionAttempt": "FAILED",
+    "revocationConfirmed": true,
+    "attemptLog": "session setup failed: NT_STATUS_LOGON_FAILURE "
+  },
+  "closureSuggestion": "READY_FOR_REVIEW",
+  "notice": "This is a closure SUGGESTION, not a GAP closure.",
+  "reviewerConfirmed": false
+}

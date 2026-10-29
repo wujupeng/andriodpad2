@@ -1,0 +1,44 @@
+{
+  "commitHash": "3dde2a3fa297a32e0944e2bb333a4df0fecf4b4b",
+  "timestamp": "2026-10-28T15:30:00Z",
+  "items": [
+    {
+      "path": "src/adapter/smb/SmbPlugin.ts",
+      "sha256": "cf8ab2d8157a3e0111d0f43aa9edc08cce68b102af2d9039cfe77496fb02d56c",
+      "sizeBytes": 4810,
+      "commitHash": "3dde2a3fa297a32e0944e2bb333a4df0fecf4b4b"
+    },
+    {
+      "path": "src/core/",
+      "sha256": "0a504ba2ae09ebc017278854111f7d87e6ca5bdbb87f323a4504ef81171d7a9a",
+      "sizeBytes": 3,
+      "fileCount": 3,
+      "commitHash": "3dde2a3fa297a32e0944e2bb333a4df0fecf4b4b"
+    },
+    {
+      "path": "android/app/src/main/java/com/pad2/filemanager/smb/",
+      "sha256": "c64d086c0f134836a4161e5442396d987e70c81005e547154a3e13dca9b3fa67",
+      "sizeBytes": 28,
+      "fileCount": 28,
+      "commitHash": "3dde2a3fa297a32e0944e2bb333a4df0fecf4b4b"
+    },
+    {
+      "path": "src/main.tsx",
+      "sha256": "729eba51faa54f680a9153baed6158ee216ec042eda787b283a485cd20587b20",
+      "sizeBytes": 518,
+      "commitHash": "3dde2a3fa297a32e0944e2bb333a4df0fecf4b4b"
+    },
+    {
+      "path": "package.json",
+      "sha256": "919f1b98ac32c0484313cd9f8f2d753a0f0b1103a45d108be596fdbd1ee9aac6",
+      "sizeBytes": 1044,
+      "commitHash": "3dde2a3fa297a32e0944e2bb333a4df0fecf4b4b"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "placeholder",
+      "sizeBytes": 142179,
+      "commitHash": "3dde2a3fa297a32e0944e2bb333a4df0fecf4b4b"
+    }
+  ]
+}

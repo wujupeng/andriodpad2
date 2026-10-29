@@ -1,0 +1,8 @@
+{
+  "task": "TASK-AU006-F-02",
+  "timestamp": "2026-10-28T16:00:00Z",
+  "path": "src/main.tsx",
+  "diffLines": 0,
+  "verification": "PASS",
+  "note": "AU-006 为设计文档产出，0 行变更"
+}

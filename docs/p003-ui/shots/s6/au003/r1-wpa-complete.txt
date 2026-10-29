@@ -1,0 +1,92 @@
+TASK-AU003-A-03~A-12: WP-A Release 签名构建 — 完整证据
+=====================================================
+日期: 2026-10-27
+
+## A-03: build.gradle signingConfig 配置
+变更: android/app/build.gradle 新增 signingConfigs.release 块 + buildTypes.release.signingConfig 引用
+版本: versionCode 5→6, versionName "1.4"→"1.5"
+.gitignore: 新增 android/keystore/ + gradle.properties 排除模式
+冻结区影响: 零 (build.gradle 非冻结区)
+
+## A-04: Release keystore 生成
+方法: keytool -genkeypair
+路径: ~/android-keystores/pad2-release.keystore (远程构建服务器)
+别名: pad2
+算法: RSA 2048
+有效期: 10000 天
+DN: CN=PAD2 Release, O=PAD2, C=CN
+证书 SHA-256: 092ee3d72572e79278246b46d402dc293cc7018b48d7d2d315a774ff4d75f809
+证书 SHA-1: 274ddd12b34f04dc53812350790ab95a03ff59d3
+Debug 证书 SHA-256: a41e9a222026def9f7e7ed1106909e6b67bec99cda69b3455dcfad25d4bb5290
+Release ≠ Debug: ✅ (完全不同)
+gradle.properties: 创建于远程服务器，含签名密码 (不入 git)
+
+## A-05: Release APK 构建
+命令: ./gradlew :app:assembleRelease -PPAD2_STORE_PASSWORD=... -PPAD2_KEY_ALIAS=pad2 -PPAD2_KEY_PASSWORD=...
+结果: BUILD SUCCESSFUL in 32s
+产物: app-release.apk (10130943 bytes, 10.1 MB)
+
+## A-06: 签名验证
+命令: apksigner verify --verbose --print-certs
+结果: Verifies
+签名方案: v2 (APK Signature Scheme v2) ✅
+证书 DN: CN=PAD2 Release, O=PAD2, C=CN (非 Android Debug) ✅
+证书 SHA-256: 092ee3d72572e79278246b46d402dc293cc7018b48d7d2d315a774ff4d75f809
+密钥算法: RSA 2048
+
+## A-07: APK SHA-256 + update.json
+APK SHA-256: 02715eec4249af52104773b9ee40004f7ad7ec336689cf9528834eb9d689de75
+update.json 已更新:
+  versionCode: 6, versionName: "1.5"
+  fileName: pad2-v6-release.apk
+  sha256: 02715eec4249af52104773b9ee40004f7ad7ec336689cf9528834eb9d689de75
+  size: 10130943
+  minVersionCode: 5
+
+## A-08: SMB 归档 + 构建身份记录
+归档路径:
+  /mnt/share/apk/dazongli/pad2-v6-release.apk
+  /mnt/share/apk/pad2-v6-release.apk
+构建身份:
+  commit: 3dde2a3fa297a32e0944e2bb333a4df0fecf4b4b (AU-002 工作区)
+  构建时间: 2026-10-27 13:05
+  versionCode: 6, versionName: 1.5
+  APK SHA-256: 02715eec4249af52104773b9ee40004f7ad7ec336689cf9528834eb9d689de75
+  证书 SHA-256: 092ee3d72572e79278246b46d402dc293cc7018b48d7d2d315a774ff4d75f809
+  构建服务器: debian@192.168.2.3
+  签名方案: v2
+
+## A-09: 同签名升级验证 (签名基线切换)
+操作: 卸载 debug 签名 v5 → 安装 release 签名 v6
+卸载: adb uninstall com.pad2.filemanager → Success
+安装: pm install --user 0 /data/local/tmp/pad2-v6-release.apk → Success
+验证:
+  versionCode: 6 ✅ (was 5)
+  versionName: 1.5 ✅ (was 1.4)
+  签名: release 证书 (非 debug) ✅: 签名基线已切换
+
+## A-10: 回滚基线
+回滚基线 APK: /mnt/share/apk/dazongli/pad2-p005-v14.apk
+  versionCode: 5, versionName: 1.4
+  签名: Android Debug (SHA-256: a41e9a22...d4bb5290)
+  签名兼容性: 与 release 签名不兼容 (不同证书)
+  回滚方法: adb uninstall com.pad2.filemanager && pm install --user 0 <baseline>.apk
+  注意: 回滚需卸载 release 版本后安装 debug 基线 (签名不兼容)
+
+## A-11: 私钥保护
+- android/keystore/ 已 gitignore ✅
+- gradle.properties 已 gitignore ✅
+- 源码中无 keystore 文件 ✅
+- 源码中无签名密码 ✅
+- keystore 存储于远程构建服务器 ~/android-keystores/ (不入 git) ✅
+- APK 不含 keystore (仅含签名后的证书) ✅
+
+## 冻结区核验
+- src/adapter/smb/SmbPlugin.ts: 零变更 ✅
+- src/core/: 零变更 ✅
+- android/.../smb/: 零变更 ✅
+- main.tsx: 零变更 ✅
+- package.json: 零新增依赖 ✅
+
+结论: WP-A 全部完成。Release 签名 APK 已构建、签名、验证、归档、安装。
+R-1 阻断项已解除。

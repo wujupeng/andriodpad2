@@ -15,6 +15,7 @@ export interface BannerAction {
   label: string;
   onPress: () => void;
   variant?: 'primary' | 'text';
+  dataAttrs?: Record<string, string | boolean>;
 }
 
 export interface StatusBannerProps {
@@ -23,6 +24,7 @@ export interface StatusBannerProps {
   title: string;
   description?: string;
   actions?: BannerAction[];
+  rootDataAttrs?: Record<string, string | boolean>;
 }
 
 export function StatusBanner({
@@ -31,12 +33,14 @@ export function StatusBanner({
   title,
   description,
   actions,
+  rootDataAttrs,
 }: StatusBannerProps) {
   const visibleActions = actions?.slice(0, 2) ?? [];
   return (
     <section
       className={`${styles.banner} ${styles[`banner--${semantic}`]}`}
       role="status"
+      {...(rootDataAttrs ?? {})}
     >
       <span className={styles.banner__bar} aria-hidden />
       <Icon name={icon} size={20} />
@@ -54,6 +58,7 @@ export function StatusBanner({
               type="button"
               className={`${styles.banner__action} ${styles[`banner__action--${action.variant ?? 'text'}`]}`}
               onClick={action.onPress}
+              {...(action.dataAttrs ?? {})}
             >
               {action.label}
             </button>

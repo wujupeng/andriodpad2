@@ -29,8 +29,11 @@ Thumbs.db
 
 # Credentials
 credentials.json
+update_cred.json
 *.key
 *.pem
+android/keystore/
+gradle.properties
 
 # Logs
 *.log

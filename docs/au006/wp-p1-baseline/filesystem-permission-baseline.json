@@ -1,0 +1,24 @@
+{
+  "task": "TASK-AU006-P1-03",
+  "timestamp": "2026-10-28T15:35:00Z",
+  "path": "/mnt/share",
+  "owner": "debian",
+  "group": "debian",
+  "mode": "drwxrwxr-x (0775)",
+  "acl": {
+    "user::rwx": true,
+    "group::rwx": true,
+    "other::r-x": true
+  },
+  "subdirectories": [
+    "apk", "app", "bit", "CrossFlow-X", "delldrivers", "erp插件", "front",
+    "gate4-test", "install", "lost+found", "Pirntdrivers", "project", "smbd"
+  ],
+  "files": [
+    "aaaa.rar", "._.DS_Store", ".DS_Store", "FM-SP02-01 设备维修单 2.0.doc",
+    "hbx-agent-gnu.exe", "p0-02-saveas-reachable.txt", "p0-02-saveas-unreachable.txt",
+    "p0-02-test.docx", "p0-02-test.txt", "RpcAuthnLevelPrivacyEnabled.txt",
+    "test-render.docx", "标签模板3.dwg", "测试A.txt"
+  ],
+  "verification": "PASS"
+}

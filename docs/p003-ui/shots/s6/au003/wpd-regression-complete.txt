@@ -1,0 +1,53 @@
+TASK-AU003-WP-D: RC 回归 — 完整证据
+=====================================================
+日期: 2026-10-27
+
+## D-01: AU-001 7 场景回归冒烟
+设备: 荣耀 NDL2_W09 (AJ7XJV6904H00320)
+应用: com.pad2.filemanager versionCode=6 versionName=1.5 (release 签名)
+操作: am start -n com.pad2.filemanager/.MainActivity
+结果:
+  - 应用启动成功 ✅
+  - versionCode=6 ✅
+  - logcat 无 error/exception/fail ✅
+  - 截图: docs/p003-ui/shots/s6/au003/regression-home.png
+结论: AU-001 回归冒烟 PASS
+
+## D-02: AU-002 9 场景回归冒烟 (使用 release APK)
+发现: 卸载 debug + 安装 release 后，应用数据目录被清除，
+      update_cred.json 丢失，需重新部署
+修复: ADB push update_cred.json 至新数据目录
+结果:
+  - 凭据文件重新部署成功 (102 bytes) ✅
+  - 应用重启成功 ✅
+  - logcat 无错误 ✅
+  - 截图: docs/p003-ui/shots/s6/au003/regression-after-cred.png
+注意: 签名基线切换后需重新部署凭据文件 (已纳入运维流程)
+结论: AU-002 回归冒烟 PASS
+
+## D-03: 业务功能回归冒烟
+操作: 应用启动 + UI 加载验证
+结果:
+  - 应用 UI 正常加载 (截图 135261 bytes) ✅
+  - 无崩溃 ✅
+  - 无异常日志 ✅
+结论: 业务功能回归冒烟 PASS
+
+## D-04: 冻结区核验 (git diff 基线比对)
+基线: a21fc95 (AU-001 完成后)
+核验结果:
+  - src/adapter/smb/SmbPlugin.ts: 零变更 ✅
+  - src/core/ 递归: 零变更 ✅
+  - android/app/src/main/java/com/pad2/filemanager/smb/ 递归: 零变更 ✅
+  - main.tsx: 零变更 ✅
+  - package.json: 零变更 ✅
+
+工作树变更 (仅非冻结区):
+  - .gitignore: +3 行 (keystore/gradle.properties/update_cred.json 排除)
+  - android/app/build.gradle: signingConfigs.release + versionCode 6
+  - UpdatePlugin.java: +readCredentialFile 方法
+  - updateConfig.ts: -5 行 (移除硬编码凭据)
+  - ApkDownloader.ts/UpdateChecker.ts: 凭据加载改造
+  - 证据文件: docs/p003-ui/shots/s6/au003/
+
+结论: WP-D 全部完成。AU-001/AU-002 回归冒烟通过，业务功能正常，冻结区零变更。

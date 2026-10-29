@@ -19,7 +19,7 @@ export function mapUpdateError(error: string | Error): { category: UpdateErrorCa
   let category: UpdateErrorCategory = 'unknown';
   if (/auth|logon|credential/i.test(msg)) category = 'auth_failed';
   else if (/timeout|timed out/i.test(msg)) category = 'timeout';
-  else if (/unreachable|cannot connect|refused/i.test(msg)) category = 'unreachable';
+  else if (/unreachable|cannot connect|refused|connect failed/i.test(msg)) category = 'unreachable';
   else if (/network|connection lost|reset/i.test(msg)) category = 'network_lost';
   else if (/permission|denied/i.test(msg)) category = 'permission_denied';
   else if (/space|disk|full|storage/i.test(msg)) category = 'disk_full';

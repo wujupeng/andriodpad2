@@ -1,0 +1,57 @@
+{
+  "task": "TASK-AU005-K-01",
+  "timestamp": "2026-10-28T07:18:10.560Z",
+  "checks": [
+    {
+      "id": "R-KEEP-01",
+      "name": "SMB连接与目录浏览",
+      "codePath": "ConnectionPage/BrowsePage/Breadcrumb/browseStore/smbConnectionStore",
+      "diffImpact": "未触及",
+      "result": "PASS"
+    },
+    {
+      "id": "R-KEEP-02",
+      "name": "文件下载到本地缓存",
+      "codePath": "editSessionStore.openFile保留SmbPlugin.openInWps",
+      "diffImpact": "openFile仅移除writeback监听，保留openInWps调用",
+      "result": "PASS"
+    },
+    {
+      "id": "R-KEEP-03",
+      "name": "本地缓存管理",
+      "codePath": "LocalBrowsePage/recentFilesStore/SmbPlugin.cleanup",
+      "diffImpact": "未触及",
+      "result": "PASS"
+    },
+    {
+      "id": "R-KEEP-04",
+      "name": "文件信息查看",
+      "codePath": "FileInfoDialog",
+      "diffImpact": "未触及",
+      "result": "PASS"
+    },
+    {
+      "id": "R-KEEP-05",
+      "name": "搜索与排序",
+      "codePath": "BrowsePage SearchField/SortMenu/browseStore.sortedAndFilteredFiles",
+      "diffImpact": "未触及",
+      "result": "PASS"
+    },
+    {
+      "id": "R-KEEP-06",
+      "name": "多选模式",
+      "codePath": "BrowsePage多选态+MultiSelectBar组件骨架保留",
+      "diffImpact": "MultiSelectBar仅注释变更，骨架保留，批量写操作灰显",
+      "result": "PASS"
+    },
+    {
+      "id": "R-KEEP-07",
+      "name": "近期文件列表",
+      "codePath": "recentFilesStore/RecentFilesPage",
+      "diffImpact": "未触及",
+      "result": "PASS"
+    }
+  ],
+  "allPass": true,
+  "verification": "PASS"
+}

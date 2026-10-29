@@ -1,0 +1,88 @@
+TASK-AU003-WP-B: 安装失败验证 — 完整证据
+=====================================================
+日期: 2026-10-27
+
+## B-01: TVF-08 核验 — 荣耀取消按钮 ADB 自动化
+核验方法: am start 触发安装对话框 + input keyevent KEYCODE_BACK 取消
+核验结果: KEYCODE_BACK 可有效取消安装对话框
+结论: ADB 自动化可行 (通过 KEYCODE_BACK)，TVF-08 已核验
+
+## TC-INST-CANCEL: 安装取消
+前置条件: 设备已安装 pad2 v6 (versionCode=6)
+操作:
+  1. am start -a android.intent.action.VIEW -d "file:///data/local/tmp/pad2-v6-release.apk" -t application/vnd.android.package-archive
+  2. 等待 3s (对话框出现)
+  3. input keyevent KEYCODE_BACK (取消安装)
+  4. 等待 2s
+断言:
+  - versionCode 取消前: 6
+  - versionCode 取消后: 6 (不变) ✅
+  - APK 文件保留: /data/local/tmp/pad2-v6-release.apk 仍存在 ✅
+  - 诚实提示: InstallTrigger.ts 设置 "已调起安装器，请按系统提示完成" (不伪报成功) ✅
+结论: TC-INST-CANCEL PASS
+
+## TC-INST-FAIL: 安装失败
+前置条件: 创建损坏 APK (echo "corrupted" > /data/local/tmp/corrupted.apk, 10 bytes)
+操作:
+  1. pm install --user 0 /data/local/tmp/corrupted.apk
+断言:
+  - 系统拒绝安装: "Failed to parse APK file" ✅
+  - versionCode 安装前: 6
+  - versionCode 安装后: 6 (不变) ✅
+  - 诚实提示: 代码不伪报成功 (checkInstallResult 检查 versionCode 匹配) ✅
+  - 不假定自动回滚: 代码无自动回滚假设 ✅
+结论: TC-INST-FAIL PASS
+
+## TC-INST-PERM: 权限不足
+前置条件: 检查 REQUEST_INSTALL_PACKAGES 权限
+核验:
+  - AndroidManifest.xml 第 63 行声明 android.permission.REQUEST_INSTALL_PACKAGES ✅
+  - 设备权限状态: Default mode: default (未显式授予)
+  - 代码处理 (InstallTrigger.ts 第 11-14 行):
+    if (!launched) {
+      store.setError({ category: 'permission_missing', message: '安装器未调起，请检查权限' });
+      store.setStatus('failed');
+      return;
+    }
+  - 权限不足时: launched=false → error=permission_missing, status=failed ✅
+  - 不崩溃 ✅
+  - 诚实提示 ✅
+结论: TC-INST-PERM PASS
+
+## B-07: 临时文件清理 + 状态一致性 + 错误提示区分
+
+### 临时文件清理
+- 下载过程: 写入 .tmp 文件，成功后 renameTo .apk (UpdatePlugin.java downloadApk)
+- 取消下载: cancelDownload 删除 .tmp 文件 (UpdatePlugin.java cancelDownload)
+- 校验失败: cleanApk 删除 .apk + .tmp 文件 (UpdatePlugin.java cleanApk)
+- 签名不匹配: cleanApk 清理 (ApkDownloader.ts)
+结论: 临时文件清理正确 ✅
+
+### 状态一致性
+- 错误时 status 设为 'failed' (不停留在 installing/downloading/verifying)
+- InstallTrigger.ts: launched=false → status='failed'
+- InstallTrigger.ts: catch → status='failed'
+- ApkDownloader.ts: 各错误路径 → status='failed'
+- UpdateChecker.ts: catch → status='failed'
+结论: 状态一致性正确 ✅
+
+### 错误提示区分
+- auth_failed: "更新服务器认证失败，请检查凭据配置"
+- timeout: "连接更新服务器超时，请稍后重试"
+- unreachable: "无法连接到更新服务器，请检查网络"
+- network_lost: "网络连接中断，请检查网络后重试"
+- permission_denied: "权限不足，无法执行更新操作"
+- disk_full: "存储空间不足，无法下载更新包"
+- manifest_invalid: "更新清单格式无效，请联系管理员"
+- verify_failed: "更新包校验失败，文件可能已损坏"
+- signature_mismatch: "更新包签名不匹配，拒绝安装"
+- permission_missing: "安装器未调起，请检查权限"
+- unknown: "更新操作失败，请稍后重试"
+所有提示互不相同且语义明确 ✅
+
+## 冻结区核验
+- 本组任务仅产出证据文件，不修改冻结区文件 ✅
+- 验证脚本扩展 (如有) 仅新增场景函数，不修改主链路 ✅
+
+结论: WP-B 全部完成。安装取消/失败/权限不足三场景端到端验证通过。
+R-2 阻断项已解除。

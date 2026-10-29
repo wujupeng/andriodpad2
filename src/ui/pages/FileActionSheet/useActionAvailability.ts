@@ -15,6 +15,7 @@ import type { SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
 import type { SmbConnectionState } from '../../../state/smbConnectionStore';
 import { OPERATION_CAPABILITIES } from '../../../state/operationStore';
 import { operationPluginBridge } from '../../../state/operationStore';
+import { READ_ONLY_NOTICES } from '../../../state/readOnlyMode';
 
 export type FileActionId = 'open' | 'edit' | 'copy' | 'move' | 'rename' | 'delete' | 'info';
 
@@ -79,29 +80,24 @@ export function useActionAvailability({
     return {
       // 打开（预览）：目录无（目录点击本就直接进入，design.md 2.4.5）
       open: anyDirectory ? { enabled: false, reason: '目录无需打开' } : wpsUnavailable,
-      // 编辑（WPS 编辑并回写）：仅文档类文件 + 已连接 + WPS 已安装（isDirectory 无）
-      edit: anyDirectory ? { enabled: false, reason: '目录不支持编辑' } : wpsUnavailable,
-      // 复制/移动：TASK-S5-03 已真实桥接（OPERATION_CAPABILITIES=true）；
-      // 文件夹操作本轮不支持（递归复制/移动属后续任务）——目录灰显如实禁用（不伪报）
+      // AU-005 只读模式：edit 恒禁用，不依赖 wpsState（R-FAS-07）
+      edit: { enabled: false, reason: READ_ONLY_NOTICES.editDisabledReason },
+      // AU-005 只读模式：写操作经能力表恒禁用（R-FAS-08）
       copy: anyDirectory
         ? { enabled: false, reason: '暂不支持文件夹操作' }
-        : notAvailable(OPERATION_CAPABILITIES.copy, '该操作暂不可用：前端插件方法未暴露'),
+        : notAvailable(OPERATION_CAPABILITIES.copy, READ_ONLY_NOTICES.greyedReason),
       move: anyDirectory
         ? { enabled: false, reason: '暂不支持文件夹操作' }
-        : notAvailable(OPERATION_CAPABILITIES.move, '该操作暂不可用：前端插件方法未暴露'),
-      // 重命名：TASK-S5-04-R 已真实桥接（OPERATION_CAPABILITIES=true）；
-      // 文件夹重命名本轮不支持（目录 rename 语义与递归风险待后续任务评估）——灰显不伪报
+        : notAvailable(OPERATION_CAPABILITIES.move, READ_ONLY_NOTICES.greyedReason),
       rename: anyDirectory
         ? { enabled: false, reason: '暂不支持文件夹操作' }
-        : notAvailable(OPERATION_CAPABILITIES.rename, '该操作暂不可用：前端插件方法未暴露'),
-      // 删除：TASK-S5-05 已真实桥接（deleteRemote）——目录灰显（原生层另有
-      // folderExists 预检双重拒绝——UI 灰显+执行器拒绝双防线，PM 门槛"目录目标拒绝"）
+        : notAvailable(OPERATION_CAPABILITIES.rename, READ_ONLY_NOTICES.greyedReason),
       delete:
         source === 'local'
           ? { enabled: true }
           : anyDirectory
             ? { enabled: false, reason: '暂不支持删除文件夹' }
-            : notAvailable(OPERATION_CAPABILITIES.deleteRemote, '该操作暂不可用：前端插件方法未暴露'),
+            : notAvailable(OPERATION_CAPABILITIES.deleteRemote, READ_ONLY_NOTICES.greyedReason),
       // 属性：目录与文件均可用（getFileAttributes 前端方法已暴露）
       info: connected ? { enabled: true } : { enabled: false, reason: '未连接' },
     };

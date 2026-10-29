@@ -1,0 +1,232 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-10-28T17:40:00Z",
+  "generatedBy": "WP-P5-20-RISK-REGISTER",
+  "sourceDocument": "wp-p5-gate/threat-analysis-report.md",
+  "risks": [
+    {
+      "id": "RISK-001",
+      "threatId": "S-1",
+      "category": "Spoofing",
+      "description": "pad2_app 账户凭据被窃取",
+      "likelihood": "LOW",
+      "impact": "HIGH",
+      "inherentRisk": "MEDIUM",
+      "mitigations": ["D-01", "D-02", "D-03", "D-04"],
+      "residualRisk": "LOW",
+      "status": "MITIGATED",
+      "authorization": "DESIGN_READY"
+    },
+    {
+      "id": "RISK-002",
+      "threatId": "S-2",
+      "category": "Spoofing",
+      "description": "SMB 服务器被 MITM 伪装",
+      "likelihood": "LOW",
+      "impact": "HIGH",
+      "inherentRisk": "MEDIUM",
+      "mitigations": ["SMB 签名"],
+      "residualRisk": "MEDIUM",
+      "status": "PARTIALLY_MITIGATED",
+      "authorization": "NOT_AUTHORIZED",
+      "pendingAction": "启用 server signing = mandatory"
+    },
+    {
+      "id": "RISK-003",
+      "threatId": "S-3",
+      "category": "Spoofing",
+      "description": "应用主机 IP 被欺骗",
+      "likelihood": "MEDIUM",
+      "impact": "HIGH",
+      "inherentRisk": "HIGH",
+      "mitigations": ["D-20", "防火墙"],
+      "residualRisk": "LOW",
+      "status": "MITIGATED",
+      "authorization": "DESIGN_READY"
+    },
+    {
+      "id": "RISK-004",
+      "threatId": "T-1",
+      "category": "Tampering",
+      "description": "smb.conf 被未授权修改",
+      "likelihood": "LOW",
+      "impact": "HIGH",
+      "inherentRisk": "MEDIUM",
+      "mitigations": ["D-18"],
+      "residualRisk": "LOW",
+      "status": "MITIGATED",
+      "authorization": "DESIGN_READY"
+    },
+    {
+      "id": "RISK-005",
+      "threatId": "T-5",
+      "category": "Tampering",
+      "description": "通过 [writable] 篡改只读区文件",
+      "likelihood": "LOW",
+      "impact": "HIGH",
+      "inherentRisk": "MEDIUM",
+      "mitigations": ["D-07", "D-12", "D-08"],
+      "residualRisk": "LOW",
+      "status": "MITIGATED",
+      "authorization": "DESIGN_READY"
+    },
+    {
+      "id": "RISK-006",
+      "threatId": "T-6",
+      "category": "Tampering",
+      "description": "审计日志被篡改或删除",
+      "likelihood": "LOW",
+      "impact": "MEDIUM",
+      "inherentRisk": "MEDIUM",
+      "mitigations": ["D-08", "远程归档"],
+      "residualRisk": "MEDIUM",
+      "status": "PARTIALLY_MITIGATED",
+      "authorization": "NOT_AUTHORIZED",
+      "pendingAction": "配置远程审计日志归档"
+    },
+    {
+      "id": "RISK-007",
+      "threatId": "I-1",
+      "category": "InformationDisclosure",
+      "description": "pad2_app 密码明文泄露",
+      "likelihood": "LOW",
+      "impact": "HIGH",
+      "inherentRisk": "MEDIUM",
+      "mitigations": ["D-02"],
+      "residualRisk": "LOW",
+      "status": "MITIGATED",
+      "authorization": "DESIGN_READY"
+    },
+    {
+      "id": "RISK-008",
+      "threatId": "I-3",
+      "category": "InformationDisclosure",
+      "description": ".meta/ 元数据通过 SMB 泄露",
+      "likelihood": "LOW",
+      "impact": "MEDIUM",
+      "inherentRisk": "LOW",
+      "mitigations": ["D-07 veto files", "D-08 ACL"],
+      "residualRisk": "LOW",
+      "status": "MITIGATED",
+      "authorization": "DESIGN_READY"
+    },
+    {
+      "id": "RISK-009",
+      "threatId": "D-1",
+      "category": "DenialOfService",
+      "description": "可写区磁盘被填满",
+      "likelihood": "MEDIUM",
+      "impact": "MEDIUM",
+      "inherentRisk": "MEDIUM",
+      "mitigations": [],
+      "residualRisk": "MEDIUM",
+      "status": "UNMITIGATED",
+      "authorization": "NOT_AUTHORIZED",
+      "pendingAction": "设置 pad2_app 磁盘配额"
+    },
+    {
+      "id": "RISK-010",
+      "threatId": "D-3",
+      "category": "DenialOfService",
+      "description": "SMB 连接被耗尽",
+      "likelihood": "MEDIUM",
+      "impact": "MEDIUM",
+      "inherentRisk": "MEDIUM",
+      "mitigations": ["D-20", "max connections"],
+      "residualRisk": "LOW",
+      "status": "MITIGATED",
+      "authorization": "DESIGN_READY"
+    },
+    {
+      "id": "RISK-011",
+      "threatId": "E-1",
+      "category": "ElevationOfPrivilege",
+      "description": "pad2_app 提权至 root",
+      "likelihood": "LOW",
+      "impact": "HIGH",
+      "inherentRisk": "MEDIUM",
+      "mitigations": ["无 sudo"],
+      "residualRisk": "MEDIUM",
+      "status": "PARTIALLY_MITIGATED",
+      "authorization": "NOT_AUTHORIZED",
+      "pendingAction": "配置 AppArmor profile"
+    },
+    {
+      "id": "RISK-012",
+      "threatId": "E-3",
+      "category": "ElevationOfPrivilege",
+      "description": "路径穿越逃逸 writable/",
+      "likelihood": "MEDIUM",
+      "impact": "HIGH",
+      "inherentRisk": "HIGH",
+      "mitigations": ["D-09 normalizeAndValidatePath"],
+      "residualRisk": "LOW",
+      "status": "MITIGATED",
+      "authorization": "DESIGN_READY"
+    },
+    {
+      "id": "RISK-013",
+      "threatId": "E-4",
+      "category": "ElevationOfPrivilege",
+      "description": "符号链接劫持逃逸",
+      "likelihood": "MEDIUM",
+      "impact": "HIGH",
+      "inherentRisk": "HIGH",
+      "mitigations": ["D-09 detectSymlink"],
+      "residualRisk": "LOW",
+      "status": "MITIGATED",
+      "authorization": "DESIGN_READY"
+    },
+    {
+      "id": "RISK-014",
+      "threatId": "E-6",
+      "category": "ElevationOfPrivilege",
+      "description": "FRZ-EX 边界被绕过",
+      "likelihood": "LOW",
+      "impact": "HIGH",
+      "inherentRisk": "MEDIUM",
+      "mitigations": ["D-17 三层强制", "as const"],
+      "residualRisk": "LOW",
+      "status": "MITIGATED",
+      "authorization": "DESIGN_READY"
+    },
+    {
+      "id": "RISK-015",
+      "threatId": "E-5",
+      "category": "ElevationOfPrivilege",
+      "description": "硬链接逃逸",
+      "likelihood": "LOW",
+      "impact": "HIGH",
+      "inherentRisk": "MEDIUM",
+      "mitigations": ["D-09 assertNoHardlink", "protected_hardlinks"],
+      "residualRisk": "LOW",
+      "status": "MITIGATED",
+      "authorization": "DESIGN_READY"
+    }
+  ],
+  "summary": {
+    "totalRisks": 15,
+    "byStatus": {
+      "MITIGATED": 10,
+      "PARTIALLY_MITIGATED": 3,
+      "UNMITIGATED": 1,
+      "ACCEPTED": 1
+    },
+    "byResidualRisk": {
+      "LOW": 10,
+      "MEDIUM": 4,
+      "HIGH": 0
+    },
+    "pendingAuthorization": [
+      "RISK-002: 启用 SMB 签名",
+      "RISK-006: 配置远程审计归档",
+      "RISK-009: 设置磁盘配额",
+      "RISK-011: 配置 AppArmor"
+    ]
+  },
+  "authorization": {
+    "overall": "NOT_AUTHORIZED",
+    "reason": "4 项残余风险须授权配置后方可达到 LOW 风险",
+    "productionRelease": "BLOCKED"
+  }
+}

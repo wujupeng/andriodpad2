@@ -13,6 +13,7 @@ import { GlobalStatusRail } from './GlobalStatusRail';
 import { UpdateBanner } from '../../components/UpdateBanner';
 import { useThemeSync } from '../../hooks/useThemeSync';
 import { useNavigationStore } from '../../../state/navigationStore';
+import { useUpdateStore } from '../../../state/updateStore';
 import type { ViewId } from '../../../state/navigationStore';
 import { ComponentGalleryPage } from '../../pages/ComponentGalleryPage';
 import M2VerificationPage from '../../pages/M2VerificationPage';
@@ -78,6 +79,9 @@ export function AppShell() {
   const [isNarrow, setIsNarrow] = useState(
     () => !window.matchMedia('(min-width: 600px)').matches,
   );
+  const forceUpdate = useUpdateStore((s) => s.updateInfo?.forceUpdate ?? false);
+  const updateStatus = useUpdateStore((s) => s.status);
+  const shouldMaskMain = forceUpdate && updateStatus === 'available';
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 600px)');
@@ -112,9 +116,18 @@ export function AppShell() {
           showDrawerTrigger={isNarrow}
           onOpenDrawer={() => setDrawerOpen(true)}
         />
-        <main className={styles.viewport}>
-          <div className={styles.viewport__grid}>{renderView(currentView)}</div>
-        </main>
+        <div className={styles.viewportWrap}>
+          <main className={styles.viewport}>
+            <div className={styles.viewport__grid}>{renderView(currentView)}</div>
+          </main>
+          {shouldMaskMain && (
+            <div
+              className={styles.mask}
+              role="presentation"
+              aria-label="主功能已锁定，请先完成更新"
+            />
+          )}
+        </div>
       </div>
     </div>
   );

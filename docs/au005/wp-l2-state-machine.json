@@ -1,0 +1,53 @@
+{
+  "task": "TASK-AU005-L2-03",
+  "description": "editSessionStore 只读模式状态机收窄可达集验证",
+  "timestamp": "2026-10-28T14:00:00Z",
+  "allStates": [
+    "idle", "opening", "open_failed", "opened",
+    "editing", "saving", "writeback_pending", "writeback_success", "writeback_failed",
+    "conflict", "saveas_detected",
+    "network_interrupted", "session_invalid", "session_terminated"
+  ],
+  "transitions": [
+    { "from": "idle", "to": "opening", "guard": "none", "readOnlyReachable": true, "source": "openFile" },
+    { "from": "opening", "to": "open_failed", "guard": "catch error", "readOnlyReachable": true, "source": "openFile catch" },
+    { "from": "opening", "to": "opened", "guard": "openInWps success", "readOnlyReachable": true, "source": "openFile success" },
+    { "from": "opened", "to": "editing", "guard": "READ_ONLY_MODE (blocked)", "readOnlyReachable": false, "source": "applyForegroundCheckResult changed" },
+    { "from": "opened/editing", "to": "saveas_detected", "guard": "READ_ONLY_MODE (blocked)", "readOnlyReachable": false, "source": "applyForegroundCheckResult saveAsDiscovered" },
+    { "from": "any", "to": "writeback_success", "guard": "READ_ONLY_MODE (blocked)", "readOnlyReachable": false, "source": "applyWritebackResult" },
+    { "from": "any", "to": "writeback_failed", "guard": "READ_ONLY_MODE (blocked)", "readOnlyReachable": false, "source": "applyWritebackResult" },
+    { "from": "any", "to": "saveas_detected", "guard": "READ_ONLY_MODE (blocked)", "readOnlyReachable": false, "source": "applySaveAsDiscovery" },
+    { "from": "any", "to": "conflict", "guard": "READ_ONLY_MODE (blocked)", "readOnlyReachable": false, "source": "applyRemoteCheckResult" },
+    { "from": "conflict", "to": "writeback_pending", "guard": "READ_ONLY_MODE (blocked)", "readOnlyReachable": false, "source": "resolveConflict OVERWRITE_CONFIRMED" },
+    { "from": "conflict", "to": "opened", "guard": "none (RELOAD/SAVE_AS_COPY)", "readOnlyReachable": true, "source": "resolveConflict non-OVERWRITE" },
+    { "from": "conflict", "to": "session_terminated", "guard": "none (DISCARD)", "readOnlyReachable": true, "source": "resolveConflict DISCARD" },
+    { "from": "any", "to": "writeback_pending", "guard": "READ_ONLY_MODE (blocked)", "readOnlyReachable": false, "source": "manualStep writeback" },
+    { "from": "any", "to": "session_terminated", "guard": "READ_ONLY_MODE", "readOnlyReachable": true, "source": "manualStep writeback guard / applyWritebackResult guard / applySaveAsDiscovery guard / resolveConflict OVERWRITE guard" },
+    { "from": "any", "to": "network_interrupted", "guard": "error category network_lost/unreachable", "readOnlyReachable": true, "source": "applyError" },
+    { "from": "any", "to": "session_invalid", "guard": "error category other", "readOnlyReachable": true, "source": "applyError" },
+    { "from": "any", "to": "session_terminated", "guard": "none", "readOnlyReachable": true, "source": "closeSession" },
+    { "from": "network_interrupted", "to": "opened", "guard": "none", "readOnlyReachable": true, "source": "notifyAppStateChange" }
+  ],
+  "reachableSet": [
+    "idle", "opening", "open_failed", "opened",
+    "session_terminated", "network_interrupted", "session_invalid"
+  ],
+  "unreachableSet": [
+    "editing", "saving", "writeback_pending", "writeback_success", "writeback_failed",
+    "saveas_detected", "conflict"
+  ],
+  "reachableCount": 7,
+  "unreachableCount": 7,
+  "verification": "PASS",
+  "guards": [
+    "applyForegroundCheckResult: saveAsDiscovered branch → READ_ONLY_MODE return",
+    "applyForegroundCheckResult: changed→editing → READ_ONLY_MODE blocked",
+    "applyWritebackResult: entry → READ_ONLY_MODE → session_terminated",
+    "applySaveAsDiscovery: entry → READ_ONLY_MODE → session_terminated",
+    "applyRemoteCheckResult: entry → READ_ONLY_MODE return (conflict unreachable)",
+    "resolveConflict: OVERWRITE_CONFIRMED → READ_ONLY_MODE → session_terminated",
+    "manualStep: writeback → READ_ONLY_MODE → session_terminated",
+    "openFile: appStateChange writeback trigger removed"
+  ],
+  "tracing": ["R-ESS-05", "数据约束 6.3"]
+}

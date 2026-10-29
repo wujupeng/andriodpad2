@@ -2,6 +2,7 @@ import { useEditSessionStore } from '../../../state/editSessionStore';
 import type { ManualStepAction } from '../../../state/editSessionStore';
 import { useEditSessionMonitor } from '../../hooks/useEditSessionMonitor';
 import { EmptyState } from '../../components/EmptyState';
+import { READ_ONLY_MODE, READ_ONLY_NOTICES } from '../../../state/readOnlyMode';
 
 const STATE_LABELS: Record<string, string> = {
   idle: '空闲',
@@ -20,10 +21,11 @@ const STATE_LABELS: Record<string, string> = {
   session_terminated: '会话已终止',
 };
 
-const MANUAL_ACTIONS: { action: ManualStepAction; label: string }[] = [
+// AU-005 只读模式：writeback/check-remote 灰显（R-ESS-06）；check-change/foreground-check 保留只读语义
+const MANUAL_ACTIONS: { action: ManualStepAction; label: string; readOnlyDisabled?: boolean }[] = [
   { action: 'check-change', label: '检查本地变更' },
-  { action: 'writeback', label: '执行写回' },
-  { action: 'check-remote', label: '检查远程变更' },
+  { action: 'writeback', label: '执行写回', readOnlyDisabled: true },
+  { action: 'check-remote', label: '检查远程变更', readOnlyDisabled: true },
   { action: 'foreground-check', label: '前台检查' },
 ];
 
@@ -103,22 +105,29 @@ export function EditSessionPage() {
       )}
 
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-        {MANUAL_ACTIONS.map(({ action, label }) => (
-          <button
-            key={action}
-            onClick={() => void manualStep(action)}
-            style={{
-              padding: '6px 12px',
-              fontSize: '13px',
-              border: '1px solid var(--color-border)',
-              borderRadius: '6px',
-              background: 'var(--color-surface)',
-              cursor: 'pointer',
-            }}
-          >
-            {label}
-          </button>
-        ))}
+        {MANUAL_ACTIONS.map(({ action, label, readOnlyDisabled }) => {
+          const disabled = READ_ONLY_MODE && readOnlyDisabled;
+          return (
+            <button
+              key={action}
+              onClick={disabled ? undefined : () => void manualStep(action)}
+              disabled={disabled}
+              style={{
+                padding: '6px 12px',
+                fontSize: '13px',
+                border: '1px solid var(--color-border)',
+                borderRadius: '6px',
+                background: 'var(--color-surface)',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                opacity: disabled ? 0.5 : 1,
+                color: disabled ? 'var(--color-text-tertiary)' : 'inherit',
+              }}
+              title={disabled ? READ_ONLY_NOTICES.greyedReason : undefined}
+            >
+              {label}
+            </button>
+          );
+        })}
         <button
           onClick={closeSession}
           style={{

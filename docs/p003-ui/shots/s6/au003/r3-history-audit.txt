@@ -1,0 +1,39 @@
+TASK-AU003-C-01: 历史提交审计 — Git 历史中凭据明文检查
+=====================================================
+日期: 2026-10-27
+审计方法: git log -p --all -S '<REDACTED_SMB_PASSWORD>' + git log --all -S '<REDACTED_SMB_PASSWORD>'
+
+审计结果:
+  状态: 发现历史凭据明文泄露
+
+  泄露范围:
+    1. 提交 dfd43cf7dcefe363e69f1b6d84a46095108795d7
+       作者: wujupeng <wujupeng@outlook.com>
+       日期: Mon Oct 26 14:03:15 2026 +0800
+       消息: fix(AU-001): 更新源 SMB 凭据接线 + UpdateBanner 挂载 + 验证脚本
+       文件: src/adapter/update/updateConfig.ts
+       变更: username pad2gate3→debian, password 空→<REDACTED_SMB_PASSWORD>
+       说明: 此提交将 SMB 密码明文写入源码
+
+    2. 提交 a21fc95 (AU-001 完成后基线)
+       消息: feat: complete app source - UI layer, state stores, SMB adapter, WPS writeback, auto-update (AU-001)
+       文件: src/adapter/update/updateConfig.ts
+       说明: 包含 host 192.168.2.3 配置
+
+    3. 多个文档提交 (b115272, c105c67, 5a252ef, 09a3a40, dea74d4 等)
+       说明: 验证报告/文档中可能引用凭据相关内容
+
+  当前状态:
+    src/adapter/update/updateConfig.ts 第 16 行仍含密码明文 return '<REDACTED_SMB_PASSWORD>'
+    src/adapter/update/updateConfig.ts 第 4 行含 host '192.168.2.3'
+    src/adapter/update/updateConfig.ts 第 7 行含 username 'debian'
+
+轮换建议:
+  1. SMB 密码已泄露至 Git 历史，建议轮换 SMB 密码
+  2. 历史清理为可选操作 (git filter-branch 或 BFG)，本任务不强制执行
+  3. 轮换后更新 update_cred.json (设备受控文件) 中的密码
+  4. 确保新密码不再提交至 Git 仓库
+
+结论: 历史提交含凭据明文泄露，须制定轮换计划 (TASK-AU003-C-12)。
+凭据轮换由运维按凭据管理流程执行，本任务仅登记建议。
+本文档不含密码明文。

@@ -1,0 +1,59 @@
+{
+  "task": "TASK-AU005-E-03",
+  "description": "AU-005 最终 Gate 汇总",
+  "timestamp": "2026-10-28T14:30:00Z",
+  "taskSummary": {
+    "WP-0": { "tasks": ["0-01", "0-02", "0-03"], "count": 3, "result": "PASS" },
+    "WP-C": { "tasks": ["C-01"], "count": 1, "result": "PASS" },
+    "WP-L1": { "tasks": ["L1-01", "L1-02"], "count": 2, "result": "PASS" },
+    "WP-L2": { "tasks": ["L2-01", "L2-02", "L2-03"], "count": 3, "result": "PASS" },
+    "WP-U1": { "tasks": ["U1-01", "U1-02", "U1-03", "U1-04"], "count": 4, "result": "PASS" },
+    "WP-U2": { "tasks": ["U2-01", "U2-02", "U2-03", "U2-04"], "count": 4, "result": "PASS" },
+    "WP-K": { "tasks": ["K-01"], "count": 1, "result": "PASS" },
+    "WP-F": { "tasks": ["F-01", "F-02", "F-03"], "count": 3, "result": "PASS" },
+    "WP-G": { "tasks": ["G-01", "G-02", "G-03", "G-04"], "count": 4, "result": "PASS" },
+    "WP-E": { "tasks": ["E-01", "E-02", "E-03"], "count": 3, "result": "PASS" }
+  },
+  "totalTasks": 28,
+  "allPass": true,
+  "gateConditions": {
+    "WP0toU2": "PASS",
+    "WPK_retainedFunctions": "PASS (7/7)",
+    "WPF_frozenZone": "PASS (3/3 零变更)",
+    "WPG_staticGates": "PASS (tsc+tokens+contrast 全绿)",
+    "EARScoverage": "PASS (56/56 + 6/6 = 100%)",
+    "defenseInDepth": "PASS (三层独立)"
+  },
+  "frzExPending": {
+    "item": "ACTION_EDIT→ACTION_VIEW (android/.../smb/)",
+    "status": "未授权（待 PM 审批）",
+    "equivalentReadOnly": "UI 层三层防御达成等效只读效果",
+    "impact": "本清单全部 28 任务已执行完成，无需 FRZ-EX 授权"
+  },
+  "productionRelease": {
+    "status": "BLOCKED（未解除）",
+    "note": "AU-005 完成不自动解除生产发布 BLOCKED 状态，须 PM 单独授权"
+  },
+  "verification": "PASS",
+  "changedFiles": [
+    "src/state/readOnlyMode.ts (新增)",
+    "src/state/operationStore.ts (修改: 能力表翻false + 执行器守卫)",
+    "src/state/editSessionStore.ts (修改: openFile禁writeback + 6处守卫)",
+    "src/ui/components/ReadOnlyNotice/index.tsx (新增)",
+    "src/ui/components/ReadOnlyNotice/style.module.css (新增)",
+    "src/ui/pages/FileActionSheet/ActionList/index.tsx (修改: 移除edit项)",
+    "src/ui/pages/FileActionSheet/useActionAvailability.ts (修改: edit恒禁用)",
+    "src/ui/pages/FileActionSheet/index.tsx (修改: 移除edit分发 + ReadOnlyNotice)",
+    "src/ui/pages/FileActionSheet/DestinationPickerDialog/index.tsx (修改: 新建文件夹条件渲染)",
+    "src/ui/pages/BrowsePage/MultiSelectBar/index.tsx (修改: 注释)",
+    "src/ui/pages/EditSessionPage/index.tsx (修改: writeback/check-remote灰显)",
+    "src/ui/hooks/useEditSessionMonitor.ts (修改: 禁用checkRemoteChanged轮询)"
+  ],
+  "frozenZoneStatus": {
+    "SmbPlugin.ts": "零变更",
+    "src/core/": "零变更",
+    "android/.../smb/": "零变更",
+    "src/main.tsx": "零变更 (0行方案)",
+    "package.json": "零变更 (零新增依赖)"
+  }
+}

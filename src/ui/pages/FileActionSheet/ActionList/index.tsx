@@ -20,8 +20,8 @@ interface MenuItem {
 }
 
 const SINGLE_ITEMS: MenuItem[] = [
-  { id: 'open', icon: 'icon-open', title: '打开', subtitle: '用 WPS/预览打开' },
-  { id: 'edit', icon: 'icon-edit', title: '编辑', subtitle: '用 WPS 编辑并回写' },
+  // AU-005 只读模式：移除 edit 项（R-FAS-01）；open 副标题改只读（R-FAS-02）
+  { id: 'open', icon: 'icon-open', title: '打开', subtitle: '用 WPS 只读打开' },
   { id: 'copy', icon: 'icon-copy', title: '复制', subtitle: '复制到…' },
   { id: 'move', icon: 'icon-move', title: '移动', subtitle: '移动到…' },
   { id: 'rename', icon: 'icon-rename', title: '重命名', subtitle: '重命名' },

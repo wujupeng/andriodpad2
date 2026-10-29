@@ -28,6 +28,8 @@ import { TransferStatus } from '../core/transfer/TransferEngine';
 import SmbPlugin from '../adapter/smb/SmbPlugin';
 import { mapSmbError } from '../utils/smbErrorMapper';
 import { useSmbConnectionStore } from './smbConnectionStore';
+import { READ_ONLY_NOTICES } from './readOnlyMode';
+import { WRITE_ENABLED_SCOPE, WRITE_PERMISSION_MATRIX } from './writePermission';
 
 export type OperationStatus =
   | 'pending'
@@ -98,8 +100,8 @@ export interface TransferOptions {
 
 /**
  * 操作能力表（S4-05 FileActionSheet 灰显判定依据）。
- * TASK-S5-03：copy/move 前端插件方法已桥接（PM 授权实施）——翻 true；
- * rename/deleteRemote 待 S5-04/S5-05 单独授权，保持 false 如实披露。
+ * AU-006: writeback/saveas 按权限矩阵派生（design.md §2.2.2.2）。
+ * 当前 enabled=false → 全 false → 等价 AU-005 只读模式。
  */
 export const OPERATION_CAPABILITIES: Readonly<{
   copy: boolean;
@@ -109,18 +111,25 @@ export const OPERATION_CAPABILITIES: Readonly<{
   deleteLocal: boolean;
   /** DestinationPicker"新建文件夹"（ensureDirectory 前端方法已暴露） */
   createDirectory: boolean;
+  /** AU-006 新增：写回相关能力（按权限矩阵） */
+  writeback: boolean;
+  saveas: boolean;
 }> = {
-  // TASK-S5-03 已实施：SmbClient.copyFile（流式+临时+原子落位+SHA 校验）+ 插件桥接
-  copy: true,
-  // TASK-S5-03 已实施：SmbClient.moveFile（copy+校验成功后才删源）
-  move: true,
-  // TASK-S5-04-R 已实施：SmbClient.renameFile（完整相对路径+replace=false 服务端原子防覆盖）
-  rename: true,
-  // TASK-S5-05 已实施：SmbClient.deleteRemoteFile（目录拒绝+存在性预检+删除后核验）
-  deleteRemote: true,
-  // 本地单文件删除：cleanup() 为全量清缓存语义（非按路径删除）不得挪用，无单文件删除方法
+  // AU-005 只读模式：远端复制为远端写操作，置 false（R-OPS-01）
+  copy: false,
+  // AU-005 只读模式：远端移动为远端写操作，置 false（R-OPS-01）
+  move: false,
+  // AU-005 只读模式：重命名为远端写操作，置 false（R-OPS-01）
+  rename: false,
+  // AU-005 只读模式：远端删除为远端写操作，置 false（R-OPS-01）
+  deleteRemote: false,
+  // 既有事实：本地单文件删除无方法，保持 false（R-OPS-02）
   deleteLocal: false,
-  createDirectory: true,
+  // AU-005 只读模式：新建文件夹为远端写操作，置 false（R-OPS-01）
+  createDirectory: false,
+  // AU-006 新增：写回相关能力（按权限矩阵派生）
+  writeback: WRITE_ENABLED_SCOPE.enabled && WRITE_PERMISSION_MATRIX.writeback,
+  saveas: WRITE_ENABLED_SCOPE.enabled && WRITE_PERMISSION_MATRIX.saveas,
 };
 
 /** core TransferStatus 十态 → UI 七态只读映射（design.md 152 行决策，不修改 core 文件） */
@@ -320,17 +329,23 @@ export const useOperationStore = create<OperationStoreState>()((set, get) => {
 
     // 复制：TASK-S5-03 真实桥接（options=冲突决策产物：overwrite 授权/destNames 改名）
     enqueueCopy: async (paths, destination, options) => {
+      // AU-005 第二防线：能力表 false 时拒绝，不调用 SmbPlugin（R-OPS-03、REQ-REL-02）
+      if (!OPERATION_CAPABILITIES.copy) throw new Error(READ_ONLY_NOTICES.greyedReason);
       await enqueue('copy', toTargets(paths, options), destination, makeTransferExecutor('copy'));
     },
 
     // 移动：TASK-S5-03 真实桥接（copy+SHA 校验成功后原生层删源；options 同上）
     enqueueMove: async (paths, destination, options) => {
+      // AU-005 第二防线：能力表 false 时拒绝，不调用 SmbPlugin（R-OPS-03、REQ-REL-02）
+      if (!OPERATION_CAPABILITIES.move) throw new Error(READ_ONLY_NOTICES.greyedReason);
       await enqueue('move', toTargets(paths, options), destination, makeTransferExecutor('move'));
     },
 
     // 重命名：TASK-S5-04-R 真实桥接（方案 A：服务端原子 rename；
     // COLLISION→reject→mapSmbError conflict 类→operationStore conflict 态）
     executeRename: async (path, newName) => {
+      // AU-005 第二防线：能力表 false 时拒绝，不调用 SmbPlugin（R-OPS-03、REQ-REL-02）
+      if (!OPERATION_CAPABILITIES.rename) throw new Error(READ_ONLY_NOTICES.greyedReason);
       await enqueue('rename', [{ path, name: newName }], undefined, async (target) => {
         await SmbPlugin.renameFile({ path: target.path, newName: target.name });
       });
@@ -340,6 +355,8 @@ export const useOperationStore = create<OperationStoreState>()((set, get) => {
     // 不存在明确失败/删除后核验）；scope=local 仍如实失败（本地删除 OUT_OF_SCOPE，
     // cleanup 全量清缓存语义不得挪用——PM 禁令）
     executeDelete: async (paths, scope) => {
+      // AU-005 第二防线：远端删除能力表 false 时拒绝，不调用 SmbPlugin（R-OPS-03、REQ-REL-02）
+      if (scope === 'remote' && !OPERATION_CAPABILITIES.deleteRemote) throw new Error(READ_ONLY_NOTICES.greyedReason);
       if (scope !== 'remote') {
         await enqueue('delete', toTargets(paths), undefined, missingCapabilityExecutor);
         return;

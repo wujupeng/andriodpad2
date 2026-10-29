@@ -1,0 +1,19 @@
+{
+  "taskId": "TASK-AU004-0-04",
+  "tvf": "TVF-06",
+  "date": "2026-10-27",
+  "devicePath": "/sdcard/Android/data/com.pad2.filemanager/files/update_cred.json",
+  "fileExists": true,
+  "jsonValid": true,
+  "fields": {
+    "host": "192.168.2.3",
+    "share": "share",
+    "path": "apk",
+    "username": "debian",
+    "password": "<REDACTED>",
+    "domain": ""
+  },
+  "fieldsComplete": true,
+  "fieldCount": 6,
+  "result": "PASS"
+}

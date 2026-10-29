@@ -1,0 +1,46 @@
+{
+  "task": "TASK-AU006-P1-04",
+  "timestamp": "2026-10-28T15:35:00Z",
+  "readOnlyMode": {
+    "file": "src/state/readOnlyMode.ts",
+    "value": "true as const",
+    "notices": ["menuBadge", "operationBlock", "editReturnNotice", "greyedReason", "editDisabledReason", "writebackDisabledReason", "conflictOverwriteDisabledReason"]
+  },
+  "operationCapabilities": {
+    "file": "src/state/operationStore.ts",
+    "line": "104-125",
+    "values": {
+      "copy": false,
+      "move": false,
+      "rename": false,
+      "deleteRemote": false,
+      "deleteLocal": false,
+      "createDirectory": false
+    }
+  },
+  "editSessionGuards": {
+    "file": "src/state/editSessionStore.ts",
+    "guardPoints": [
+      { "line": 167, "method": "applyForegroundCheckResult", "branch": "saveAsDiscovered", "guard": "if (READ_ONLY_MODE) return" },
+      { "line": 176, "method": "applyForegroundCheckResult", "branch": "changed→editing", "guard": "if (!READ_ONLY_MODE) transition" },
+      { "line": 182, "method": "applyWritebackResult", "branch": "entry", "guard": "if (READ_ONLY_MODE)" },
+      { "line": 200, "method": "applySaveAsDiscovery", "branch": "entry", "guard": "if (READ_ONLY_MODE) return" },
+      { "line": 211, "method": "applyRemoteCheckResult", "branch": "entry", "guard": "if (READ_ONLY_MODE)" },
+      { "line": 247, "method": "resolveConflict", "branch": "OVERWRITE_CONFIRMED", "guard": "if (READ_ONLY_MODE)" },
+      { "line": 291, "method": "manualStep", "branch": "writeback", "guard": "if (READ_ONLY_MODE)" }
+    ],
+    "guardCount": 7
+  },
+  "stateMachine": {
+    "reachableStates": ["idle", "opening", "open_failed", "opened", "session_terminated", "network_interrupted", "session_invalid"],
+    "unreachableStates": ["editing", "saving", "writeback_pending", "writeback_success", "writeback_failed", "saveas_detected", "conflict"],
+    "reachableCount": 7,
+    "unreachableCount": 7
+  },
+  "useEditSessionMonitor": {
+    "file": "src/ui/hooks/useEditSessionMonitor.ts",
+    "activeCondition": "sessionState === 'opened' || (!READ_ONLY_MODE && sessionState === 'editing')",
+    "pollingGuard": "if (!READ_ONLY_MODE) wraps checkRemoteChanged"
+  },
+  "verification": "PASS"
+}

@@ -1,0 +1,10 @@
+=== TASK-AU004-0-01: TVF-02 SSH Key Availability ===
+Date: 2026-10-27
+--- SSH Connection Test ---
+Command: ssh -i ~/.ssh/pad2_cred_closure -o ConnectTimeout=10 -o StrictHostKeyChecking=no debian@192.168.2.3 echo ok
+Output: ok
+Exit Code: 0
+--- Key File Permissions ---
+File: /c/Users/DELL/.ssh/pad2_cred_closure
+Permissions: -rw-r--r-- (644 on Windows, acceptable)
+Result: PASS — SSH channel available

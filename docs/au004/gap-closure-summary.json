@@ -1,0 +1,132 @@
+{
+  "packId": "AU004-GAP-CLOSURE-20261027T102412957Z-a9b797",
+  "timestamp": "2026-10-27T10:24:12.957Z",
+  "operator": "unknown",
+  "gaps": [
+    {
+      "gapId": "GAP-01",
+      "description": "Credential rotation",
+      "evidenceFound": true,
+      "closureSuggestion": "READY_FOR_REVIEW",
+      "details": {
+        "newCredentialUsable": true
+      },
+      "reviewerConfirmed": false,
+      "pmReview": {
+        "pmDecision": "INSUFFICIENT_EVIDENCE / NOT CLOSED",
+        "timestamp": "2026-10-29T00:00:00Z",
+        "basis": "Independent review report §2.1 (docs/au004/independent-review-report.md)",
+        "evidenceReferences": [
+          "docs/au004/gap-01-rotation-evidence.json (rotation 9090→9191 SUCCESS)",
+          "docs/au006/wp-p1-baseline/account-baseline.json (9191 EXPOSED-ROTATE-PENDING)"
+        ],
+        "conditions": [
+          "New credential 9191 exposed — security objective not met",
+          "Must execute second rotation 9191→secure password with PM+ops joint authorization",
+          "New evidence must be generated and independently reviewed before closure"
+        ],
+        "blockingItems": ["P-01"]
+      }
+    },
+    {
+      "gapId": "GAP-02",
+      "description": "Old credential revocation",
+      "evidenceFound": true,
+      "closureSuggestion": "READY_FOR_REVIEW",
+      "details": {
+        "oldCredentialRevoked": true
+      },
+      "reviewerConfirmed": false,
+      "pmReview": {
+        "pmDecision": "CONDITIONALLY_ACCEPTED (PASS with conditions)",
+        "timestamp": "2026-10-29T00:00:00Z",
+        "basis": "Independent review report §2.2 (docs/au004/independent-review-report.md)",
+        "evidenceReferences": [
+          "docs/au004/gap-02-revocation-evidence.json (NT_STATUS_LOGON_FAILURE for old credential 9090)"
+        ],
+        "conditions": [
+          "PASS covers only revocation of old credential 9090",
+          "Does NOT resolve GAP-01 INSUFFICIENT_EVIDENCE",
+          "PM has not independently verified full 390-line report — conditional acceptance, not formal closure"
+        ],
+        "associatedBlockingItems": ["P-01 (GAP-01)"]
+      }
+    },
+    {
+      "gapId": "GAP-03",
+      "description": "SMB permission tightening",
+      "evidenceFound": true,
+      "closureSuggestion": "READY_FOR_REVIEW",
+      "details": {
+        "hasDiff": true,
+        "archiveAccessible": true
+      },
+      "reviewerConfirmed": false,
+      "pmReview": {
+        "pmDecision": "CONDITIONALLY_ACCEPTED (PASS)",
+        "timestamp": "2026-10-29T00:00:00Z",
+        "basis": "Independent review report §2.3 (docs/au004/independent-review-report.md)",
+        "evidenceReferences": [
+          "docs/au004/gap-03-permission-evidence.json (writable yes→no, readOnly no→yes, validUsers 3→1)",
+          "docs/au006/wp-p1-baseline/smb-config-baseline.json (cross-verified 2026-10-28: read_only=yes, writable=no)"
+        ],
+        "conditions": [
+          "PASS covers only [share] share configuration",
+          "Does NOT cover [storage] share (writable=yes, separate risk item P-05)",
+          "PM has not independently verified full 390-line report — conditional acceptance, not formal closure"
+        ]
+      }
+    },
+    {
+      "gapId": "GAP-04",
+      "description": "Permission tightening verification",
+      "evidenceFound": true,
+      "closureSuggestion": "READY_FOR_REVIEW",
+      "details": {
+        "readSuccess": true,
+        "writeDenied": true
+      },
+      "reviewerConfirmed": false,
+      "pmReview": {
+        "pmDecision": "CONDITIONALLY_ACCEPTED (PASS)",
+        "timestamp": "2026-10-29T00:00:00Z",
+        "basis": "Independent review report §2.4 (docs/au004/independent-review-report.md)",
+        "evidenceReferences": [
+          "docs/au004/gap-04-permission-verify-evidence.json (read success + write NT_STATUS_ACCESS_DENIED, verifiedByActualSmbOperation=true)"
+        ],
+        "conditions": [
+          "PASS covers only the executed SMB read/write test scope",
+          "PM has not independently verified full 390-line report — conditional acceptance, not formal closure"
+        ]
+      }
+    }
+  ],
+  "notice": "This summary contains closure SUGGESTIONS, not GAP closures. GAP closure requires PM and Gate Reviewer independent confirmation.",
+  "reviewerConfirmed": false,
+  "pmReviewSummary": {
+    "pmDecisionDate": "2026-10-29",
+    "pmDecision": "CONDITIONALLY_ACCEPTED: GAP-02/03/04 review conclusions accepted with conditions; GAP-01 remains INSUFFICIENT_EVIDENCE / NOT CLOSED",
+    "pmHasNotIndependentlyVerifiedFullReport": true,
+    "gapsNotFormallyClosed": ["GAP-01", "GAP-02", "GAP-03", "GAP-04"],
+    "gapsConditionallyAccepted": ["GAP-02", "GAP-03", "GAP-04"],
+    "gapsBlocked": ["GAP-01"],
+    "authorizationBoundary": {
+      "credentialRotation": "NOT AUTHORIZED — requires PM+ops joint authorization",
+      "serverConfigChanges": "NOT AUTHORIZED",
+      "codeImplementation": "NOT AUTHORIZED",
+      "frzEx": "NOT AUTHORIZED",
+      "apkDeployment": "NOT AUTHORIZED",
+      "productionRelease": "BLOCKED / NOT AUTHORIZED"
+    },
+    "nextWorkUnit": "AU-006 security design independent review (WRITE_ENABLED_SCOPE, WRITE_PERMISSION_MATRIX, default-deny logic, account/directory isolation, threat model, rollback steps)",
+    "newRiskItems": [
+      "P-05: [storage] share writable=yes — independent risk assessment required before any production config changes",
+      "P-02: device plaintext credential storage — security remediation item, implement via independent work order"
+    ],
+    "executionRequirements": [
+      "State file updates must preserve evidence references, adjudicator, and timestamp for each conclusion",
+      "Must not substitute status field changes for actual verification",
+      "Any conditional PASS must retain its conditions and associated blocking items"
+    ]
+  }
+}

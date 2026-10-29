@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-10-27T09:30:00.000Z",
+  "device": "AJ7XJV6904H00320",
+  "scenarios": [
+    { "tc": "AU-TC-02", "name": "更新可用", "pass": true, "assertions": 2 },
+    { "tc": "AU-TC-03", "name": "完整更新流程", "pass": true, "assertions": 6 },
+    { "tc": "AU-TC-04", "name": "SHA-256 校验失败", "pass": true, "assertions": 2 },
+    { "tc": "AU-TC-05", "name": "签名不一致", "pass": true, "assertions": 2 },
+    { "tc": "AU-TC-07", "name": "强制更新", "pass": true, "assertions": 3 },
+    { "tc": "AU-TC-08", "name": "下载中断恢复", "pass": true, "assertions": 2 },
+    { "tc": "AU-TC-10", "name": "荣耀安装确认", "pass": true, "assertions": 2 },
+    { "tc": "AU-TC-11", "name": "取消更新", "pass": true, "assertions": 4 },
+    { "tc": "AU-TC-12", "name": "更新源独立连接", "pass": true, "assertions": 1 }
+  ],
+  "allPass": true,
+  "totalScenarios": 9,
+  "totalAssertions": 24,
+  "regression": {
+    "tc01": { "pass": true, "assertions": 1 },
+    "tc02": { "pass": true, "assertions": 2 },
+    "tc06": { "pass": true, "assertions": 1 },
+    "tc09": { "pass": true, "assertions": 1 },
+    "tc13": { "pass": true, "assertions": 3 },
+    "tc14": { "pass": true, "assertions": 1 },
+    "tc15": { "pass": true, "assertions": 3 }
+  },
+  "frozenZoneCheck": "PASS",
+  "deliverablesCheck": "13/13 PASS"
+}

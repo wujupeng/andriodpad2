@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-10-28T17:45:00Z",
+  "generatedBy": "WP-P5-23-DESIGN-SUMMARY",
+  "title": "AU-006 待授权事项清单",
+  "overallStatus": "NOT_AUTHORIZED",
+  "productionRelease": "BLOCKED",
+  "categories": {
+    "implementation": {
+      "description": "代码实现授权",
+      "status": "NOT_AUTHORIZED",
+      "items": [
+        "修改 editSessionStore 源码（新增 write_pending/write_completed 态）",
+        "修改 READ_ONLY_MODE 守卫（条件化为 writeEnabled）",
+        "修改 OPERATION_CAPABILITIES（新增 writeBackEnabled）",
+        "实现 normalizeAndValidatePath 函数",
+        "实现 detectSymlink 函数",
+        "实现 assertNoHardlink 函数",
+        "实现 WRITE_PERMISSION_MATRIX 与 evaluateWritePermission",
+        "实现 FRZ_EX_BOUNDARY 与 isWithinFrzEx",
+        "实现路径映射层 mapLogicalToPhysical/mapPhysicalToLogical",
+        "实现冲突检测 FileLock 与版本号乐观锁",
+        "实现 SaveAs 失败处理与错误分类",
+        "实现审计日志 logWritebackAudit"
+      ]
+    },
+    "deployment": {
+      "description": "系统部署授权",
+      "status": "NOT_AUTHORIZED",
+      "items": [
+        "创建 pad2_app 系统账户（useradd）",
+        "创建 pad2_app_group 组（groupadd）",
+        "执行 init-writable-dir.sh 创建 /mnt/share/writable/",
+        "修改 /etc/samba/smb.conf 新增 [writable] section",
+        "解除/恢复 smb.conf immutable 属性（chattr）",
+        "重启 smbd 服务（systemctl restart smbd）",
+        "设置 POSIX ACL（setfacl）",
+        "修改 /etc/fstab 新增 [writable] 挂载项",
+        "配置 pad2_app 磁盘配额",
+        "配置 AppArmor profile 限制 pad2_app",
+        "启用 SMB 签名（server signing = mandatory）",
+        "部署定期扫描 cron（符号链接 + 锁清理）",
+        "设置 sysctl fs.protected_hardlinks=1",
+        "配置远程审计日志归档"
+      ]
+    },
+    "credential": {
+      "description": "凭据管理授权",
+      "status": "NOT_AUTHORIZED",
+      "items": [
+        "生成 pad2_app 密码（禁止明文，使用 ${SMB_APP_PASSWORD}）",
+        "存储密码至 Android Keystore",
+        "配置密码轮换策略（90 天周期）",
+        "配置密码撤销流程"
+      ]
+    },
+    "testing": {
+      "description": "测试执行授权",
+      "status": "NOT_AUTHORIZED",
+      "items": [
+        "单元测试执行（18 项验证矩阵）",
+        "集成测试执行（SMB + 文件系统）",
+        "渗透测试执行（T-5, E-3, E-6 专项）",
+        "回滚演练执行（12 步）"
+      ]
+    },
+    "production": {
+      "description": "生产发布",
+      "status": "BLOCKED",
+      "items": [
+        "Production Release 须完成全部 NOT AUTHORIZED 项授权",
+        "Production Release 须通过渗透测试",
+        "Production Release 须通过回滚演练",
+        "Production Release 须通过变更评审"
+      ]
+    }
+  },
+  "summary": {
+    "totalPendingItems": 44,
+    "byCategory": {
+      "implementation": 12,
+      "deployment": 14,
+      "credential": 4,
+      "testing": 4,
+      "production": 4
+    },
+    "blockingProductionRelease": true,
+    "blockReason": "44 项待授权事项未完成，须逐一获得授权后方可进入实现与部署阶段"
+  }
+}

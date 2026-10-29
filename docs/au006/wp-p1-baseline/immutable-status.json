@@ -1,0 +1,9 @@
+{
+  "task": "TASK-AU006-P1-01",
+  "timestamp": "2026-10-28T15:35:00Z",
+  "file": "/etc/samba/smb.conf",
+  "lsattr": "----i---------e-------",
+  "immutable": true,
+  "note": "immutable 属性存在（i 标志），变更 smb.conf 须先 chattr -i 解除",
+  "verification": "PASS"
+}

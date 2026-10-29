@@ -5,6 +5,7 @@ import com.hierynomus.msfscc.fileinformation.FileIdBothDirectoryInformation;
 import com.hierynomus.mssmb2.SMB2CreateDisposition;
 import com.hierynomus.mssmb2.SMB2ShareAccess;
 import com.hierynomus.smbj.SMBClient;
+import com.hierynomus.smbj.SmbConfig;
 import com.hierynomus.smbj.auth.AuthenticationContext;
 import com.hierynomus.smbj.connection.Connection;
 import com.hierynomus.smbj.session.Session;
@@ -17,6 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class UpdateSmbClient {
     private SMBClient smbClient;
@@ -26,7 +28,11 @@ public class UpdateSmbClient {
 
     public void connect(String host, String shareName, String username, String password, String domain) throws IOException {
         disconnect();
-        smbClient = new SMBClient();
+        SmbConfig config = SmbConfig.builder()
+            .withSoTimeout(30, TimeUnit.SECONDS)
+            .withTimeout(60, TimeUnit.SECONDS)
+            .build();
+        smbClient = new SMBClient(config);
         connection = smbClient.connect(host);
         AuthenticationContext authContext;
         if (username == null || username.isEmpty()) {
@@ -66,7 +72,20 @@ public class UpdateSmbClient {
     }
 
     public InputStream getFileStream(String path) throws IOException {
+        return getFileStream(path, 0);
+    }
+
+    public InputStream getFileStream(String path, long offset) throws IOException {
         File file = diskShare.openFile(path, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null);
-        return file.getInputStream();
+        InputStream is = file.getInputStream();
+        if (offset > 0) {
+            long skipped = is.skip(offset);
+            if (skipped != offset) {
+                try { is.close(); } catch (Exception ignored) {}
+                try { file.close(); } catch (Exception ignored) {}
+                throw new IOException("skip mismatch: expected " + offset + ", skipped " + skipped);
+            }
+        }
+        return is;
     }
 }
