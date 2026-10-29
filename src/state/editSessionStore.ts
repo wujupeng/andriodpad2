@@ -16,6 +16,10 @@ import type {
 } from '../adapter/smb/SmbPlugin';
 import type { SmbErrorCategory } from '../utils/smbErrorMapper';
 
+import { checkEditWritePermission } from './editWritePermission';
+import { executeWriteback } from './writebackExecutor.ts';
+import { mapWritebackExecutorResultToState, shouldAutoTransitionToOpened } from './writebackResultMapper.ts';
+
 export type EditSessionState =
   | 'idle'
   | 'opening'
@@ -145,11 +149,8 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
         try {
           const checkResult = await SmbPlugin.checkLocalFileChanged();
           get().applyForegroundCheckResult(checkResult);
-          if (checkResult.changed && get().state === 'editing') {
-            transition(set, get, 'writeback_pending');
-            const wbResult = await SmbPlugin.writeback();
-            get().applyWritebackResult(wbResult);
-          }
+          // AU-005 只读模式：appStateChange 监听仅 foreground 状态监测，不触发 writeback（R-ESS-01）
+          // 用户返回时若本地有修改，提示不会写回服务器（R-NOTICE-03）
         } catch (err) {
           get().applyError({ category: 'unknown', message: String(err) });
         }
@@ -165,6 +166,9 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
     const cur = get();
     if (cur.state !== 'opened' && cur.state !== 'editing') return;
     if (result.saveAsDiscovered) {
+      // AU-006 路径级写回权限守卫（R-ESS-03）：未授权路径不进入 saveas_detected
+      const perm = checkEditWritePermission(cur.baseline?.remotePath ?? null);
+      if (!perm.permitted) return;
       set({
         pendingSaveAs: result.saveAsFilePath
           ? { candidatePath: result.saveAsFilePath, prompt: result.saveAsPrompt || '' }
@@ -172,11 +176,42 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
       });
       transition(set, get, 'saveas_detected');
     } else if (result.changed) {
-      transition(set, get, 'editing');
+      const perm = checkEditWritePermission(cur.baseline?.remotePath ?? null);
+      if (perm.permitted) {
+        const baseline = cur.baseline;
+        if (!baseline) return;
+        transition(set, get, 'saving');
+        void (async () => {
+          try {
+            transition(set, get, 'writeback_pending');
+            const execResult = await executeWriteback(
+              { remotePath: baseline.remotePath, baselineSha256: baseline.baselineSha256, baselineMtime: baseline.baselineMtime },
+              { writeback: () => SmbPlugin.writeback(), checkRemoteChanged: () => SmbPlugin.checkRemoteChanged() },
+            );
+            const mapping = mapWritebackExecutorResultToState(execResult, baseline.baselineMtime);
+            if (mapping.conflictInfo) set({ conflictInfo: mapping.conflictInfo });
+            if (mapping.lastError) set({ lastError: { category: mapping.lastError.category, userMessage: mapping.lastError.userMessage } });
+            transition(set, get, mapping.state, mapping.detail);
+            if (shouldAutoTransitionToOpened(mapping.state)) {
+              transition(set, get, 'opened', 'writeback completed, ready for next edit');
+            }
+          } catch (err) {
+            get().applyError({ category: 'unknown', message: String(err) });
+          }
+        })();
+      } else {
+        transition(set, get, 'editing');
+      }
     }
   },
 
   applyWritebackResult: (result) => {
+    // AU-006 路径级写回权限守卫（R-ESS-02）：未授权路径转入 session_terminated
+    const perm = checkEditWritePermission(get().baseline?.remotePath ?? null);
+    if (!perm.permitted) {
+      transition(set, get, 'session_terminated', perm.reason);
+      return;
+    }
     if (result.writebackSuccess) {
       transition(set, get, 'writeback_success');
     } else {
@@ -190,6 +225,9 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
   },
 
   applyRemoteCheckResult: (result) => {
+    // AU-006 路径级写回权限守卫（R-ESS-05）：未授权路径不进入 conflict 态
+    const perm = checkEditWritePermission(get().baseline?.remotePath ?? null);
+    if (!perm.permitted) return;
     if (result.remoteChanged) {
       set({
         conflictInfo: { remoteMtime: result.remoteMtime, baselineMtime: result.baselineMtime },
@@ -199,6 +237,15 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
   },
 
   applySaveAsDiscovery: (result) => {
+    // AU-006 路径级写回权限守卫（R-ESS-03）：未授权路径转入 session_terminated
+    const perm = checkEditWritePermission(
+      get().baseline?.remotePath ?? null,
+      result.saveAsFilePath,
+    );
+    if (!perm.permitted) {
+      transition(set, get, 'session_terminated', perm.reason);
+      return;
+    }
     set({
       pendingSaveAs: result.saveAsFilePath
         ? { candidatePath: result.saveAsFilePath, prompt: result.saveAsPrompt || '' }
@@ -214,8 +261,19 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
       transition(set, get, 'session_terminated', 'saveas discarded');
       return;
     }
+    // AU-006 路径级写回权限守卫：OVERWRITE_ORIGINAL/WRITE_AS_NEW 须授权
+    const candidatePath = cur.pendingSaveAs?.candidatePath;
+    const perm = checkEditWritePermission(
+      cur.baseline?.remotePath ?? null,
+      candidatePath,
+    );
+    if (!perm.permitted) {
+      set({ pendingSaveAs: null });
+      transition(set, get, 'session_terminated', perm.reason);
+      return;
+    }
     try {
-      await SmbPlugin.resolveSaveAs({ choice, saveAsFilePath: cur.pendingSaveAs?.candidatePath });
+      await SmbPlugin.resolveSaveAs({ choice, saveAsFilePath: candidatePath });
       set({ pendingSaveAs: null });
       transition(set, get, 'opened', `saveas resolved: ${choice}`);
     } catch (err) {
@@ -230,10 +288,33 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
       return;
     }
     if (choice === 'OVERWRITE_CONFIRMED') {
+      // AU-006 路径级写回权限守卫（R-ESS-04）：未授权路径转入 session_terminated
+      const perm = checkEditWritePermission(get().baseline?.remotePath ?? null);
+      if (!perm.permitted) {
+        transition(set, get, 'session_terminated', perm.reason);
+        return;
+      }
+      const baseline = get().baseline;
+      if (!baseline) {
+        transition(set, get, 'session_terminated', 'no baseline');
+        return;
+      }
       transition(set, get, 'writeback_pending');
       try {
-        const wbResult = await SmbPlugin.writeback();
-        get().applyWritebackResult(wbResult);
+        const execResult = await executeWriteback(
+          { remotePath: baseline.remotePath, baselineSha256: baseline.baselineSha256, baselineMtime: baseline.baselineMtime },
+          {
+            writeback: () => SmbPlugin.writeback(),
+            checkRemoteChanged: async () => ({ remoteMtime: 0, baselineMtime: 0, remoteChanged: false }),
+          },
+        );
+        const mapping = mapWritebackExecutorResultToState(execResult, baseline.baselineMtime);
+        if (mapping.conflictInfo) set({ conflictInfo: mapping.conflictInfo });
+        if (mapping.lastError) set({ lastError: { category: mapping.lastError.category, userMessage: mapping.lastError.userMessage } });
+        transition(set, get, mapping.state, mapping.detail);
+        if (shouldAutoTransitionToOpened(mapping.state)) {
+          transition(set, get, 'opened', 'writeback completed, ready for next edit');
+        }
       } catch (err) {
         get().applyError({ category: 'unknown', message: String(err) });
       }
@@ -269,8 +350,29 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
       if (action === 'check-change') {
         get().applyForegroundCheckResult(await SmbPlugin.checkLocalFileChanged());
       } else if (action === 'writeback') {
+        // AU-006 路径级写回权限守卫（R-ESS-02）：未授权路径转入 session_terminated
+        const perm = checkEditWritePermission(get().baseline?.remotePath ?? null);
+        if (!perm.permitted) {
+          transition(set, get, 'session_terminated', perm.reason);
+          return;
+        }
+        const baseline = get().baseline;
+        if (!baseline) {
+          transition(set, get, 'session_terminated', 'no baseline');
+          return;
+        }
         transition(set, get, 'writeback_pending');
-        get().applyWritebackResult(await SmbPlugin.writeback());
+        const execResult = await executeWriteback(
+          { remotePath: baseline.remotePath, baselineSha256: baseline.baselineSha256, baselineMtime: baseline.baselineMtime },
+          { writeback: () => SmbPlugin.writeback(), checkRemoteChanged: () => SmbPlugin.checkRemoteChanged() },
+        );
+        const mapping = mapWritebackExecutorResultToState(execResult, baseline.baselineMtime);
+        if (mapping.conflictInfo) set({ conflictInfo: mapping.conflictInfo });
+        if (mapping.lastError) set({ lastError: { category: mapping.lastError.category, userMessage: mapping.lastError.userMessage } });
+        transition(set, get, mapping.state, mapping.detail);
+        if (shouldAutoTransitionToOpened(mapping.state)) {
+          transition(set, get, 'opened', 'writeback completed, ready for next edit');
+        }
       } else if (action === 'check-remote') {
         get().applyRemoteCheckResult(await SmbPlugin.checkRemoteChanged());
       } else if (action === 'foreground-check') {
