@@ -8,17 +8,57 @@
  */
 import { create } from 'zustand';
 import { App } from '@capacitor/app';
-import SmbPlugin from '../adapter/smb/SmbPlugin';
+import SmbPlugin from '../adapter/smb/SmbPlugin.ts';
 import type {
   FileChangeResult,
   RemoteChangeResult,
   WritebackResult,
-} from '../adapter/smb/SmbPlugin';
-import type { SmbErrorCategory } from '../utils/smbErrorMapper';
+} from '../adapter/smb/SmbPlugin.ts';
+import type { SmbErrorCategory } from '../utils/smbErrorMapper.ts';
 
-import { checkEditWritePermission } from './editWritePermission';
+import { checkEditWritePermission } from './editWritePermission.ts';
 import { executeWriteback } from './writebackExecutor.ts';
 import { mapWritebackExecutorResultToState, shouldAutoTransitionToOpened } from './writebackResultMapper.ts';
+
+interface SmbMethodDeps {
+  writeback: () => Promise<WritebackResult>;
+  checkRemoteChanged: () => Promise<RemoteChangeResult>;
+  sleep?: (ms: number) => Promise<void>;
+  checkPermission?: (remotePath: string) => { permitted: boolean; reason?: string };
+}
+
+let _smbMethodDeps: SmbMethodDeps | null = null;
+
+function getSmbMethods(): SmbMethodDeps {
+  if (_smbMethodDeps) return _smbMethodDeps;
+  return {
+    writeback: () => SmbPlugin.writeback(),
+    checkRemoteChanged: () => SmbPlugin.checkRemoteChanged(),
+  };
+}
+
+/**
+ * @internal 仅供测试注入 SMB 方法依赖，生产代码禁止调用
+ */
+export function __setSmbMethodDepsForTest(deps: SmbMethodDeps | null): void {
+  _smbMethodDeps = deps;
+}
+
+let _permCheckOverride: ((remotePath: string | null, candidatePath?: string) => { permitted: boolean; reason?: string }) | null = null;
+
+/**
+ * @internal 仅供测试注入权限判定函数，生产代码禁止调用
+ */
+export function __setPermissionCheckForTest(
+  fn: ((remotePath: string | null, candidatePath?: string) => { permitted: boolean; reason?: string }) | null,
+): void {
+  _permCheckOverride = fn;
+}
+
+function getPermCheck(remotePath: string | null, candidatePath?: string): { permitted: boolean; reason?: string } {
+  if (_permCheckOverride) return _permCheckOverride(remotePath, candidatePath);
+  return checkEditWritePermission(remotePath, candidatePath);
+}
 
 export type EditSessionState =
   | 'idle'
@@ -146,11 +186,12 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
       transition(set, get, 'opened');
       const listener = await App.addListener('appStateChange', async ({ isActive }) => {
         if (!isActive) return;
+        // 前台检测后触发：应用回到前台时经 checkLocalFileChanged 检测本地变更，
+        // 非 WPS 保存时即时触发。后台时不触发写回。
         try {
           const checkResult = await SmbPlugin.checkLocalFileChanged();
           get().applyForegroundCheckResult(checkResult);
-          // AU-005 只读模式：appStateChange 监听仅 foreground 状态监测，不触发 writeback（R-ESS-01）
-          // 用户返回时若本地有修改，提示不会写回服务器（R-NOTICE-03）
+          // AU-005 只读模式：前台检测后若本地有修改，提示不会写回服务器（R-NOTICE-03）
         } catch (err) {
           get().applyError({ category: 'unknown', message: String(err) });
         }
@@ -162,12 +203,14 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
     }
   },
 
+  // 前台检测后触发：由 appStateChange + foregroundCheck/checkLocalFileChanged 检测到 changed 后调用。
+  // 非 WPS 保存时即时触发——应用在后台时不触发，仅在前台返回时检测。
   applyForegroundCheckResult: (result) => {
     const cur = get();
     if (cur.state !== 'opened' && cur.state !== 'editing') return;
     if (result.saveAsDiscovered) {
       // AU-006 路径级写回权限守卫（R-ESS-03）：未授权路径不进入 saveas_detected
-      const perm = checkEditWritePermission(cur.baseline?.remotePath ?? null);
+      const perm = getPermCheck(cur.baseline?.remotePath ?? null);
       if (!perm.permitted) return;
       set({
         pendingSaveAs: result.saveAsFilePath
@@ -176,7 +219,7 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
       });
       transition(set, get, 'saveas_detected');
     } else if (result.changed) {
-      const perm = checkEditWritePermission(cur.baseline?.remotePath ?? null);
+      const perm = getPermCheck(cur.baseline?.remotePath ?? null);
       if (perm.permitted) {
         const baseline = cur.baseline;
         if (!baseline) return;
@@ -186,7 +229,7 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
             transition(set, get, 'writeback_pending');
             const execResult = await executeWriteback(
               { remotePath: baseline.remotePath, baselineSha256: baseline.baselineSha256, baselineMtime: baseline.baselineMtime },
-              { writeback: () => SmbPlugin.writeback(), checkRemoteChanged: () => SmbPlugin.checkRemoteChanged() },
+              getSmbMethods(),
             );
             const mapping = mapWritebackExecutorResultToState(execResult, baseline.baselineMtime);
             if (mapping.conflictInfo) set({ conflictInfo: mapping.conflictInfo });
@@ -207,7 +250,7 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
 
   applyWritebackResult: (result) => {
     // AU-006 路径级写回权限守卫（R-ESS-02）：未授权路径转入 session_terminated
-    const perm = checkEditWritePermission(get().baseline?.remotePath ?? null);
+    const perm = getPermCheck(get().baseline?.remotePath ?? null);
     if (!perm.permitted) {
       transition(set, get, 'session_terminated', perm.reason);
       return;
@@ -226,7 +269,7 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
 
   applyRemoteCheckResult: (result) => {
     // AU-006 路径级写回权限守卫（R-ESS-05）：未授权路径不进入 conflict 态
-    const perm = checkEditWritePermission(get().baseline?.remotePath ?? null);
+    const perm = getPermCheck(get().baseline?.remotePath ?? null);
     if (!perm.permitted) return;
     if (result.remoteChanged) {
       set({
@@ -238,7 +281,7 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
 
   applySaveAsDiscovery: (result) => {
     // AU-006 路径级写回权限守卫（R-ESS-03）：未授权路径转入 session_terminated
-    const perm = checkEditWritePermission(
+    const perm = getPermCheck(
       get().baseline?.remotePath ?? null,
       result.saveAsFilePath,
     );
@@ -263,7 +306,7 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
     }
     // AU-006 路径级写回权限守卫：OVERWRITE_ORIGINAL/WRITE_AS_NEW 须授权
     const candidatePath = cur.pendingSaveAs?.candidatePath;
-    const perm = checkEditWritePermission(
+    const perm = getPermCheck(
       cur.baseline?.remotePath ?? null,
       candidatePath,
     );
@@ -289,7 +332,7 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
     }
     if (choice === 'OVERWRITE_CONFIRMED') {
       // AU-006 路径级写回权限守卫（R-ESS-04）：未授权路径转入 session_terminated
-      const perm = checkEditWritePermission(get().baseline?.remotePath ?? null);
+      const perm = getPermCheck(get().baseline?.remotePath ?? null);
       if (!perm.permitted) {
         transition(set, get, 'session_terminated', perm.reason);
         return;
@@ -303,10 +346,7 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
       try {
         const execResult = await executeWriteback(
           { remotePath: baseline.remotePath, baselineSha256: baseline.baselineSha256, baselineMtime: baseline.baselineMtime },
-          {
-            writeback: () => SmbPlugin.writeback(),
-            checkRemoteChanged: async () => ({ remoteMtime: 0, baselineMtime: 0, remoteChanged: false }),
-          },
+          getSmbMethods(),
         );
         const mapping = mapWritebackExecutorResultToState(execResult, baseline.baselineMtime);
         if (mapping.conflictInfo) set({ conflictInfo: mapping.conflictInfo });
@@ -351,7 +391,7 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
         get().applyForegroundCheckResult(await SmbPlugin.checkLocalFileChanged());
       } else if (action === 'writeback') {
         // AU-006 路径级写回权限守卫（R-ESS-02）：未授权路径转入 session_terminated
-        const perm = checkEditWritePermission(get().baseline?.remotePath ?? null);
+        const perm = getPermCheck(get().baseline?.remotePath ?? null);
         if (!perm.permitted) {
           transition(set, get, 'session_terminated', perm.reason);
           return;
@@ -364,7 +404,7 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
         transition(set, get, 'writeback_pending');
         const execResult = await executeWriteback(
           { remotePath: baseline.remotePath, baselineSha256: baseline.baselineSha256, baselineMtime: baseline.baselineMtime },
-          { writeback: () => SmbPlugin.writeback(), checkRemoteChanged: () => SmbPlugin.checkRemoteChanged() },
+          getSmbMethods(),
         );
         const mapping = mapWritebackExecutorResultToState(execResult, baseline.baselineMtime);
         if (mapping.conflictInfo) set({ conflictInfo: mapping.conflictInfo });
