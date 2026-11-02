@@ -1,13 +1,15 @@
 /**
  * 界面偏好 store（design.md 2.7.2 UiPrefs、TASK-S2-01）
- * themeMode 三态 + sideNavCollapsed；Preferences `pad2.prefs.v1` 版本化持久化：
+ * themeMode 三态 + sideNavCollapsed + viewMode；Preferences `pad2.prefs.v1` 版本化持久化：
  * 值携带 version 字段，读取校验版本，不匹配/损坏安全丢弃重建（design.md 2.7.2 持久化 schema 版本化）。
  * 接口签名冻结于 S1-09（R-07），本任务仅填充实现。
+ * TASK-VM-01：扩展 viewMode 字段（五种视图模式，默认 detail，version 1 框架内兼容扩展）。
  */
 import { create } from 'zustand';
 import { Preferences } from '@capacitor/preferences';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
+export type ViewMode = 'largeIcon' | 'mediumIcon' | 'smallIcon' | 'tile' | 'detail';
 
 const PREFS_KEY = 'pad2.prefs.v1';
 const PREFS_VERSION = 1;
@@ -16,10 +18,21 @@ interface PersistedPrefs {
   version: number;
   themeMode: ThemeMode;
   sideNavCollapsed: boolean;
+  viewMode: ViewMode;
 }
 
 function isThemeMode(value: unknown): value is ThemeMode {
   return value === 'system' || value === 'light' || value === 'dark';
+}
+
+function isViewMode(value: unknown): value is ViewMode {
+  return (
+    value === 'largeIcon' ||
+    value === 'mediumIcon' ||
+    value === 'smallIcon' ||
+    value === 'tile' ||
+    value === 'detail'
+  );
 }
 
 /**
@@ -38,6 +51,7 @@ export async function readPersistedPrefs(): Promise<PersistedPrefs | null> {
       themeMode: isThemeMode(parsed.themeMode) ? parsed.themeMode : 'system',
       sideNavCollapsed:
         typeof parsed.sideNavCollapsed === 'boolean' ? parsed.sideNavCollapsed : false,
+      viewMode: isViewMode(parsed.viewMode) ? parsed.viewMode : 'detail',
     };
   } catch {
     return null;
@@ -55,22 +69,30 @@ async function persistPrefs(prefs: PersistedPrefs): Promise<void> {
 export interface UiPrefsState {
   themeMode: ThemeMode;
   sideNavCollapsed: boolean;
+  viewMode: ViewMode;
   setThemeMode(mode: ThemeMode): void;
   setSideNavCollapsed(collapsed: boolean): void;
+  setViewMode(mode: ViewMode): void;
 }
 
 export const useUiPrefsStore = create<UiPrefsState>()((set, get) => ({
   themeMode: 'system',
   sideNavCollapsed: false,
+  viewMode: 'detail',
   setThemeMode: (mode) => {
     set({ themeMode: mode });
-    const { themeMode, sideNavCollapsed } = get();
-    void persistPrefs({ version: PREFS_VERSION, themeMode, sideNavCollapsed });
+    const { themeMode, sideNavCollapsed, viewMode } = get();
+    void persistPrefs({ version: PREFS_VERSION, themeMode, sideNavCollapsed, viewMode });
   },
   setSideNavCollapsed: (collapsed) => {
     set({ sideNavCollapsed: collapsed });
-    const { themeMode, sideNavCollapsed } = get();
-    void persistPrefs({ version: PREFS_VERSION, themeMode, sideNavCollapsed });
+    const { themeMode, sideNavCollapsed, viewMode } = get();
+    void persistPrefs({ version: PREFS_VERSION, themeMode, sideNavCollapsed, viewMode });
+  },
+  setViewMode: (mode) => {
+    set({ viewMode: mode });
+    const { themeMode, sideNavCollapsed, viewMode } = get();
+    void persistPrefs({ version: PREFS_VERSION, themeMode, sideNavCollapsed, viewMode });
   },
 }));
 
@@ -81,6 +103,7 @@ export async function hydrateUiPrefs(): Promise<void> {
     useUiPrefsStore.setState({
       themeMode: persisted.themeMode,
       sideNavCollapsed: persisted.sideNavCollapsed,
+      viewMode: persisted.viewMode,
     });
   }
 }

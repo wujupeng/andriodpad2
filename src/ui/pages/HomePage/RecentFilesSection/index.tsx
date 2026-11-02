@@ -3,6 +3,7 @@
  * recentFilesStore ≤8 条 ListRow（名称/类型图标/来源共享名/相对时间）；
  * 空态 EmptyState"去浏览文件"引导（spec 5.2.1-R3/R5）。
  */
+import { useEffect } from 'react';
 import { Card } from '../../../components/Card';
 import { ListRow } from '../../../components/ListRow';
 import { EmptyState } from '../../../components/EmptyState';
@@ -12,14 +13,20 @@ import { useRecentFilesStore } from '../../../../state/recentFilesStore';
 import { useSmbConnectionStore } from '../../../../state/smbConnectionStore';
 import { useNavigationStore } from '../../../../state/navigationStore';
 import { formatTimestamp } from '../../../../utils/fileUtils';
+import { sortRecentFiles } from '../../../../utils/recentFileSort';
+import { useRecentSortPrefsStore } from '../../../../state/recentSortPrefsStore';
 import styles from './style.module.css';
 
 export function RecentFilesSection() {
   const entries = useRecentFilesStore((s) => s.entries);
   const connectionState = useSmbConnectionStore((s) => s.state);
   const push = useNavigationStore((s) => s.push);
+  const sort = useRecentSortPrefsStore((s) => s.sort);
+  const loadSortPrefs = useRecentSortPrefsStore((s) => s.loadSortPrefs);
 
-  const visible = entries.slice(0, 8);
+  useEffect(() => { void loadSortPrefs(); }, [loadSortPrefs]);
+
+  const visible = sortRecentFiles(entries, sort).slice(0, 8);
 
   return (
     <Card

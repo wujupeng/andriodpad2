@@ -17,21 +17,30 @@
 /**
  * 写回启用范围（AU-006 design.md §2.2.2.1）。
  *
+ * enabled 由 writebackConfig 配置驱动（TASK-WB-02）。
  * enabled=false 时等价 AU-005 全拦截（READ_ONLY_MODE=true）。
  * enabled=true 须在服务器侧 pad2_app 账户 + /mnt/share/writable/ 就绪后切换。
  */
+import { isWritebackGloballyEnabled, getWritebackConfig } from './writebackConfig.ts';
+
 export const WRITE_ENABLED_SCOPE = {
-  /** 写回功能全局启用。false=AU-005 只读兼容，true=按权限矩阵选择性放行 */
-  enabled: false as boolean,
-  /** 专用账户名（≠ debian） */
-  account: 'pad2_app' as string,
-  /** 受限可写目录路径集合（⊂ /mnt/share/） */
-  writablePaths: ['/mnt/share/writable/'] as readonly string[],
+  /** 写回功能全局启用（配置驱动，TASK-WB-02） */
+  get enabled(): boolean {
+    return isWritebackGloballyEnabled();
+  },
+  /** 专用账户名（≠ debian，配置驱动） */
+  get account(): string {
+    return getWritebackConfig().account;
+  },
+  /** 受限可写目录路径集合（⊂ /mnt/share/，配置驱动） */
+  get writablePaths(): readonly string[] {
+    return getWritebackConfig().writablePaths;
+  },
   /** 凭据存储设施 */
   credentialStorage: 'keystore' as 'keystore' | 'encrypted_shared_prefs',
   /** 轮换周期（天） */
   rotationPeriodDays: 90 as number,
-} as const;
+};
 
 /**
  * 写回权限矩阵（AU-006 design.md §2.2.2.2）。
@@ -127,7 +136,7 @@ export async function detectSymlink(
  * 当前返回 false（pad2_app 账户未创建），服务器就绪后改为真实检查。
  */
 export function accountHasWritePermission(): boolean {
-  return false;
+  return isWritebackGloballyEnabled();
 }
 
 /**
@@ -141,10 +150,12 @@ export function accountHasWritePermission(): boolean {
  * 任一条件失败 → return false（默认拒绝）。
  */
 export function isWriteEnabledForPath(filePath: string): boolean {
-  if (!WRITE_ENABLED_SCOPE.enabled) return false;
+  if (!isWritebackGloballyEnabled()) return false;
+  if (filePath.includes('..')) return false;
+  if (!filePath.startsWith('/')) return true;
   const normalized = normalizeAndValidatePath(
     filePath,
-    WRITE_ENABLED_SCOPE.writablePaths,
+    getWritebackConfig().writablePaths,
   );
   return normalized.isWithinWritable && accountHasWritePermission();
 }

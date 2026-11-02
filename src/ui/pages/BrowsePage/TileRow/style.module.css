@@ -1,0 +1,12 @@
+.rowFixed {
+  height: 64px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.markHighlight {
+  background: var(--pad2-color-brand-50);
+  color: var(--pad2-color-brand-700);
+  border-radius: 2px;
+}

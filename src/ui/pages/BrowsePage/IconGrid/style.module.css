@@ -1,0 +1,26 @@
+.scrollContainer {
+  overflow-y: auto;
+  height: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+.spacer {
+  position: relative;
+}
+
+.window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.gridRow {
+  display: flex;
+  gap: var(--pad2-space-2);
+  padding: 0 var(--pad2-space-2);
+}
+
+.placeholder {
+  flex: 1 1 0;
+}

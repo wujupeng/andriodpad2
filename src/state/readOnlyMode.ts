@@ -7,10 +7,15 @@
  * 当前 enabled=false → READ_ONLY_MODE=true → 等价 AU-005 全拦截。
  * 服务器就绪后 enabled=true → READ_ONLY_MODE=false → 按权限矩阵选择性放行。
  */
-import { WRITE_ENABLED_SCOPE } from './writePermission.ts';
+import { isWritebackGloballyEnabled } from './writebackConfig.ts';
 
-/** 只读模式标志（从 WRITE_ENABLED_SCOPE 派生；REQ-REL-01、REQ-P4-04） */
-export const READ_ONLY_MODE = !WRITE_ENABLED_SCOPE.enabled;
+/** 只读模式标志（配置驱动，TASK-WB-02；REQ-REL-01、REQ-P4-04） */
+export const READ_ONLY_MODE = !isWritebackGloballyEnabled();
+
+/** 只读模式动态检查（配置加载后实时反映，推荐新代码使用此函数） */
+export function isReadOnlyMode(): boolean {
+  return !isWritebackGloballyEnabled();
+}
 
 /**
  * 只读模式提示文案（R-NOTICE-01~05）。

@@ -4,11 +4,11 @@ import { useUpdateStore } from '../../state/updateStore';
 import { mapUpdateError } from '../../utils/updateErrorMapper';
 import type { UpdateInfo } from '../../adapter/update/types';
 
-export async function checkForUpdate(): Promise<void> {
+export async function checkForUpdate(force = false): Promise<void> {
   if (!UPDATE_ENABLED) return;
   const store = useUpdateStore.getState();
   if (store.status === 'checking' || store.status === 'downloading' || store.status === 'installing') return;
-  if (store.lastCheckAt && Date.now() - store.lastCheckAt < UPDATE_CHECK_INTERVAL_MS) return;
+  if (!force && store.lastCheckAt && Date.now() - store.lastCheckAt < UPDATE_CHECK_INTERVAL_MS) return;
 
   store.setStatus('checking');
   store.setError(null);
@@ -47,7 +47,7 @@ export async function checkForUpdate(): Promise<void> {
     store.setLastCheckAt(Date.now());
   } catch (e) {
     const { category, message } = mapUpdateError(e as Error);
-    store.setError({ category, message });
+    store.setError({ category, message, detail: (e as Error)?.message ?? '' });
     store.setStatus('failed');
     store.setLastCheckAt(Date.now());
   }

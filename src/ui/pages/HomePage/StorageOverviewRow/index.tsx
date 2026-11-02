@@ -13,12 +13,10 @@ import { StatusBadge } from '../../../components/StatusBadge';
 import { BaseButton } from '../../../components/BaseButton';
 import { Icon } from '../../../icons/Icon';
 import type { IconName } from '../../../icons/registry';
-import { useConnectionStatus } from '../../../hooks/useConnectionStatus';
 import type { SemanticIconPair } from '../../../tokens/tokens';
-import { useSmbConnectionStore } from '../../../../state/smbConnectionStore';
-import { useSmbProfilesStore } from '../../../../state/smbProfilesStore';
 import { useNavigationStore } from '../../../../state/navigationStore';
 import { formatFileSize } from '../../../../utils/fileUtils';
+import { MultiSmbCards } from './MultiSmbCards';
 import styles from './style.module.css';
 
 interface LocalQuota {
@@ -72,11 +70,7 @@ function StorageCard({ icon, title, badge, quota, meta, action }: StorageCardPro
 
 export function StorageOverviewRow() {
   const [localQuota, setLocalQuota] = useState<LocalQuota>({ status: 'unavailable' });
-  const connectionState = useSmbConnectionStore((s) => s.state);
-  const activeProfileId = useSmbConnectionStore((s) => s.activeProfileId);
-  const profiles = useSmbProfilesStore((s) => s.profiles);
   const push = useNavigationStore((s) => s.push);
-  const connection = useConnectionStatus();
 
   useEffect(() => {
     let cancelled = false;
@@ -93,9 +87,6 @@ export function StorageOverviewRow() {
       cancelled = true;
     };
   }, []);
-
-  const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
-  const smbConnected = connectionState === 'connected';
 
   return (
     <section className={styles.row} aria-label="存储概览">
@@ -116,35 +107,8 @@ export function StorageOverviewRow() {
         />
       )}
 
-      <StorageCard
-        icon="icon-sd-card"
-        title="SD 卡"
-        badge={{ semantic: 'neutral', label: '未挂载', icon: 'icon-file-question' }}
-        meta="插入 SD 卡后显示容量"
-      />
 
-      <StorageCard
-        icon="icon-server"
-        title={activeProfile ? activeProfile.name : 'SMB 服务器'}
-        badge={
-          smbConnected
-            ? { semantic: 'success', label: connection.label, icon: 'icon-check-circle' }
-            : connectionState === 'connecting'
-              ? { semantic: 'info', label: connection.label, icon: 'icon-loader' }
-              : { semantic: 'neutral', label: connection.label, icon: 'icon-cloud-off' }
-        }
-        meta={
-          smbConnected && activeProfile
-            ? `已连接共享 ${activeProfile.share}`
-            : connectionState === 'connecting'
-              ? '正在建立连接…'
-              : '未连接，点击进入配置连接'
-        }
-        action={{
-          label: smbConnected ? '进入浏览' : '去连接',
-          onPress: () => push(smbConnected ? 'browse' : 'connection'),
-        }}
-      />
+      <MultiSmbCards />
     </section>
   );
 }

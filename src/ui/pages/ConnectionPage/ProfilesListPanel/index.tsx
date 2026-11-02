@@ -20,6 +20,7 @@ import { EmptyState } from '../../../components/EmptyState';
 import { StatusBanner } from '../../../components/StatusBanner';
 import { Icon } from '../../../icons/Icon';
 import { useSmbConnectionStore } from '../../../../state/smbConnectionStore';
+import { useSmbMultiConnStore } from '../../../../state/smbMultiConnStore';
 import { useSmbProfilesStore } from '../../../../state/smbProfilesStore';
 import { getPasswordSemantics } from '../../../../state/smbProfilesStore';
 import type { SmbProfile } from '../../../../state/smbProfilesStore';
@@ -77,8 +78,8 @@ export interface ProfilesListPanelProps {
 
 export function ProfilesListPanel({ onEdit }: ProfilesListPanelProps) {
   const profiles = useSmbProfilesStore((s) => s.profiles);
-  const connectionState = useSmbConnectionStore((s) => s.state);
-  const activeProfileId = useSmbConnectionStore((s) => s.activeProfileId);
+
+  const multiHandles = useSmbMultiConnStore((s) => s.handles);
 
   const [menuFor, setMenuFor] = useState<SmbProfile | null>(null);
   const [deleteFor, setDeleteFor] = useState<SmbProfile | null>(null);
@@ -171,18 +172,35 @@ const connectWithProfile = useCallback(
       onEdit(profile);
       return;
     }
-      const store = useSmbConnectionStore.getState();
-      await store.connect(profile.id, {
+      const multiStore = useSmbMultiConnStore.getState();
+      await multiStore.connect(profile.id, {
         host: profile.host,
         share: profile.share,
         username: profile.username,
         password,
         domain: profile.domain,
       });
+      // 同步热会话状态到 smbConnectionStore（兼容镜像，供既有消费方）
+      const afterHandle = useSmbMultiConnStore.getState().getHandle(profile.id);
+      if (afterHandle) {
+        useSmbConnectionStore.setState({
+          state: afterHandle.state,
+          activeProfileId:
+            afterHandle.state === 'connected'
+              ? profile.id
+              : useSmbConnectionStore.getState().activeProfileId,
+          lastError: afterHandle.lastError,
+        });
+      }
       const after = useSmbConnectionStore.getState();
       if (testOnly) {
         if (after.state === 'connected') {
-          await store.disconnect();
+          await useSmbMultiConnStore.getState().disconnect(profile.id);
+          useSmbConnectionStore.setState({
+            state: 'disconnected',
+            activeProfileId: null,
+            lastError: null,
+          });
           showBanner({ semantic: 'success', title: '连接成功' }, 4000);
         } else {
           showBanner({
@@ -239,9 +257,21 @@ const connectWithProfile = useCallback(
     const profilesStore = useSmbProfilesStore.getState();
     await profilesStore.remove(profile.id);
     // 删除活动连接 → 同步断开（连接上下文已无对应配置）
-    const conn = useSmbConnectionStore.getState();
-    if (conn.activeProfileId === profile.id) {
-      await conn.disconnect();
+    const multiConn = useSmbMultiConnStore.getState();
+    if (multiConn.getHandle(profile.id)) {
+      await multiConn.disconnect(profile.id);
+      const hotId = useSmbMultiConnStore.getState().hotProfileId;
+      const hotHandle = hotId ? useSmbMultiConnStore.getState().getHandle(hotId) : undefined;
+      useSmbConnectionStore.setState({
+        state: hotHandle?.state ?? 'disconnected',
+        activeProfileId: hotId,
+        lastError: hotHandle?.lastError ?? null,
+      });
+    } else {
+      const conn = useSmbConnectionStore.getState();
+      if (conn.activeProfileId === profile.id) {
+        await conn.disconnect();
+      }
     }
     setRemoving(false);
     setDeleteFor(null);
@@ -296,7 +326,7 @@ const connectWithProfile = useCallback(
                 key={profile.id}
                 profile={profile}
                 connectionState={
-                  profile.id === activeProfileId ? connectionState : 'disconnected'
+                  multiHandles.get(profile.id)?.state ?? 'disconnected'
                 }
                 onPress={() => void connectWithProfile(profile, false)}
                 onMenu={() => setMenuFor(profile)}

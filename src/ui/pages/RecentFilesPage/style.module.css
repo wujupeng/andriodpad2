@@ -1,0 +1,16 @@
+/* 最近文件页（TASK-RF-04） */
+
+.page {
+  padding: 16px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 12px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}

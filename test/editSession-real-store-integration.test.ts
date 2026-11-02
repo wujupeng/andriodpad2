@@ -21,7 +21,11 @@ import type {
   WritebackResult,
   RemoteChangeResult,
 } from '../src/state/writebackExecutor.ts';
-import { WRITE_ENABLED_SCOPE } from '../src/state/writePermission.ts';
+import { __setWritebackConfigForTest } from '../src/state/writebackConfig.ts';
+
+function setWriteEnabled(enabled: boolean): void {
+  __setWritebackConfigForTest({ enabled, writablePaths: ['/mnt/share/writable/'], account: 'pad2_app' });
+}
 
 interface SmbMock {
   writebackCalls: number;
@@ -121,7 +125,7 @@ describe('TASK-10-R1 真实 store 集成测试 — applyForegroundCheckResult', 
   afterEach(() => {
     __setSmbMethodDepsForTest(null);
     __setPermissionCheckForTest(null);
-    WRITE_ENABLED_SCOPE.enabled = false;
+    setWriteEnabled(false);
     useEditSessionStore.setState({
       state: 'idle',
       baseline: null,
@@ -137,7 +141,7 @@ describe('TASK-10-R1 真实 store 集成测试 — applyForegroundCheckResult', 
     const mock = makeSmbMock({ writebackSuccess: true, remoteChanged: false });
     __setSmbMethodDepsForTest(mock);
     __setPermissionCheckForTest(permissiveCheck);
-    WRITE_ENABLED_SCOPE.enabled = true;
+    setWriteEnabled(true);
     setupStore('opened');
 
     useEditSessionStore.getState().applyForegroundCheckResult({
@@ -159,7 +163,7 @@ describe('TASK-10-R1 真实 store 集成测试 — applyForegroundCheckResult', 
     const mock = makeSmbMock();
     __setSmbMethodDepsForTest(mock);
     __setPermissionCheckForTest(denyingCheck);
-    WRITE_ENABLED_SCOPE.enabled = false;
+    setWriteEnabled(false);
     setupStore('opened');
 
     useEditSessionStore.getState().applyForegroundCheckResult({
@@ -191,7 +195,7 @@ describe('TASK-10-R1 真实 store 集成测试 — applyForegroundCheckResult', 
       checkPermission: () => ({ permitted: true }),
     });
     __setPermissionCheckForTest(permissiveCheck);
-    WRITE_ENABLED_SCOPE.enabled = true;
+    setWriteEnabled(true);
     setupStore('opened');
 
     useEditSessionStore.getState().applyForegroundCheckResult({
@@ -218,7 +222,7 @@ describe('TASK-10-R1 真实 store 集成测试 — applyForegroundCheckResult', 
     const mock = makeSmbMock({ writebackSuccess: true, remoteChanged: false });
     __setSmbMethodDepsForTest(mock);
     __setPermissionCheckForTest(permissiveCheck);
-    WRITE_ENABLED_SCOPE.enabled = true;
+    setWriteEnabled(true);
     setupStore('opened');
 
     useEditSessionStore.getState().applyForegroundCheckResult({
@@ -235,7 +239,7 @@ describe('TASK-10-R1 真实 store 集成测试 — applyForegroundCheckResult', 
     const mock = makeSmbMock();
     __setSmbMethodDepsForTest(mock);
     __setPermissionCheckForTest(permissiveCheck);
-    WRITE_ENABLED_SCOPE.enabled = true;
+    setWriteEnabled(true);
     setupStore('opened');
 
     useEditSessionStore.getState().applyForegroundCheckResult({
@@ -252,7 +256,7 @@ describe('TASK-10-R1 真实 store 集成测试 — resolveConflict OVERWRITE_CON
   afterEach(() => {
     __setSmbMethodDepsForTest(null);
     __setPermissionCheckForTest(null);
-    WRITE_ENABLED_SCOPE.enabled = false;
+    setWriteEnabled(false);
     useEditSessionStore.setState({
       state: 'idle',
       baseline: null,
@@ -268,7 +272,7 @@ describe('TASK-10-R1 真实 store 集成测试 — resolveConflict OVERWRITE_CON
     const mock = makeSmbMock({ remoteChanged: true });
     __setSmbMethodDepsForTest(mock);
     __setPermissionCheckForTest(permissiveCheck);
-    WRITE_ENABLED_SCOPE.enabled = true;
+    setWriteEnabled(true);
     setupStore('conflict');
 
     await useEditSessionStore.getState().resolveConflict('OVERWRITE_CONFIRMED');
@@ -287,7 +291,7 @@ describe('TASK-10-R1 真实 store 集成测试 — resolveConflict OVERWRITE_CON
     const mock = makeSmbMock({ writebackSuccess: true, remoteChanged: false });
     __setSmbMethodDepsForTest(mock);
     __setPermissionCheckForTest(permissiveCheck);
-    WRITE_ENABLED_SCOPE.enabled = true;
+    setWriteEnabled(true);
     setupStore('conflict');
 
     await useEditSessionStore.getState().resolveConflict('OVERWRITE_CONFIRMED');
@@ -302,7 +306,7 @@ describe('TASK-10-R1 真实 store 集成测试 — resolveConflict OVERWRITE_CON
     const mock = makeSmbMock();
     __setSmbMethodDepsForTest(mock);
     __setPermissionCheckForTest(denyingCheck);
-    WRITE_ENABLED_SCOPE.enabled = false;
+    setWriteEnabled(false);
     setupStore('conflict');
 
     await useEditSessionStore.getState().resolveConflict('OVERWRITE_CONFIRMED');

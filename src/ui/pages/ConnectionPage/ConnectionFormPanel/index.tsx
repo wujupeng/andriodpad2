@@ -26,6 +26,7 @@ import { useSmbProfilesStore } from '../../../../state/smbProfilesStore';
 import { isSameProfileIdentity } from '../../../../state/smbProfilesStore';
 import type { SmbProfile } from '../../../../state/smbProfilesStore';
 import { isCryptoAvailable } from '../../../../utils/crypto';
+import { normalizeRootPath } from '../../../../utils/rootPathNormalize';
 import { FormField } from '../FormField';
 import styles from './style.module.css';
 
@@ -37,6 +38,7 @@ interface ConnectionFormValues {
   username: string;
   password: string;
   domain: string;
+  rootPath: string;
 }
 
 const EMPTY_FORM: ConnectionFormValues = {
@@ -46,6 +48,7 @@ const EMPTY_FORM: ConnectionFormValues = {
   username: '',
   password: '',
   domain: '',
+  rootPath: '',
 };
 
 type FormErrors = Partial<Record<keyof ConnectionFormValues, string>>;
@@ -72,6 +75,13 @@ function validateForm(form: ConnectionFormValues): FormErrors {
     errors.host = '地址格式不正确，应为 IP 或主机名（如 192.168.1.1）';
   if (!form.share.trim()) errors.share = '请填写共享名';
   if (!form.username.trim()) errors.username = '请填写用户名';
+  // TASK-RP-05-C：rootPath 含 .. 越界片段拒绝（REQ-RP-11 表单层提示用户）
+  if (form.rootPath.trim()) {
+    const rpResult = normalizeRootPath(form.rootPath);
+    if (rpResult.ok === false && rpResult.reason === 'parent_ref') {
+      errors.rootPath = '根路径不得越出共享范围';
+    }
+  }
   // TASK-S6-01-FIX-01（FIX-C1，R01）：密码非必填——guest/空密码为合法完整凭据形态
   // （Windows Server guest 共享场景，S6-01 WS-01 实测根因：此处拦截导致提交静默 return，
   // "保存→连接"链路从未发起）。用户名必填保持（纯匿名形态不放行，spec 5.1.3 异常 1）；
@@ -104,11 +114,13 @@ export function ConnectionFormPanel({ initialProfile, onSaved }: ConnectionFormP
           username: initialProfile.username,
           password: '',
           domain: initialProfile.domain ?? '',
+          rootPath: initialProfile.rootPath ?? '',
         }
       : EMPTY_FORM,
   );
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
   const [rememberPassword, setRememberPassword] = useState(false);
+  const [autoConnect, setAutoConnect] = useState(() => initialProfile?.autoConnect ?? false);
   const [cryptoOk, setCryptoOk] = useState<boolean | null>(null);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -211,6 +223,9 @@ export function ConnectionFormPanel({ initialProfile, onSaved }: ConnectionFormP
     const profilesStore = useSmbProfilesStore.getState();
 
     const isEdit = !!initialProfile?.id;
+    // TASK-RP-05-E：rootPath 经 normalizeRootPath 规范化后透传 save
+    const rpResult = normalizeRootPath(form.rootPath);
+    const rootPath = rpResult.ok === true ? rpResult.value : undefined;
     await profilesStore.save({
       id: initialProfile?.id,
       name: form.name.trim(),
@@ -220,6 +235,8 @@ export function ConnectionFormPanel({ initialProfile, onSaved }: ConnectionFormP
       domain: form.domain.trim() || undefined,
       password: form.password,
       rememberPassword: rememberPassword && cryptoOk === true,
+      autoConnect,
+      rootPath,
     });
     const profilesAfter = useSmbProfilesStore.getState().profiles;
     // TASK-S6-01-FIX-01（FIX-C3，R11）：新建模式条目定位改身份四元组判定——
@@ -328,6 +345,14 @@ export function ConnectionFormPanel({ initialProfile, onSaved }: ConnectionFormP
           hint="仅域环境下填写工作组或域名"
           error={fieldErrors.domain}
         />
+        <FormField
+          label="根路径（选填）"
+          value={form.rootPath}
+          onChange={setField('rootPath')}
+          placeholder="如 AutoFileBackup"
+          hint="留空使用共享根；填入则将该子目录作为浏览根"
+          error={fieldErrors.rootPath}
+        />
         <label className={styles.rememberRow}>
           <input
             type="checkbox"
@@ -342,6 +367,23 @@ export function ConnectionFormPanel({ initialProfile, onSaved }: ConnectionFormP
               {cryptoOk === false
                 ? '当前环境不支持加密存储，密码仅本次连接使用'
                 : '密码将以加密方式保存在本设备'}
+            </span>
+          </span>
+        </label>
+        <label className={styles.rememberRow}>
+          <input
+            type="checkbox"
+            className={styles.rememberCheckbox}
+            checked={autoConnect}
+            disabled={busy || !rememberPassword || cryptoOk !== true}
+            onChange={(event) => setAutoConnect(event.target.checked)}
+          />
+          <span className={styles.rememberText}>
+            <span className={styles.rememberLabel}>自动连接</span>
+            <span className={styles.rememberHint}>
+              {rememberPassword
+                ? '启动应用时自动连接此共享'
+                : '需先勾选记住密码才能自动连接'}
             </span>
           </span>
         </label>

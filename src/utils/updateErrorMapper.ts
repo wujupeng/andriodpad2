@@ -17,13 +17,13 @@ const ERROR_MESSAGES: Record<UpdateErrorCategory, string> = {
 export function mapUpdateError(error: string | Error): { category: UpdateErrorCategory; message: string } {
   const msg = typeof error === 'string' ? error : error.message || '';
   let category: UpdateErrorCategory = 'unknown';
-  if (/auth|logon|credential/i.test(msg)) category = 'auth_failed';
+  if (/auth|logon|credential|STATUS_LOGON_FAILURE/i.test(msg)) category = 'auth_failed';
   else if (/timeout|timed out/i.test(msg)) category = 'timeout';
-  else if (/unreachable|cannot connect|refused|connect failed/i.test(msg)) category = 'unreachable';
-  else if (/network|connection lost|reset/i.test(msg)) category = 'network_lost';
-  else if (/permission|denied/i.test(msg)) category = 'permission_denied';
-  else if (/space|disk|full|storage/i.test(msg)) category = 'disk_full';
-  else if (/manifest|json|parse/i.test(msg)) category = 'manifest_invalid';
+  else if (/unreachable|cannot connect|refused|connect failed|unknown host|host not found|no route to host/i.test(msg)) category = 'unreachable';
+  else if (/network|connection lost|reset|broken pipe|transport|IOException/i.test(msg)) category = 'network_lost';
+  else if (/permission|denied|STATUS_ACCESS_DENIED/i.test(msg)) category = 'permission_denied';
+  else if (/space|disk|full|storage|ENOSPC/i.test(msg)) category = 'disk_full';
+  else if (/manifest|json|parse|not found|No such file|ENOENT|STATUS_OBJECT_NAME_NOT_FOUND/i.test(msg)) category = 'manifest_invalid';
   else if (/sha|hash|verify|checksum/i.test(msg)) category = 'verify_failed';
   else if (/signature|signing/i.test(msg)) category = 'signature_mismatch';
   else if (/install.*permission|REQUEST_INSTALL/i.test(msg)) category = 'permission_missing';

@@ -14,27 +14,53 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Breadcrumb } from '../../components/Breadcrumb';
 import { Icon } from '../../icons/Icon';
 import { useBrowseStore } from '../../../state/browseStore';
+import { useBrowseContextStore } from '../../../state/browseContextStore';
+import type { BrowseSort } from '../../../state/browseContextStore';
 import { useSmbConnectionStore } from '../../../state/smbConnectionStore';
 import { useSmbProfilesStore } from '../../../state/smbProfilesStore';
 import { useEditSessionStore } from '../../../state/editSessionStore';
 import { useOperationStore, OPERATION_CAPABILITIES } from '../../../state/operationStore';
+import { useUiPrefsStore } from '../../../state/uiPrefsStore';
 import { sortedAndFilteredFiles } from '../../../state/browseStore';
 import type { SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
 import { SearchField } from './SearchField';
 import { SortMenu } from './SortMenu';
+import { ViewModeMenu } from './ViewModeMenu';
 import { SessionStatusStrip } from './SessionStatusStrip';
 import { StatusBanner } from '../../components/StatusBanner';
 import { FileList } from './FileList';
 import { MultiSelectBar } from './MultiSelectBar';
 import { OperationProgressPanel } from './OperationProgressPanel';
 import { FileActionSheet } from '../FileActionSheet';
+import { WritebackUnavailableBanner } from '../../components/WritebackUnavailableBanner';
 import type { OperationTask } from '../../../state/operationStore';
 import styles from './style.module.css';
 
-/** currentPath（'\' 分隔，原生风格）→ Breadcrumb 段解析 */
-function buildSegments(currentPath: string, rootName: string) {
-  const segments = [{ name: rootName, path: '' }];
-  if (currentPath) {
+/**
+ * currentPath（'\' 分隔，原生风格）→ Breadcrumb 段解析（TASK-RP-04：rootPath 逻辑根感知）
+ * - rootPath 未提供（undefined）→ 回退现状：根段 path='', currentPath 全量按 \\ 拆分（REQ-RP-07）
+ * - rootPath 非空 → 根段 path=rootPath；currentPath 在 rootPath 之内时剥离前缀后拆分子段；
+ *   currentPath 越出 rootPath 时仅显示根段（防御层 2，REQ-RP-06）
+ */
+function buildSegments(currentPath: string, rootName: string, rootPath?: string) {
+  const segments = [{ name: rootName, path: rootPath || '' }];
+  if (rootPath) {
+    // rootPath 非空：检查 currentPath 是否在 rootPath 之内
+    if (currentPath === rootPath || currentPath.startsWith(rootPath + '\\')) {
+      // 剥离 rootPath 前缀后拆分子段
+      const remainder = currentPath === rootPath ? '' : currentPath.slice(rootPath.length + 1);
+      const parts = remainder.split('\\').filter(Boolean);
+      let acc = rootPath;
+      for (const part of parts) {
+        acc = `${acc}\\${part}`;
+        segments.push({ name: part, path: acc });
+      }
+    }
+    // currentPath 越出 rootPath → 仅显示根段（防御层 2，REQ-RP-06）
+    return segments;
+  }
+  // rootPath 未提供：现状逻辑（全量拆分 currentPath）
+  if (currentPath && currentPath !== '/') {
     const parts = currentPath.split('\\').filter(Boolean);
     let acc = '';
     for (const part of parts) {
@@ -46,25 +72,61 @@ function buildSegments(currentPath: string, rootName: string) {
 }
 
 export function BrowsePage() {
-  const currentPath = useBrowseStore((s) => s.currentPath);
-  const files = useBrowseStore((s) => s.files);
-  const loading = useBrowseStore((s) => s.loading);
-  const sort = useBrowseStore((s) => s.sort);
-  const searchQuery = useBrowseStore((s) => s.searchQuery);
   const selection = useBrowseStore((s) => s.selection);
   const selectionMode = useBrowseStore((s) => s.selectionMode);
-  const enterDirectory = useBrowseStore((s) => s.enterDirectory);
-  const refresh = useBrowseStore((s) => s.refresh);
-  const loadError = useBrowseStore((s) => s.loadError);
-  const setSort = useBrowseStore((s) => s.setSort);
-  const setSearchQuery = useBrowseStore((s) => s.setSearchQuery);
   const enterSelectionMode = useBrowseStore((s) => s.enterSelectionMode);
   const exitSelectionMode = useBrowseStore((s) => s.exitSelectionMode);
   const toggleSelection = useBrowseStore((s) => s.toggleSelection);
 
+  const viewMode = useUiPrefsStore((s) => s.viewMode);
+  const setViewMode = useUiPrefsStore((s) => s.setViewMode);
+
   const connectionState = useSmbConnectionStore((s) => s.state);
   const profiles = useSmbProfilesStore((s) => s.profiles);
   const activeProfileId = useSmbConnectionStore((s) => s.activeProfileId);
+
+  // per-profile 浏览上下文（TASK-MC-06，REQ-MC-03）
+  const browseContexts = useBrowseContextStore((s) => s.contexts);
+  const ctxEntry = activeProfileId ? browseContexts.get(activeProfileId) : undefined;
+  const currentPath = ctxEntry?.currentPath ?? '';
+  const files = ctxEntry?.files ?? [];
+  const loading = ctxEntry?.loading ?? false;
+  const loadError = ctxEntry?.loadError ?? null;
+  const sort = ctxEntry?.sort ?? { field: 'name' as const, ascending: true };
+  const searchQuery = ctxEntry?.searchQuery ?? '';
+
+  const enterDirectory = useCallback(
+    (path: string) => {
+      if (!activeProfileId) return;
+      void useBrowseContextStore.getState().enterDirectory(activeProfileId, path);
+    },
+    [activeProfileId],
+  );
+  const refresh = useCallback(() => {
+    if (!activeProfileId) return;
+    void useBrowseContextStore.getState().refresh(activeProfileId);
+  }, [activeProfileId]);
+  const setSort = useCallback(
+    (s: BrowseSort) => {
+      if (!activeProfileId) return;
+      useBrowseContextStore.getState().setSort(activeProfileId, s);
+    },
+    [activeProfileId],
+  );
+  const setSearchQuery = useCallback(
+    (q: string) => {
+      if (!activeProfileId) return;
+      useBrowseContextStore.getState().setSearchQuery(activeProfileId, q);
+    },
+    [activeProfileId],
+  );
+
+  // 切换共享时同步 activeProfile 到 browseContextStore（不触发重连，REQ-MC-03）
+  useEffect(() => {
+    if (activeProfileId) {
+      useBrowseContextStore.getState().setActiveProfile(activeProfileId);
+    }
+  }, [activeProfileId]);
 
   /** FileActionSheet 上下文（单文件/批量共用，TASK-S4-05 正式菜单） */
   const [pendingFiles, setPendingFiles] = useState<SmbFileEntry[]>([]);
@@ -113,9 +175,15 @@ export function BrowsePage() {
     return profile?.name ?? '共享目录';
   }, [profiles, activeProfileId]);
 
+  // TASK-RP-04-B：查找 profile.rootPath 传入 buildSegments
+  const rootPath = useMemo(
+    () => profiles.find((p) => p.id === activeProfileId)?.rootPath,
+    [profiles, activeProfileId],
+  );
+
   const segments = useMemo(
-    () => buildSegments(currentPath, rootName),
-    [currentPath, rootName],
+    () => buildSegments(currentPath, rootName, rootPath),
+    [currentPath, rootName, rootPath],
   );
 
   const visibleFiles = useMemo(
@@ -192,6 +260,7 @@ export function BrowsePage() {
         <div className={styles.toolbarActions}>
           <SearchField value={searchQuery} onChange={setSearchQuery} />
           <SortMenu sort={sort} onChange={setSort} />
+          <ViewModeMenu viewMode={viewMode} onChange={setViewMode} />
           <button
             type="button"
             className={styles.multiselectTrigger}
@@ -203,6 +272,7 @@ export function BrowsePage() {
         </div>
       </div>
       <SessionStatusStrip connectionState={connectionState} />
+      <WritebackUnavailableBanner />
       {/* TASK-S5-06-C（PM 授权第 5 条）：目录加载失败如实呈现（S4-01 交付的
           loadError 此前 UI 层零消费——刷新/进入失败以"目录为空"冒充，违反
           "不得将旧状态冒充最新服务器数据"）。加载成功时 store 已清 null。 */}
@@ -228,6 +298,7 @@ export function BrowsePage() {
           onEnterDirectory={(path) => void enterDirectory(path)}
           onRowActivate={handleRowActivate}
           onClearSearch={() => setSearchQuery('')}
+          viewMode={viewMode}
         />
       </div>
       {selectionMode && (

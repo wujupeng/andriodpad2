@@ -29,7 +29,8 @@ import SmbPlugin from '../adapter/smb/SmbPlugin';
 import { mapSmbError } from '../utils/smbErrorMapper';
 import { useSmbConnectionStore } from './smbConnectionStore';
 import { READ_ONLY_NOTICES } from './readOnlyMode';
-import { WRITE_ENABLED_SCOPE, WRITE_PERMISSION_MATRIX } from './writePermission';
+import { WRITE_PERMISSION_MATRIX } from './writePermission';
+import { isWritebackGloballyEnabled } from './writebackConfig';
 
 export type OperationStatus =
   | 'pending'
@@ -128,8 +129,8 @@ export const OPERATION_CAPABILITIES: Readonly<{
   // AU-005 只读模式：新建文件夹为远端写操作，置 false（R-OPS-01）
   createDirectory: false,
   // AU-006 新增：写回相关能力（按权限矩阵派生）
-  writeback: WRITE_ENABLED_SCOPE.enabled && WRITE_PERMISSION_MATRIX.writeback,
-  saveas: WRITE_ENABLED_SCOPE.enabled && WRITE_PERMISSION_MATRIX.saveas,
+  writeback: isWritebackGloballyEnabled() && WRITE_PERMISSION_MATRIX.writeback,
+  saveas: isWritebackGloballyEnabled() && WRITE_PERMISSION_MATRIX.saveas,
 };
 
 /** core TransferStatus 十态 → UI 七态只读映射（design.md 152 行决策，不修改 core 文件） */

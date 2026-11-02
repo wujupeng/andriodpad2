@@ -10,8 +10,10 @@ import { useNavigationStore } from '../../../../state/navigationStore';
 import type { ViewId } from '../../../../state/navigationStore';
 import { useSmbProfilesStore } from '../../../../state/smbProfilesStore';
 import { useSmbConnectionStore } from '../../../../state/smbConnectionStore';
+import { useSmbMultiConnStore } from '../../../../state/smbMultiConnStore';
 import { useUiPrefsStore } from '../../../../state/uiPrefsStore';
 import type { ThemeMode } from '../../../../state/uiPrefsStore';
+import { switchBrowse } from '../../../../orchestration/browse/switchBrowse';
 import styles from './style.module.css';
 
 interface SideNavProps {
@@ -37,8 +39,9 @@ export function SideNav({ drawerOpen, onRequestCloseDrawer }: SideNavProps) {
   const push = useNavigationStore((s) => s.push);
   const switchHome = useNavigationStore((s) => s.switchHome);
   const profiles = useSmbProfilesStore((s) => s.profiles);
-  const connectionState = useSmbConnectionStore((s) => s.state);
+
   const activeProfileId = useSmbConnectionStore((s) => s.activeProfileId);
+  const multiHandles = useSmbMultiConnStore((s) => s.handles);
   const themeMode = useUiPrefsStore((s) => s.themeMode);
   const setThemeMode = useUiPrefsStore((s) => s.setThemeMode);
 
@@ -53,12 +56,7 @@ export function SideNav({ drawerOpen, onRequestCloseDrawer }: SideNavProps) {
   };
 
   const openProfile = (profileId: string) => {
-    const isActive = profileId === activeProfileId;
-    if (isActive && connectionState === 'connected') {
-      push('browse');
-    } else {
-      push('connection');
-    }
+    switchBrowse(profileId);
   };
 
   const cycleTheme = () => {
@@ -95,11 +93,12 @@ export function SideNav({ drawerOpen, onRequestCloseDrawer }: SideNavProps) {
         <div className={styles.section}>
           <div className={styles.sectionTitle}>SMB 连接</div>
           {profiles.map((profile) => {
+            const handleState = multiHandles.get(profile.id)?.state;
             const isActiveProfile = profile.id === activeProfileId;
             const dotSemantic =
-              isActiveProfile && connectionState === 'connected'
+              handleState === 'connected'
                 ? styles.dotSuccess
-                : isActiveProfile && connectionState === 'connecting'
+                : handleState === 'connecting'
                   ? styles.dotInfo
                   : styles.dotIdle;
             return (

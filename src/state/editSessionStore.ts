@@ -19,6 +19,9 @@ import type { SmbErrorCategory } from '../utils/smbErrorMapper.ts';
 import { checkEditWritePermission } from './editWritePermission.ts';
 import { executeWriteback } from './writebackExecutor.ts';
 import { mapWritebackExecutorResultToState, shouldAutoTransitionToOpened } from './writebackResultMapper.ts';
+import { useRecentFilesStore } from './recentFilesStore';
+import { useSmbProfilesStore } from './smbProfilesStore';
+import { getFileKind } from '../ui/icons/fileTypeIcons';
 
 interface SmbMethodDeps {
   writeback: () => Promise<WritebackResult>;
@@ -70,6 +73,7 @@ export type EditSessionState =
   | 'writeback_pending'
   | 'writeback_success'
   | 'writeback_failed'
+  | 'writeback_unavailable'
   | 'conflict'
   | 'saveas_detected'
   | 'network_interrupted'
@@ -184,6 +188,18 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
       };
       set({ baseline });
       transition(set, get, 'opened');
+      // 记录最近文件（spec 5.2 规则 3：openInWps 成功后）
+      const ext = baseline.fileName.includes('.')
+        ? baseline.fileName.slice(baseline.fileName.lastIndexOf('.') + 1)
+        : '';
+      const profileName =
+        useSmbProfilesStore.getState().profiles.find((p) => p.id === profileId)?.name ?? profileId;
+      useRecentFilesStore.getState().record({
+        path: filePath,
+        name: baseline.fileName,
+        fileType: getFileKind(ext),
+        source: profileName,
+      });
       const listener = await App.addListener('appStateChange', async ({ isActive }) => {
         if (!isActive) return;
         // 前台检测后触发：应用回到前台时经 checkLocalFileChanged 检测本地变更，
@@ -208,22 +224,13 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
   applyForegroundCheckResult: (result) => {
     const cur = get();
     if (cur.state !== 'opened' && cur.state !== 'editing') return;
-    if (result.saveAsDiscovered) {
-      // AU-006 路径级写回权限守卫（R-ESS-03）：未授权路径不进入 saveas_detected
-      const perm = getPermCheck(cur.baseline?.remotePath ?? null);
-      if (!perm.permitted) return;
-      set({
-        pendingSaveAs: result.saveAsFilePath
-          ? { candidatePath: result.saveAsFilePath, prompt: result.saveAsPrompt || '' }
-          : null,
-      });
-      transition(set, get, 'saveas_detected');
-    } else if (result.changed) {
+    if (result.saveAsDiscovered || result.changed) {
       const perm = getPermCheck(cur.baseline?.remotePath ?? null);
       if (perm.permitted) {
         const baseline = cur.baseline;
         if (!baseline) return;
         transition(set, get, 'saving');
+
         void (async () => {
           try {
             transition(set, get, 'writeback_pending');
@@ -232,6 +239,7 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
               getSmbMethods(),
             );
             const mapping = mapWritebackExecutorResultToState(execResult, baseline.baselineMtime);
+
             if (mapping.conflictInfo) set({ conflictInfo: mapping.conflictInfo });
             if (mapping.lastError) set({ lastError: { category: mapping.lastError.category, userMessage: mapping.lastError.userMessage } });
             transition(set, get, mapping.state, mapping.detail);
@@ -239,11 +247,15 @@ export const useEditSessionStore = create<EditSessionStoreState>()((set, get) =>
               transition(set, get, 'opened', 'writeback completed, ready for next edit');
             }
           } catch (err) {
+
             get().applyError({ category: 'unknown', message: String(err) });
           }
         })();
       } else {
-        transition(set, get, 'editing');
+        // TASK-WB-03: 假成功消除——写回不可用时明确告知，不静默转 editing
+        transition(set, get, 'writeback_unavailable', perm.reason);
+        set({ lastError: { category: 'permission_denied', userMessage: perm.reason ?? '写回不可用：本地修改不会写回服务器' } });
+        return;
       }
     }
   },

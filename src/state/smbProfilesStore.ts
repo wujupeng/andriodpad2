@@ -17,6 +17,7 @@
 import { create } from 'zustand';
 import { Preferences } from '@capacitor/preferences';
 import { encryptPassword, isCryptoAvailable } from '../utils/crypto';
+import { normalizeRootPath } from '../utils/rootPathNormalize';
 import { useOperationStore } from './operationStore';
 import { useEditSessionStore } from './editSessionStore';
 
@@ -40,6 +41,24 @@ export interface SmbProfile {
    * - 可选字段：version 1 框架内向后兼容扩展（旧数据缺失=unset 语义，回退现状两态行为）
    */
   passwordEmpty?: boolean;
+  /** 冷启动自动重连标志（默认 false，HC-05 兼容，旧数据缺失视为 false） */
+  autoConnect?: boolean;
+  /**
+   * 工作台持久固定标志（persistent_connection 特性）：
+   * - true = 连接成功后自动标记，工作台持久呈现，仅手动离线才解除
+   * - false/undefined = 未固定（旧数据缺失视为 false，HC-05 兼容）
+   * - 与 autoConnect 正交：pinned 由连接事实自动维护，autoConnect 由用户独立配置
+   * - 不携带敏感字段（DFX-PC-07）
+   */
+  pinned?: boolean;
+  /**
+   * 浏览逻辑根（rootPath 特性）：share 内子目录相对路径。
+   * - 规范化后：`\\` 分隔，无首尾分隔符，无 `..` 越界片段
+   * - unset/undefined 时浏览逻辑根=share 根（现状行为，HC-05 兼容）
+   * - 不参与身份判定（CON-RP-01）、不参与物理连接（CON-RP-02）
+   * - 可选字段：version 1 框架内向后兼容扩展（旧数据缺失=unset）
+   */
+  rootPath?: string;
   createdAt: number;
   lastConnectedAt?: number;
 }
@@ -53,6 +72,9 @@ export interface SmbProfileInput {
   domain?: string;
   password?: string;
   rememberPassword?: boolean;
+  autoConnect?: boolean;
+  /** 表单提交的规范化后 rootPath（undefined=未配置，由 UI 层经 normalizeRootPath 规范化） */
+  rootPath?: string;
 }
 
 export interface SmbProfilesState {
@@ -60,6 +82,7 @@ export interface SmbProfilesState {
   load(): Promise<void>;
   save(profile: SmbProfileInput): Promise<void>;
   remove(id: string): Promise<void>;
+  markPinned(profileId: string, pinned: boolean): Promise<void>;
   hasActiveOperations(id: string): boolean;
 }
 
@@ -139,9 +162,19 @@ function sanitizeProfile(raw: unknown): SmbProfile | null {
     createdAt: p.createdAt,
   };
   if (typeof p.domain === 'string' && p.domain) profile.domain = p.domain;
+  // TASK-RP-02-B：rootPath 白名单解析——字符串且经 normalizeRootPath 规范化合法才落位；
+  // 含 `..`/非法类型/空串静默丢弃该字段（REQ-RP-14/18，不拒整个 profile，fail-secure）
+  if (typeof p.rootPath === 'string' && p.rootPath) {
+    const rpResult = normalizeRootPath(p.rootPath);
+    if (rpResult.ok === true && rpResult.value) {
+      profile.rootPath = rpResult.value;
+    }
+  }
   // TASK-S6-01-FIX-01（FIX-C6）：空密码凭据语义标记白名单解析——严格 === true 才落位
   // （非布尔/篡改值静默丢弃，与密文 fail-secure 同风格，防三态误判）
   if (p.passwordEmpty === true) profile.passwordEmpty = true;
+  if (p.autoConnect === true) profile.autoConnect = true;
+  if (p.pinned === true) profile.pinned = true;
   if (typeof p.passwordEncrypted === 'string' && p.passwordEncrypted) {
     if (isEncryptedFormatValid(p.passwordEncrypted)) {
       profile.passwordEncrypted = p.passwordEncrypted;
@@ -249,9 +282,13 @@ export const useSmbProfilesStore = create<SmbProfilesState>()((set, get) => ({
       // rememberPassword=false 或未提供密码：清除既有密文（密码回到仅会话内存）
       passwordEncrypted,
       passwordEmpty: isEmptyCredential ? true : undefined,
+      autoConnect: input.autoConnect === true ? true : undefined,
       createdAt: existing?.createdAt ?? Date.now(),
       lastConnectedAt: existing?.lastConnectedAt,
     };
+    // TASK-RP-02-C：rootPath 落位——input.rootPath 已由 UI 层 normalizeRootPath 规范化，
+    // 此处仅透传非空值（undefined 不写入 entry，旧数据兼容，与 domain 同策略）
+    if (input.rootPath) entry.rootPath = input.rootPath;
     const next = existing
       ? profiles.map((p) => (p.id === existing.id ? entry : p))
       : [...profiles, entry];
@@ -261,6 +298,17 @@ export const useSmbProfilesStore = create<SmbProfilesState>()((set, get) => ({
 
   remove: async (id) => {
     const next = get().profiles.filter((p) => p.id !== id);
+    set({ profiles: next });
+    await persist(next);
+  },
+
+  markPinned: async (profileId, pinned) => {
+    const { profiles } = get();
+    const existing = profiles.find((p) => p.id === profileId);
+    if (!existing) return;
+    const next = profiles.map((p) =>
+      p.id === profileId ? { ...p, pinned } : p,
+    );
     set({ profiles: next });
     await persist(next);
   },

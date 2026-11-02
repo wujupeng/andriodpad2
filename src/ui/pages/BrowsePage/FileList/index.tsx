@@ -1,9 +1,7 @@
 /**
  * FileList —— 虚拟化列表容器（design.md 2.4.4、D-05，TASK-S4-03）
- * useVirtualList(rowHeight=64, overscan=8)；totalHeight 撑高 + absolute
- * translateY 偏移；排序/搜索变更后 scrollToTop（design.md 2.4.4）。
- * 状态呈现（spec 5.4.1-R8/R9）：loading → SkeletonList（旧列表已由 store
- * 清空，不残留旧数据）；空目录 EmptyState；搜索无结果 EmptyState +
+ * TASK-VM-07：按 viewMode 分发渲染（detail→FileRow / tile→TileRow / grid→IconGrid）。
+ * 状态呈现（spec 5.4.1-R8/R9）：loading → SkeletonList；空目录 EmptyState；搜索无结果 EmptyState +
  * 清空搜索按钮（spec 5.4.3 异常 5）。
  */
 import { useEffect, useMemo } from 'react';
@@ -11,8 +9,12 @@ import { SkeletonList } from '../../../components/SkeletonList';
 import { EmptyState } from '../../../components/EmptyState';
 import { useVirtualList } from '../../../hooks/useVirtualList';
 import { FileRow } from '../FileRow';
+import { TileRow } from '../TileRow';
+import { IconGrid } from '../IconGrid';
+import { VIEW_MODE_CONFIG } from '../viewModeConfig';
 import { sortedAndFilteredFiles } from '../../../../state/browseStore';
 import type { SmbFileEntry } from '../../../../adapter/smb/SmbPlugin';
+import type { ViewMode } from '../../../../state/uiPrefsStore';
 import styles from './style.module.css';
 
 export interface FileListProps {
@@ -22,13 +24,12 @@ export interface FileListProps {
   searchQuery: string;
   selection: Set<string>;
   selectionMode: boolean;
+  viewMode?: ViewMode;
   onOpen(entry: SmbFileEntry): void;
   onEnterDirectory(path: string): void;
   onRowActivate(path: string): void;
   onClearSearch(): void;
 }
-
-const ROW_HEIGHT = 64;
 
 export function FileList({
   files,
@@ -37,24 +38,22 @@ export function FileList({
   searchQuery,
   selection,
   selectionMode,
-
+  viewMode = 'detail',
   onOpen,
   onEnterDirectory,
   onRowActivate,
   onClearSearch,
 }: FileListProps) {
-  // 派生：排序 + 搜索过滤（useMemo 语义，design.md 2.4.4）
   const visible = useMemo(
     () => sortedAndFilteredFiles(files, sort, searchQuery),
     [files, sort, searchQuery],
   );
 
-  const virtual = useVirtualList(visible, { rowHeight: ROW_HEIGHT, overscan: 8 });
+  const config = VIEW_MODE_CONFIG[viewMode];
+  const virtual = useVirtualList(visible, { rowHeight: config.rowHeight, overscan: 8 });
 
-  // 排序/搜索变更后 scrollTop 归零（design.md 2.4.4 虚拟化要点）
   useEffect(() => {
     virtual.scrollToTop();
-
   }, [sort.field, sort.ascending, searchQuery]);
 
   if (loading) {
@@ -82,6 +81,23 @@ export function FileList({
     );
   }
 
+  if (viewMode === 'largeIcon' || viewMode === 'mediumIcon' || viewMode === 'smallIcon') {
+    return (
+      <IconGrid
+        files={visible}
+        viewMode={viewMode}
+        searchQuery={searchQuery}
+        selection={selection}
+        selectionMode={selectionMode}
+        onOpen={onOpen}
+        onEnterDirectory={onEnterDirectory}
+        onRowActivate={onRowActivate}
+      />
+    );
+  }
+
+  const RowComponent = viewMode === 'tile' ? TileRow : FileRow;
+
   return (
     <div className={styles.scrollContainer} onScroll={virtual.onScroll} data-file-scroll="">
       <div className={styles.spacer} style={{ height: virtual.totalHeight }}>
@@ -90,7 +106,7 @@ export function FileList({
           style={{ transform: `translateY(${virtual.offsetY}px)` }}
         >
           {virtual.visibleItems.map(({ item }) => (
-            <FileRow
+            <RowComponent
               key={item.path}
               file={item}
               searchQuery={searchQuery}
