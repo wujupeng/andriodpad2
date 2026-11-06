@@ -1,17 +1,17 @@
 /**
  * DestinationPickerDialog —— 目标目录选择（design.md 2.4.5，TASK-S4-05）
- * 起点为当前浏览目录；子目录列表点选进入（ListRow）+ 返回上级；
- * "新建文件夹"（ensureDirectory 前端方法已暴露，OPERATION_CAPABILITIES.createDirectory）；
- * 目录数据经 operationPluginBridge.listDirectory（store 桥接，分层规则）。
- * 确认后回调目标路径（消费方入队 operationStore.enqueueCopy/Move）。
+ * TASK-LSO-22：增加「本地存储」目标分区，可浏览本地目录选为目标。
+ * TASK-LSO-23：SMB 离线连接标注不可选。
+ * onConfirm 扩展第二参数 type（向后兼容，缺省 'smb'）。
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Dialog } from '../../../components/Dialog';
 import { ListRow } from '../../../components/ListRow';
 import { BaseButton } from '../../../components/BaseButton';
 import { Icon } from '../../../icons/Icon';
-import { operationPluginBridge } from '../../../../state/operationStore';
-import { OPERATION_CAPABILITIES } from '../../../../state/operationStore';
+import { operationPluginBridge, OPERATION_CAPABILITIES, LOCAL_CAPABILITIES } from '../../../../state/operationStore';
+import { useSmbConnectionStore } from '../../../../state/smbConnectionStore';
+import { LocalFsAdapter } from '../../../../adapter/local/LocalFsAdapter';
 import type { SmbFileEntry } from '../../../../adapter/smb/SmbPlugin';
 import styles from '../style.module.css';
 
@@ -19,22 +19,31 @@ export interface DestinationPickerDialogProps {
   open: boolean;
   /** 起始目录（当前浏览目录） */
   initialDirectory: string;
-  /** 供冲突预判的目标目录既有名（进入目录时刷新） */
-  onConfirm(destination: string): void;
+  /** 源类型（决定默认目标分区：local 源默认显示 SMB+本地，smb 源默认显示 SMB） */
+  sourceType?: 'local' | 'smb';
+  /** 确认回调，type 标识目标类型（向后兼容，缺省 'smb'） */
+  onConfirm(destination: string, type?: 'local' | 'smb'): void;
   onDismiss(): void;
 }
 
-function parentOf(path: string): string {
+function parentOfSmb(path: string): string {
   if (!path.includes('\\')) return '';
   return path.substring(0, path.lastIndexOf('\\'));
+}
+
+function parentOfLocal(path: string): string {
+  if (!path.includes('/')) return '';
+  return path.substring(0, path.lastIndexOf('/'));
 }
 
 export function DestinationPickerDialog({
   open,
   initialDirectory,
+  sourceType = 'smb',
   onConfirm,
   onDismiss,
 }: DestinationPickerDialogProps) {
+  const [targetMode, setTargetMode] = useState<'smb' | 'local'>(sourceType === 'local' ? 'smb' : 'smb');
   const [current, setCurrent] = useState(initialDirectory);
   const [directories, setDirectories] = useState<SmbFileEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,20 +51,28 @@ export function DestinationPickerDialog({
   const [newFolderName, setNewFolderName] = useState('');
   const [creating, setCreating] = useState(false);
 
+  const smbConnected = useSmbConnectionStore((s) => s.state === 'connected');
+
   useEffect(() => {
     if (open) {
+      setTargetMode('smb');
       setCurrent(initialDirectory);
       setNewFolderName('');
       setError(null);
     }
   }, [open, initialDirectory]);
 
-  const loadDir = useCallback(async (path: string) => {
+  const loadDir = useCallback(async (path: string, mode: 'smb' | 'local') => {
     setLoading(true);
     setError(null);
     try {
-      const result = await operationPluginBridge.listDirectory({ path: path || undefined });
-      setDirectories(result.files.filter((f) => f.isDirectory));
+      if (mode === 'local') {
+        const result = await LocalFsAdapter.listDirectory(path);
+        setDirectories(result.files.filter((f) => f.isDirectory) as SmbFileEntry[]);
+      } else {
+        const result = await operationPluginBridge.listDirectory({ path: path || undefined });
+        setDirectories(result.files.filter((f) => f.isDirectory));
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : '目录读取失败');
       setDirectories([]);
@@ -65,8 +82,8 @@ export function DestinationPickerDialog({
   }, []);
 
   useEffect(() => {
-    if (open) void loadDir(current);
-  }, [open, current, loadDir]);
+    if (open) void loadDir(current, targetMode);
+  }, [open, current, targetMode, loadDir]);
 
   if (!open) return null;
 
@@ -75,10 +92,17 @@ export function DestinationPickerDialog({
     if (!name || creating) return;
     setCreating(true);
     try {
-      const target = current ? `${current}\\${name}` : name;
-      await operationPluginBridge.ensureDirectory({ path: target });
-      setNewFolderName('');
-      await loadDir(current);
+      if (targetMode === 'local') {
+
+        await LocalFsAdapter.createDirectory(current, name);
+        setNewFolderName('');
+        await loadDir(current, 'local');
+      } else {
+        const target = current ? `${current}\\${name}` : name;
+        await operationPluginBridge.ensureDirectory({ path: target });
+        setNewFolderName('');
+        await loadDir(current, 'smb');
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : '新建文件夹失败');
     } finally {
@@ -86,15 +110,47 @@ export function DestinationPickerDialog({
     }
   };
 
+  const parentOf = targetMode === 'local' ? parentOfLocal : parentOfSmb;
+  const rootLabel = targetMode === 'local' ? '（本地存储根目录）' : '（共享根目录）';
+  const canCreate = targetMode === 'local' ? LOCAL_CAPABILITIES.createDirectory : OPERATION_CAPABILITIES.createDirectory;
+
   return (
     <Dialog
       title="选择目标目录"
       confirmLabel="选此处"
-      onConfirm={() => onConfirm(current)}
+      onConfirm={() => onConfirm(current, targetMode)}
       onDismiss={onDismiss}
     >
       <div className={styles.pickerBody}>
-        <p className={styles.pickerPath}>当前：{current || '（共享根目录）'}</p>
+        {/* TASK-LSO-22：目标分区切换 */}
+        <div className={styles.pickerModeSwitch}>
+          <BaseButton
+            variant={targetMode === 'smb' ? 'primary' : 'secondary'}
+            size="sm"
+            disabled={!smbConnected}
+            onPress={() => {
+              setTargetMode('smb');
+              setCurrent(initialDirectory);
+            }}
+          >
+            SMB 共享
+          </BaseButton>
+          <BaseButton
+            variant={targetMode === 'local' ? 'primary' : 'secondary'}
+            size="sm"
+            onPress={() => {
+              setTargetMode('local');
+              setCurrent('');
+            }}
+          >
+            本地存储
+          </BaseButton>
+        </div>
+        {/* TASK-LSO-23：SMB 离线标注 */}
+        {targetMode === 'smb' && !smbConnected && (
+          <p className={styles.pickerError}>SMB 连接离线，无法选择为目标。请先连接或切换到本地存储。</p>
+        )}
+        <p className={styles.pickerPath}>当前：{current || rootLabel}</p>
         {error && <p className={styles.pickerError}>{error}</p>}
         {loading && <p className={styles.pickerHint}>加载中…</p>}
         <div className={styles.pickerList}>
@@ -102,7 +158,7 @@ export function DestinationPickerDialog({
             <ListRow
               icon={<Icon name="icon-arrow-left" size={22} />}
               title="返回上级"
-              subtitle={parentOf(current) || '（共享根目录）'}
+              subtitle={parentOf(current) || rootLabel}
               onPress={() => setCurrent(parentOf(current))}
             />
           )}
@@ -119,8 +175,7 @@ export function DestinationPickerDialog({
             <p className={styles.pickerHint}>此目录没有子文件夹</p>
           )}
         </div>
-        {/* AU-005 只读模式：新建文件夹为远端写操作，createDirectory=false 时不渲染（R-FAS-05） */}
-        {OPERATION_CAPABILITIES.createDirectory && (
+        {canCreate && (
           <div className={styles.pickerNewFolder}>
             <input
               type="text"

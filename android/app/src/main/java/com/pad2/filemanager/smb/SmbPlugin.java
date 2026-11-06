@@ -7,6 +7,11 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 
@@ -317,5 +322,172 @@ public class SmbPlugin extends Plugin {
         } catch (Exception e) {
             call.reject("Export log failed: " + e.getMessage());
         }
+    }
+
+    // ===== TASK-LSO-07：本地文件上传到 SMB（流式读写+SHA-256 校验）=====
+    // 冻结区边界：仅新增 @PluginMethod，既有方法零变更，SmbClient.java 零修改（仅复用 writeFileSafe）
+    // R-1 风险：大文件全量加载 byte[]（SmbClient.writeFileSafe 签名约束），超 100MB 建议分片
+    @PluginMethod
+    public void uploadFromLocal(PluginCall call) {
+        String localAbsolutePath = call.getString("localAbsolutePath", "");
+        String destinationDir = call.getString("destinationDir", "");
+        String destFileName = call.getString("destFileName");
+        Boolean overwrite = call.getBoolean("overwrite", false);
+
+        if (localAbsolutePath.isEmpty()) {
+            call.reject("localAbsolutePath is required");
+            return;
+        }
+
+        try {
+            File localFile = new File(localAbsolutePath);
+            if (!localFile.exists() || !localFile.isFile()) {
+                call.reject("Local file not found: " + localAbsolutePath);
+                return;
+            }
+
+            String targetName = (destFileName != null && !destFileName.isEmpty())
+                ? destFileName : localFile.getName();
+            String targetPath = destinationDir.isEmpty()
+                ? targetName : destinationDir + "\\" + targetName;
+
+            if (!overwrite && smbClient.directoryExists(targetPath)) {
+                call.reject("Target already exists: " + targetPath);
+                return;
+            }
+
+            byte[] data = readFileBytes(localFile);
+            String sha256 = computeSha256(data);
+
+            smbClient.writeFileSafe(targetPath, data);
+
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            ret.put("bytesCopied", data.length);
+            ret.put("sha256", sha256);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Upload from local failed: " + e.getMessage());
+        }
+    }
+
+    // ===== TASK-LSO-08：本地文件夹递归上传到 SMB（聚合 failures 清单）=====
+    // 冻结区边界：仅新增 @PluginMethod，既有方法零变更
+    // R-2 风险：深目录递归，限制 32 层
+    @PluginMethod
+    public void uploadDirectoryFromLocal(PluginCall call) {
+        String localAbsolutePath = call.getString("localAbsolutePath", "");
+        String destinationDir = call.getString("destinationDir", "");
+        Boolean overwrite = call.getBoolean("overwrite", false);
+
+        if (localAbsolutePath.isEmpty()) {
+            call.reject("localAbsolutePath is required");
+            return;
+        }
+
+        try {
+            File localDir = new File(localAbsolutePath);
+            if (!localDir.exists() || !localDir.isDirectory()) {
+                call.reject("Local directory not found: " + localAbsolutePath);
+                return;
+            }
+
+            String targetDirName = localDir.getName();
+            String targetPath = destinationDir.isEmpty()
+                ? targetDirName : destinationDir + "\\" + targetDirName;
+
+            if (!smbClient.directoryExists(targetPath)) {
+                smbClient.createDirectory(targetPath);
+            }
+
+            JSArray failures = new JSArray();
+            int[] counters = new int[2]; // [totalFiles, totalBytes]
+            uploadDirectoryRecursive(localDir, targetPath, overwrite, failures, counters, 0);
+
+            JSObject ret = new JSObject();
+            ret.put("success", failures.length() == 0);
+            ret.put("totalFiles", counters[0]);
+            ret.put("totalBytes", counters[1]);
+            ret.put("failures", failures);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Upload directory from local failed: " + e.getMessage());
+        }
+    }
+
+    private void uploadDirectoryRecursive(File localDir, String smbTargetDir,
+            Boolean overwrite, JSArray failures, int[] counters, int depth) throws IOException {
+        if (depth > 32) {
+            JSObject failure = new JSObject();
+            failure.put("path", localDir.getAbsolutePath());
+            failure.put("reason", "递归深度超限（>32 层）");
+            failures.put(failure);
+            return;
+        }
+
+        File[] children = localDir.listFiles();
+        if (children == null) return;
+
+        for (File child : children) {
+            if (child.isDirectory()) {
+                String childSmbPath = smbTargetDir + "\\" + child.getName();
+                try {
+                    if (!smbClient.directoryExists(childSmbPath)) {
+                        smbClient.createDirectory(childSmbPath);
+                    }
+                    uploadDirectoryRecursive(child, childSmbPath, overwrite, failures, counters, depth + 1);
+                } catch (Exception e) {
+                    JSObject failure = new JSObject();
+                    failure.put("path", child.getAbsolutePath());
+                    failure.put("reason", e.getMessage());
+                    failures.put(failure);
+                }
+            } else {
+                try {
+                    byte[] data = readFileBytes(child);
+                    String smbFilePath = smbTargetDir + "\\" + child.getName();
+                    if (!overwrite && smbClient.directoryExists(smbFilePath)) {
+                        JSObject failure = new JSObject();
+                        failure.put("path", child.getAbsolutePath());
+                        failure.put("reason", "Target already exists: " + smbFilePath);
+                        failures.put(failure);
+                        continue;
+                    }
+                    smbClient.writeFileSafe(smbFilePath, data);
+                    counters[0] += 1;
+                    counters[1] += data.length;
+                } catch (Exception e) {
+                    JSObject failure = new JSObject();
+                    failure.put("path", child.getAbsolutePath());
+                    failure.put("reason", e.getMessage());
+                    failures.put(failure);
+                }
+            }
+        }
+    }
+
+    private byte[] readFileBytes(File file) throws IOException {
+        byte[] data = new byte[(int) file.length()];
+        try (FileInputStream fis = new FileInputStream(file)) {
+            int offset = 0;
+            int remaining = data.length;
+            while (remaining > 0) {
+                int read = fis.read(data, offset, remaining);
+                if (read == -1) break;
+                offset += read;
+                remaining -= read;
+            }
+        }
+        return data;
+    }
+
+    private String computeSha256(byte[] data) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(data);
+        StringBuilder hex = new StringBuilder();
+        for (byte b : hash) {
+            hex.append(String.format("%02x", b));
+        }
+        return hex.toString();
     }
 }

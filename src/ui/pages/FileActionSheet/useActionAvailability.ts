@@ -13,7 +13,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
 import type { SmbConnectionState } from '../../../state/smbConnectionStore';
-import { OPERATION_CAPABILITIES } from '../../../state/operationStore';
+import { OPERATION_CAPABILITIES, LOCAL_CAPABILITIES } from '../../../state/operationStore';
 import { operationPluginBridge } from '../../../state/operationStore';
 import { READ_ONLY_NOTICES } from '../../../state/readOnlyMode';
 
@@ -82,19 +82,28 @@ export function useActionAvailability({
       open: anyDirectory ? { enabled: false, reason: '目录无需打开' } : wpsUnavailable,
       // AU-005 只读模式：edit 恒禁用，不依赖 wpsState（R-FAS-07）
       edit: { enabled: false, reason: READ_ONLY_NOTICES.editDisabledReason },
-      // AU-005 只读模式：写操作经能力表恒禁用（R-FAS-08）
-      copy: anyDirectory
-        ? { enabled: false, reason: '暂不支持文件夹操作' }
-        : notAvailable(OPERATION_CAPABILITIES.copy, READ_ONLY_NOTICES.greyedReason),
-      move: anyDirectory
-        ? { enabled: false, reason: '暂不支持文件夹操作' }
-        : notAvailable(OPERATION_CAPABILITIES.move, READ_ONLY_NOTICES.greyedReason),
-      rename: anyDirectory
-        ? { enabled: false, reason: '暂不支持文件夹操作' }
-        : notAvailable(OPERATION_CAPABILITIES.rename, READ_ONLY_NOTICES.greyedReason),
+      // TASK-LSO-20：source='local' 文件夹操作放开，校验 LOCAL_CAPABILITIES（不受只读模式限制）
+      copy:
+        source === 'local'
+          ? { enabled: LOCAL_CAPABILITIES.copy }
+          : anyDirectory
+            ? { enabled: false, reason: '暂不支持文件夹操作' }
+            : notAvailable(OPERATION_CAPABILITIES.copy, READ_ONLY_NOTICES.greyedReason),
+      move:
+        source === 'local'
+          ? { enabled: LOCAL_CAPABILITIES.move }
+          : anyDirectory
+            ? { enabled: false, reason: '暂不支持文件夹操作' }
+            : notAvailable(OPERATION_CAPABILITIES.move, READ_ONLY_NOTICES.greyedReason),
+      rename:
+        source === 'local'
+          ? { enabled: LOCAL_CAPABILITIES.rename }
+          : anyDirectory
+            ? { enabled: false, reason: '暂不支持文件夹操作' }
+            : notAvailable(OPERATION_CAPABILITIES.rename, READ_ONLY_NOTICES.greyedReason),
       delete:
         source === 'local'
-          ? { enabled: true }
+          ? { enabled: LOCAL_CAPABILITIES.deleteLocal }
           : anyDirectory
             ? { enabled: false, reason: '暂不支持删除文件夹' }
             : notAvailable(OPERATION_CAPABILITIES.deleteRemote, READ_ONLY_NOTICES.greyedReason),

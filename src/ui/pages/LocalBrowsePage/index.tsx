@@ -1,57 +1,198 @@
-import { useEffect, useState } from 'react';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { EmptyState } from '../../components/EmptyState';
+/**
+ * 本地存储浏览页（TASK-LSO-14~19，design.md 模块 E）。
+ * 复用 BrowsePage 组件组合模式（FileList/Breadcrumb/SortMenu/SearchField/
+ * StatusBanner/OperationProgressPanel/MultiSelectBar/FileActionSheet），
+ * 数据源换为 localBrowseStore，source='local'。
+ * 路径分隔符为 '/'（相对 Directory.ExternalStorage）。
+ * 无 SessionStatusStrip/WritebackUnavailableBanner（本地无连接状态机）。
+ * 文件夹可进入（R-LSO-01 核心缺陷修复）；增删改查经 FileActionSheet（source='local'）。
+ */
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Breadcrumb } from '../../components/Breadcrumb';
+import { Icon } from '../../icons/Icon';
+import { useLocalBrowseStore, sortedAndFilteredLocalFiles } from '../../../state/localBrowseStore';
+import type { BrowseSort } from '../../../state/localBrowseStore';
+import { useOperationStore, LOCAL_CAPABILITIES } from '../../../state/operationStore';
+import { useUiPrefsStore } from '../../../state/uiPrefsStore';
+import type { SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
+import { SearchField } from '../BrowsePage/SearchField';
+import { SortMenu } from '../BrowsePage/SortMenu';
+import { ViewModeMenu } from '../BrowsePage/ViewModeMenu';
+import { StatusBanner } from '../../components/StatusBanner';
+import { FileList } from '../BrowsePage/FileList';
+import { MultiSelectBar } from '../BrowsePage/MultiSelectBar';
+import { OperationProgressPanel } from '../BrowsePage/OperationProgressPanel';
+import { FileActionSheet } from '../FileActionSheet';
+import type { OperationTask } from '../../../state/operationStore';
+import styles from '../BrowsePage/style.module.css';
+
+/** currentPath（'/' 分隔）→ Breadcrumb 段解析 */
+function buildLocalSegments(currentPath: string) {
+  const segments = [{ name: '本地存储', path: '' }];
+  if (currentPath) {
+    const parts = currentPath.split('/').filter(Boolean);
+    let acc = '';
+    for (const part of parts) {
+      acc = acc ? `${acc}/${part}` : part;
+      segments.push({ name: part, path: acc });
+    }
+  }
+  return segments;
+}
 
 export function LocalBrowsePage() {
-  const [files, setFiles] = useState<{ name: string; type: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const currentPath = useLocalBrowseStore((s) => s.currentPath);
+  const files = useLocalBrowseStore((s) => s.files);
+  const loading = useLocalBrowseStore((s) => s.loading);
+  const loadError = useLocalBrowseStore((s) => s.loadError);
+  const sort = useLocalBrowseStore((s) => s.sort);
+  const searchQuery = useLocalBrowseStore((s) => s.searchQuery);
+  const selection = useLocalBrowseStore((s) => s.selection);
+  const selectionMode = useLocalBrowseStore((s) => s.selectionMode);
+  const enterDirectory = useLocalBrowseStore((s) => s.enterDirectory);
+
+  const refresh = useLocalBrowseStore((s) => s.refresh);
+  const setSort = useLocalBrowseStore((s) => s.setSort);
+  const setSearchQuery = useLocalBrowseStore((s) => s.setSearchQuery);
+  const enterSelectionMode = useLocalBrowseStore((s) => s.enterSelectionMode);
+  const exitSelectionMode = useLocalBrowseStore((s) => s.exitSelectionMode);
+  const toggleSelection = useLocalBrowseStore((s) => s.toggleSelection);
+
+  const viewMode = useUiPrefsStore((s) => s.viewMode);
+  const setViewMode = useUiPrefsStore((s) => s.setViewMode);
+
+  const [pendingFiles, setPendingFiles] = useState<SmbFileEntry[]>([]);
+  const [loadedOnce, setLoadedOnce] = useState(false);
 
   useEffect(() => {
-    void (async () => {
-      try {
-        const result = await Filesystem.readdir({ path: '', directory: Directory.ExternalStorage });
-        setFiles(result.files.map((f) => ({ name: f.name, type: f.type })));
-      } catch (e) {
-        setError(e instanceof Error ? e.message : '无法读取本地存储');
-      } finally {
-        setLoading(false);
-      }
-    })();
+    if (!loadedOnce) {
+      setLoadedOnce(true);
+      void enterDirectory('');
+    }
+  }, [loadedOnce, enterDirectory]);
+
+  const siblingNames = useMemo(() => files.map((f) => f.name), [files]);
+  const segments = useMemo(() => buildLocalSegments(currentPath), [currentPath]);
+  const visibleFiles = useMemo(
+    () => sortedAndFilteredLocalFiles(files, sort, searchQuery),
+    [files, sort, searchQuery],
+  );
+
+  const handleNavigate = useCallback(
+    (path: string) => {
+      if (path === currentPath) return;
+      void enterDirectory(path);
+    },
+    [currentPath, enterDirectory],
+  );
+
+  const handleEnterSelectionMode = useCallback(() => {
+    if (visibleFiles.length === 0) return;
+    enterSelectionMode(visibleFiles[0].path);
+  }, [visibleFiles, enterSelectionMode]);
+
+  const handleRowActivate = useCallback(
+    (path: string) => {
+      if (selectionMode) toggleSelection(path);
+      else enterSelectionMode(path);
+    },
+    [selectionMode, toggleSelection, enterSelectionMode],
+  );
+
+  const handleBatchAction = useCallback(
+    (_action: 'copy' | 'move' | 'delete') => {
+      const selected = files.filter((f) => selection.has(f.path));
+      if (selected.length === 0) return;
+      setPendingFiles(selected as SmbFileEntry[]);
+    },
+    [selection, files],
+  );
+
+  const handleRetry = useCallback((task: OperationTask) => {
+    const store = useOperationStore.getState();
+    const paths = task.targets.map((t) => t.path);
+    const destination = task.destination ?? '';
+    switch (task.kind) {
+      case 'copy':
+        void store.enqueueCopy(paths, destination, { sourceType: 'local' });
+        break;
+      case 'move':
+        void store.enqueueMove(paths, destination, { sourceType: 'local' });
+        break;
+      case 'delete':
+      case 'batch':
+      default:
+        void store.executeDelete(paths, 'local');
+        break;
+    }
   }, []);
 
-  if (loading) return <div style={{ padding: '16px' }}>正在加载...</div>;
-
-  if (error) {
-    return (
-      <EmptyState
-        icon="icon-folder"
-        title="无法访问本地存储"
-        description={error}
-      />
-    );
-  }
-
-  if (files.length === 0) {
-    return (
-      <EmptyState
-        icon="icon-folder"
-        title="本地存储为空"
-        description="下载的文件将显示在这里"
-      />
-    );
-  }
-
   return (
-    <div style={{ padding: '16px' }}>
-      {files.map((file, i) => (
-        <div key={i} style={{ padding: '12px 0', borderBottom: '1px solid var(--color-border)' }}>
-          <div style={{ fontWeight: 500 }}>{file.name}</div>
-          <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-            {file.type === 'directory' ? '文件夹' : '文件'}
-          </div>
+    <div className={styles.page}>
+      <div className={styles.toolbar}>
+        <div className={styles.toolbarNav}>
+          <Breadcrumb segments={segments} onNavigate={handleNavigate} />
         </div>
-      ))}
+        <div className={styles.toolbarActions}>
+          <SearchField value={searchQuery} onChange={setSearchQuery} />
+          <SortMenu sort={sort as BrowseSort} onChange={setSort} />
+          <ViewModeMenu viewMode={viewMode} onChange={setViewMode} />
+          <button
+            type="button"
+            className={styles.multiselectTrigger}
+            aria-label="多选"
+            onClick={handleEnterSelectionMode}
+          >
+            <Icon name="icon-multiselect" size={20} />
+          </button>
+        </div>
+      </div>
+      {loadError && !loading && (
+        <StatusBanner
+          semantic="danger"
+          icon="icon-x-circle"
+          title={`目录加载失败：${loadError.userMessage}`}
+          actions={[
+            { label: '重试', variant: 'primary', onPress: () => void refresh() },
+          ]}
+        />
+      )}
+      <div className={styles.listArea}>
+        <FileList
+          files={files as SmbFileEntry[]}
+          loading={loading}
+          sort={sort as BrowseSort}
+          searchQuery={searchQuery}
+          selection={selection}
+          selectionMode={selectionMode}
+          onOpen={() => {
+            /* 本地文件打开暂不支持 WPS 编辑，仅通过操作菜单处理 */
+          }}
+          onEnterDirectory={(path) => void enterDirectory(path)}
+          onRowActivate={handleRowActivate}
+          onClearSearch={() => setSearchQuery('')}
+          viewMode={viewMode}
+        />
+      </div>
+      {selectionMode && (
+        <MultiSelectBar
+          selectedCount={selection.size}
+          batchOperationsEnabled={
+            LOCAL_CAPABILITIES.copy || LOCAL_CAPABILITIES.move || LOCAL_CAPABILITIES.deleteLocal
+          }
+          onCancel={exitSelectionMode}
+          onBatchAction={handleBatchAction}
+        />
+      )}
+      <OperationProgressPanel onRetry={handleRetry} />
+      <FileActionSheet
+        entries={pendingFiles}
+        source="local"
+        siblingNames={siblingNames}
+        open={pendingFiles.length > 0}
+        onDismiss={() => setPendingFiles([])}
+      />
     </div>
   );
 }
+

@@ -147,6 +147,24 @@ export interface SmbPluginInterface {
   exportLog(options: { logDir?: string; content: string; fileName: string }): Promise<{ success: boolean; path: string }>;
   getSessionInfo(): Promise<SessionInfoResult>;
   isWpsInstalled(): Promise<WpsInstallResult>;
+  /** TASK-LSO-07：本地文件上传到 SMB（流式读写+SHA-256 校验；目标存在且未授权覆盖走 reject） */
+  uploadFromLocal(options: {
+    localAbsolutePath: string;
+    destinationDir: string;
+    destFileName?: string;
+    overwrite?: boolean;
+  }): Promise<{ success: boolean; bytesCopied: number; sha256: string }>;
+  /** TASK-LSO-08：本地文件夹递归上传到 SMB（聚合 failures 清单，部分失败语义） */
+  uploadDirectoryFromLocal(options: {
+    localAbsolutePath: string;
+    destinationDir: string;
+    overwrite?: boolean;
+  }): Promise<{
+    success: boolean;
+    totalFiles: number;
+    totalBytes: number;
+    failures: { path: string; reason: string }[];
+  }>;
 }
 
 const SmbPlugin = registerPlugin<SmbPluginInterface>('SmbPlugin');

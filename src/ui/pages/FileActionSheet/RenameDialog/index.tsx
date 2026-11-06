@@ -61,6 +61,14 @@ export interface RenameDialogProps {
   open: boolean;
   onConfirm(newName: string): void;
   onDismiss(): void;
+  /** 对话框标题（默认"重命名"，新建文件夹场景传"新建文件夹"） */
+  title?: string;
+  /** 确认按钮文案（默认"重命名"） */
+  confirmLabel?: string;
+  /** 输入框标签（默认"新名称"） */
+  fieldLabel?: string;
+  /** 是否隐藏"原名称"提示行（新建场景传 true） */
+  hideOriginalHint?: boolean;
 }
 
 export function RenameDialog({
@@ -69,6 +77,10 @@ export function RenameDialog({
   open,
   onConfirm,
   onDismiss,
+  title = '重命名',
+  confirmLabel = '重命名',
+  fieldLabel = '新名称',
+  hideOriginalHint = false,
 }: RenameDialogProps) {
   const [value, setValue] = useState(currentName);
   const [touched, setTouched] = useState(false);
@@ -91,14 +103,14 @@ export function RenameDialog({
 
   return (
     <Dialog
-      title="重命名"
-      confirmLabel="重命名"
+      title={title}
+      confirmLabel={confirmLabel}
       onConfirm={legal ? () => onConfirm(value.trim()) : undefined}
       onDismiss={onDismiss}
     >
       <div className={styles.renameBody}>
         <FormField
-          label="新名称"
+          label={fieldLabel}
           required
           value={value}
           onChange={(next) => {
@@ -108,7 +120,7 @@ export function RenameDialog({
           placeholder={currentName}
           error={error}
         />
-        <p className={styles.renameHint}>原名称：{currentName}</p>
+        {!hideOriginalHint && <p className={styles.renameHint}>原名称：{currentName}</p>}
       </div>
     </Dialog>
   );

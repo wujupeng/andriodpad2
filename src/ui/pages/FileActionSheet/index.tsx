@@ -28,6 +28,7 @@ import { useSmbConnectionStore } from '../../../state/smbConnectionStore';
 import { useEditSessionStore } from '../../../state/editSessionStore';
 import { useBrowseStore } from '../../../state/browseStore';
 import type { SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
+import { LocalFsAdapter } from '../../../adapter/local/LocalFsAdapter';
 import { ReadOnlyNotice } from '../../components/ReadOnlyNotice';
 import styles from './style.module.css';
 
@@ -70,6 +71,7 @@ export function FileActionSheet({
   /** 冲突预判结果（TASK-S5-03）：DestinationPicker 确认后目标目录存在同名 → 四选一 */
   const [pendingConflict, setPendingConflict] = useState<{
     destination: string;
+    destinationType: 'local' | 'smb';
     conflictPaths: string[];
     targetNames: Set<string>;
   } | null>(null);
@@ -171,33 +173,40 @@ export function FileActionSheet({
    * 授权绝不覆盖；预判失败（网络抖动）不阻塞入队——竞态兜底在 executor 层
    * （插件"目标已存在"reject → conflict 分类 → conflict 态停止）。 */
   const handleDestinationConfirm = useCallback(
-    (destination: string) => {
+    (destination: string, destinationType?: 'local' | 'smb') => {
       const paths = entries.map((e) => e.path);
       if (paths.length === 0 || !pendingTransfer) return;
+      const sourceType: 'local' | 'smb' = source === 'local' ? 'local' : 'smb';
+      const destType: 'local' | 'smb' = destinationType ?? 'smb';
       void (async () => {
         let targetNames: Set<string> | null = null;
         try {
-          const listing = await operationPluginBridge.listDirectory({
-            path: destination || undefined,
-          });
-          targetNames = new Set(listing.files.map((f) => f.name.toLowerCase()));
+          if (destType === 'local') {
+            const listing = await LocalFsAdapter.listDirectory(destination);
+            targetNames = new Set(listing.files.map((f) => f.name.toLowerCase()));
+          } else {
+            const listing = await operationPluginBridge.listDirectory({
+              path: destination || undefined,
+            });
+            targetNames = new Set(listing.files.map((f) => f.name.toLowerCase()));
+          }
         } catch {
           targetNames = null; // 预判通道失败 → 不阻塞（executor 兜底）
         }
         if (targetNames) {
           const conflictPaths = entries
-            .filter((e) => !e.isDirectory && targetNames!.has(e.name.toLowerCase()))
+            .filter((e) => targetNames!.has(e.name.toLowerCase()))
             .map((e) => e.path);
           if (conflictPaths.length > 0) {
-            setPendingConflict({ destination, conflictPaths, targetNames });
+            setPendingConflict({ destination, destinationType: destType, conflictPaths, targetNames });
             setView('conflict');
             return;
           }
         }
-        enqueueTransfer(paths, destination);
+        enqueueTransfer(paths, destination, { sourceType, destinationType: destType });
       })();
     },
-    [entries, pendingTransfer, enqueueTransfer],
+    [entries, pendingTransfer, enqueueTransfer, source],
   );
 
   /** 冲突四选一决策（spec 5.5.1-R9/R10：任何路径不得静默覆盖；TASK-S5-03 真实接线）
@@ -208,9 +217,11 @@ export function FileActionSheet({
   const handleConflictResolve = useCallback(
     (choice: ConflictChoice) => {
       if (!pendingConflict) return;
-      const { destination, conflictPaths, targetNames } = pendingConflict;
+      const { destination, destinationType, conflictPaths, targetNames } = pendingConflict;
       const conflictSet = new Set(conflictPaths);
-      const allPaths = entries.filter((e) => !e.isDirectory).map((e) => e.path);
+      const allPaths = entries.map((e) => e.path);
+      const sourceType: 'local' | 'smb' = source === 'local' ? 'local' : 'smb';
+      const baseOptions: TransferOptions = { sourceType, destinationType };
       switch (choice.kind) {
         case 'skip': {
           const remaining = allPaths.filter((p) => !conflictSet.has(p));
@@ -219,15 +230,15 @@ export function FileActionSheet({
             setView('menu');
             setStatusMessage({
               semantic: 'info',
-              text: `已跳过 ${conflictSet.size} 个同名文件（未执行任何操作）`,
+              text: `已跳过 ${conflictSet.size} 个同名项目（未执行任何操作）`,
             });
             return;
           }
-          enqueueTransfer(remaining, destination);
+          enqueueTransfer(remaining, destination, baseOptions);
           return;
         }
         case 'overwrite': {
-          enqueueTransfer(allPaths, destination, { overwrite: true });
+          enqueueTransfer(allPaths, destination, { ...baseOptions, overwrite: true });
           return;
         }
         case 'keep-both': {
@@ -236,27 +247,25 @@ export function FileActionSheet({
             const original = entries.find((e) => e.path === path)?.name ?? path;
             destNames[path] = uniqueDestName(original, targetNames);
           }
-          enqueueTransfer(allPaths, destination, { destNames });
+          enqueueTransfer(allPaths, destination, { ...baseOptions, destNames });
           return;
         }
         case 'rename': {
           if (choice.newName && allPaths.length === 1) {
-            // 单文件重命名：用户输入的新目标名（ConflictDialog 已按 existingNames 校验）
-            enqueueTransfer(allPaths, destination, { destNames: { [allPaths[0]]: choice.newName } });
+            enqueueTransfer(allPaths, destination, { ...baseOptions, destNames: { [allPaths[0]]: choice.newName } });
             return;
           }
-          // 批量场景：重命名输入为单数语义——按保留两者处理（description 已注明）
           const destNames: Record<string, string> = {};
           for (const path of conflictPaths) {
             const original = entries.find((e) => e.path === path)?.name ?? path;
             destNames[path] = uniqueDestName(original, targetNames);
           }
-          enqueueTransfer(allPaths, destination, { destNames });
+          enqueueTransfer(allPaths, destination, { ...baseOptions, destNames });
           return;
         }
       }
     },
-    [pendingConflict, entries, enqueueTransfer],
+    [pendingConflict, entries, enqueueTransfer, source],
   );
 
   const handleRenameConfirm = useCallback(
@@ -327,6 +336,7 @@ export function FileActionSheet({
       <DestinationPickerDialog
         open={open && view === 'picker'}
         initialDirectory={currentPath}
+        sourceType={source === 'local' ? 'local' : 'smb'}
         onConfirm={handleDestinationConfirm}
         onDismiss={() => setView('menu')}
       />

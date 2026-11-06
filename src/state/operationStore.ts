@@ -26,6 +26,7 @@
 import { create } from 'zustand';
 import { TransferStatus } from '../core/transfer/TransferEngine';
 import SmbPlugin from '../adapter/smb/SmbPlugin';
+import { LocalFsAdapter } from '../adapter/local/LocalFsAdapter';
 import { mapSmbError } from '../utils/smbErrorMapper';
 import { useSmbConnectionStore } from './smbConnectionStore';
 import { READ_ONLY_NOTICES } from './readOnlyMode';
@@ -93,10 +94,36 @@ export interface OperationStoreState {
  * 传输入队选项（TASK-S5-03 冲突决策接线；可选参数向后兼容既有调用）：
  * - overwrite：用户在 ConflictDialog 显式选择"覆盖"后整批授权；
  * - destNames：源路径→目标文件名映射（"保留两者/重命名"决策产物）。
+ * - sourceType/destinationType（TASK-LSO-11）：跨源分发判定，默认 'smb' 向后兼容。
  */
 export interface TransferOptions {
   overwrite?: boolean;
   destNames?: Record<string, string>;
+  /** 源类型（'local'=本地存储, 'smb'=SMB 共享），默认 'smb' 向后兼容 */
+  sourceType?: 'local' | 'smb';
+  /** 目标类型（'local'=本地存储, 'smb'=SMB 共享），默认 'smb' 向后兼容 */
+  destinationType?: 'local' | 'smb';
+}
+
+/** 跨源传输类型（TASK-LSO-11，design.md 模块 D 分发前置判定） */
+export type TransferKind = 'local-to-local' | 'local-to-smb' | 'smb-to-smb' | 'smb-to-local';
+
+/** 目标描述符（DestinationPickerDialog 返回，供分发判定） */
+export interface DestinationDescriptor {
+  type: 'local' | 'smb';
+  path: string;
+  profileId?: string;
+}
+
+/** 源/目标类型判定（TASK-LSO-11） */
+export function resolveTransferKind(
+  sourceType: 'local' | 'smb',
+  destinationType: 'local' | 'smb',
+): TransferKind {
+  if (sourceType === 'local' && destinationType === 'local') return 'local-to-local';
+  if (sourceType === 'local' && destinationType === 'smb') return 'local-to-smb';
+  if (sourceType === 'smb' && destinationType === 'smb') return 'smb-to-smb';
+  return 'smb-to-local';
 }
 
 /**
@@ -131,6 +158,25 @@ export const OPERATION_CAPABILITIES: Readonly<{
   // AU-006 新增：写回相关能力（按权限矩阵派生）
   writeback: isWritebackGloballyEnabled() && WRITE_PERMISSION_MATRIX.writeback,
   saveas: isWritebackGloballyEnabled() && WRITE_PERMISSION_MATRIX.saveas,
+};
+
+/**
+ * 本地操作能力表（TASK-LSO-10，design.md 2.7.2）。
+ * 与 OPERATION_CAPABILITIES 解耦：本地操作不受 AU-005 只读模式限制。
+ * LocalFsAdapter 已实现全部本地文件系统操作，故全 true。
+ */
+export const LOCAL_CAPABILITIES: Readonly<{
+  copy: boolean;
+  move: boolean;
+  rename: boolean;
+  deleteLocal: boolean;
+  createDirectory: boolean;
+}> = {
+  copy: true,
+  move: true,
+  rename: true,
+  deleteLocal: true,
+  createDirectory: true,
 };
 
 /** core TransferStatus 十态 → UI 七态只读映射（design.md 152 行决策，不修改 core 文件） */
@@ -185,17 +231,15 @@ function initialProgress(targets: OperationTarget[]): OperationProgress {
  */
 type TargetExecutor = (target: OperationTarget, destination: string | undefined) => Promise<void>;
 
-const missingCapabilityExecutor: TargetExecutor = async () => {
-  throw new Error(CAPABILITY_REASON);
-};
 
 /**
  * TASK-S5-03 真实传输入队执行器（copy/move）：
+ * TASK-LSO-12 扩展：按 transferKind 分发（local-to-local/local-to-smb/smb-to-smb）。
  * 插件 reject（含"目标已存在"conflict）原样传播 → runBatch 分类聚合。
  * 安全语义：overwrite 仅经 ConflictDialog 显式授权（默认 false）；
  * move 的源删除由原生层在 copy+SHA 校验成功后执行（无文件消失窗口）。
  */
-const makeTransferExecutor = (kind: 'copy' | 'move'): TargetExecutor => {
+const makeTransferExecutor = (kind: 'copy' | 'move', transferKind: TransferKind): TargetExecutor => {
   return async (target, destination) => {
     if (!destination) throw new Error('缺少目标目录');
     const params = {
@@ -204,8 +248,31 @@ const makeTransferExecutor = (kind: 'copy' | 'move'): TargetExecutor => {
       destFileName: target.destName,
       overwrite: target.overwrite ?? false,
     };
-    if (kind === 'copy') await SmbPlugin.copyFile(params);
-    else await SmbPlugin.moveFile(params);
+    switch (transferKind) {
+      case 'local-to-local':
+        if (kind === 'copy') {
+          await LocalFsAdapter.copyFile(params.sourcePath, params.destinationDir, params.destFileName, params.overwrite);
+        } else {
+          await LocalFsAdapter.moveFile(params.sourcePath, params.destinationDir, params.destFileName, params.overwrite);
+        }
+        return;
+      case 'local-to-smb':
+        await SmbPlugin.uploadFromLocal({
+          localAbsolutePath: params.sourcePath,
+          destinationDir: params.destinationDir,
+          destFileName: params.destFileName,
+          overwrite: params.overwrite,
+        });
+        if (kind === 'move') {
+          await LocalFsAdapter.deleteFile(params.sourcePath);
+        }
+        return;
+      case 'smb-to-smb':
+      default:
+        if (kind === 'copy') await SmbPlugin.copyFile(params);
+        else await SmbPlugin.moveFile(params);
+        return;
+    }
   };
 };
 
@@ -329,21 +396,36 @@ export const useOperationStore = create<OperationStoreState>()((set, get) => {
     recentTasks: [],
 
     // 复制：TASK-S5-03 真实桥接（options=冲突决策产物：overwrite 授权/destNames 改名）
+    // TASK-LSO-12：按 sourceType/destinationType 分发，本地源校验 LOCAL_CAPABILITIES
     enqueueCopy: async (paths, destination, options) => {
-      // AU-005 第二防线：能力表 false 时拒绝，不调用 SmbPlugin（R-OPS-03、REQ-REL-02）
-      if (!OPERATION_CAPABILITIES.copy) throw new Error(READ_ONLY_NOTICES.greyedReason);
-      await enqueue('copy', toTargets(paths, options), destination, makeTransferExecutor('copy'));
+      const sourceType = options?.sourceType ?? 'smb';
+      const destinationType = options?.destinationType ?? 'smb';
+      const transferKind = resolveTransferKind(sourceType, destinationType);
+      if (sourceType === 'local') {
+        if (!LOCAL_CAPABILITIES.copy) throw new Error(READ_ONLY_NOTICES.greyedReason);
+      } else {
+        if (!OPERATION_CAPABILITIES.copy) throw new Error(READ_ONLY_NOTICES.greyedReason);
+      }
+      await enqueue('copy', toTargets(paths, options), destination, makeTransferExecutor('copy', transferKind));
     },
 
     // 移动：TASK-S5-03 真实桥接（copy+SHA 校验成功后原生层删源；options 同上）
+    // TASK-LSO-12：按 sourceType/destinationType 分发
     enqueueMove: async (paths, destination, options) => {
-      // AU-005 第二防线：能力表 false 时拒绝，不调用 SmbPlugin（R-OPS-03、REQ-REL-02）
-      if (!OPERATION_CAPABILITIES.move) throw new Error(READ_ONLY_NOTICES.greyedReason);
-      await enqueue('move', toTargets(paths, options), destination, makeTransferExecutor('move'));
+      const sourceType = options?.sourceType ?? 'smb';
+      const destinationType = options?.destinationType ?? 'smb';
+      const transferKind = resolveTransferKind(sourceType, destinationType);
+      if (sourceType === 'local') {
+        if (!LOCAL_CAPABILITIES.move) throw new Error(READ_ONLY_NOTICES.greyedReason);
+      } else {
+        if (!OPERATION_CAPABILITIES.move) throw new Error(READ_ONLY_NOTICES.greyedReason);
+      }
+      await enqueue('move', toTargets(paths, options), destination, makeTransferExecutor('move', transferKind));
     },
 
     // 重命名：TASK-S5-04-R 真实桥接（方案 A：服务端原子 rename；
     // COLLISION→reject→mapSmbError conflict 类→operationStore conflict 态）
+    // 注：本地重命名由 LocalBrowsePage 直接调 LocalFsAdapter.renameFile（签名冻结，不扩展）
     executeRename: async (path, newName) => {
       // AU-005 第二防线：能力表 false 时拒绝，不调用 SmbPlugin（R-OPS-03、REQ-REL-02）
       if (!OPERATION_CAPABILITIES.rename) throw new Error(READ_ONLY_NOTICES.greyedReason);
@@ -353,13 +435,23 @@ export const useOperationStore = create<OperationStoreState>()((set, get) => {
     },
 
     // 删除：TASK-S5-05 真实桥接——scope=remote 走 deleteRemoteFile（目录拒绝/
-    // 不存在明确失败/删除后核验）；scope=local 仍如实失败（本地删除 OUT_OF_SCOPE，
-    // cleanup 全量清缓存语义不得挪用——PM 禁令）
+    // 不存在明确失败/删除后核验）；
+    // TASK-LSO-13：scope=local 走 LocalFsAdapter（文件 deleteFile/文件夹 deleteDirectory 递归）
     executeDelete: async (paths, scope) => {
-      // AU-005 第二防线：远端删除能力表 false 时拒绝，不调用 SmbPlugin（R-OPS-03、REQ-REL-02）
       if (scope === 'remote' && !OPERATION_CAPABILITIES.deleteRemote) throw new Error(READ_ONLY_NOTICES.greyedReason);
       if (scope !== 'remote') {
-        await enqueue('delete', toTargets(paths), undefined, missingCapabilityExecutor);
+        if (!LOCAL_CAPABILITIES.deleteLocal) throw new Error(READ_ONLY_NOTICES.greyedReason);
+        await enqueue('delete', toTargets(paths), undefined, async (target) => {
+          const attr = await LocalFsAdapter.getFileAttributes(target.path);
+          if (attr.isDirectory) {
+            const result = await LocalFsAdapter.deleteDirectory(target.path);
+            if (result.failures.length > 0) {
+              throw new Error(`[local:unknown] 部分删除失败：${result.failures.length} 项`);
+            }
+          } else {
+            await LocalFsAdapter.deleteFile(target.path);
+          }
+        });
         return;
       }
       await enqueue('delete', toTargets(paths), undefined, async (target) => {
@@ -397,4 +489,6 @@ export const operationPluginBridge = {
   moveFile: SmbPlugin.moveFile.bind(SmbPlugin),
   renameFile: SmbPlugin.renameFile.bind(SmbPlugin),
   deleteRemoteFile: SmbPlugin.deleteRemoteFile.bind(SmbPlugin),
+  uploadFromLocal: SmbPlugin.uploadFromLocal.bind(SmbPlugin),
+  uploadDirectoryFromLocal: SmbPlugin.uploadDirectoryFromLocal.bind(SmbPlugin),
 } as const;
