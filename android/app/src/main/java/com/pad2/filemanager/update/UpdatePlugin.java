@@ -222,22 +222,34 @@ public class UpdatePlugin extends Plugin {
     public void readCredentialFile(PluginCall call) {
         try {
             File credFile = new File(getContext().getExternalFilesDir(null), "update_cred.json");
-            if (!credFile.exists()) {
-                JSObject r = new JSObject();
-                r.put("found", false);
-                call.resolve(r);
-                return;
+            String json = null;
+            if (credFile.exists()) {
+                FileInputStream fis = new FileInputStream(credFile);
+                byte[] buf = new byte[(int) credFile.length()];
+                int read = 0;
+                while (read < buf.length) {
+                    int n = fis.read(buf, read, buf.length - read);
+                    if (n == -1) break;
+                    read += n;
+                }
+                fis.close();
+                json = new String(buf, 0, read, "UTF-8");
+            } else {
+                try {
+                    java.io.InputStream is = getContext().getAssets().open("update_cred.json");
+                    java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                    byte[] buf = new byte[4096];
+                    int n;
+                    while ((n = is.read(buf)) != -1) bos.write(buf, 0, n);
+                    is.close();
+                    json = new String(bos.toByteArray(), "UTF-8");
+                } catch (Exception assetEx) {
+                    JSObject r = new JSObject();
+                    r.put("found", false);
+                    call.resolve(r);
+                    return;
+                }
             }
-            FileInputStream fis = new FileInputStream(credFile);
-            byte[] buf = new byte[(int) credFile.length()];
-            int read = 0;
-            while (read < buf.length) {
-                int n = fis.read(buf, read, buf.length - read);
-                if (n == -1) break;
-                read += n;
-            }
-            fis.close();
-            String json = new String(buf, 0, read, "UTF-8");
             JSObject creds = new JSObject(json);
             creds.put("found", true);
             call.resolve(creds);
