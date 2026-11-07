@@ -3,12 +3,20 @@
 .nav {
   display: flex;
   flex-direction: column;
-  background: var(--pad2-color-bg-surface);
+  background: var(--pad2-color-sidebar-bg);
+  backdrop-filter: blur(var(--pad2-blur-sidebar));
+  -webkit-backdrop-filter: blur(var(--pad2-blur-sidebar));
   border-right: 1px solid var(--pad2-color-border);
   width: var(--pad2-size-sidenav-collapsed);
   flex-shrink: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .nav {
+    background: var(--pad2-color-bg-surface);
+  }
 }
 
 .sections {

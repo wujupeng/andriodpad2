@@ -22,6 +22,8 @@ export interface TileRowProps {
   onOpen(entry: SmbFileEntry): void;
   onEnterDirectory(path: string): void;
   onRowActivate(path: string): void;
+  dividerInset?: boolean;
+  hideDivider?: boolean;
 }
 
 function HighlightedName({ name, query }: { name: string; query: string }) {
@@ -62,6 +64,8 @@ function TileRowImpl({
   onOpen,
   onEnterDirectory,
   onRowActivate,
+  dividerInset = false,
+  hideDivider = false,
 }: TileRowProps) {
   const { ref } = useLongPress<HTMLDivElement>({
     onLongPress: () => onRowActivate(file.path),
@@ -89,6 +93,8 @@ function TileRowImpl({
         selected={selected}
         selectionMode={selectionMode}
         onPress={selectionMode ? () => onRowActivate(file.path) : undefined}
+        dividerInset={dividerInset}
+        hideDivider={hideDivider}
       />
     </div>
   );

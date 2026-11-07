@@ -19,7 +19,7 @@ export interface ViewModeConfigEntry {
 }
 
 export const VIEW_MODE_CONFIG: Readonly<Record<ViewMode, ViewModeConfigEntry>> = {
-  largeIcon: { layout: 'grid', iconSize: 64, columns: 4, rowHeight: 112, abbr: '大', label: '大图标' },
+  largeIcon: { layout: 'grid', iconSize: 72, columns: 4, rowHeight: 128, abbr: '大', label: '大图标' },
   mediumIcon: { layout: 'grid', iconSize: 48, columns: 6, rowHeight: 96, abbr: '中', label: '中图标' },
   smallIcon: { layout: 'grid', iconSize: 32, columns: 8, rowHeight: 80, abbr: '小', label: '小图标' },
   tile: { layout: 'row', iconSize: 24, columns: 0, rowHeight: 64, abbr: '平', label: '平铺' },

@@ -66,6 +66,7 @@ export function IconGrid({
                     onOpen={onOpen}
                     onEnterDirectory={onEnterDirectory}
                     onRowActivate={onRowActivate}
+                    viewMode={viewMode}
                   />
                 ),
               )}

@@ -432,6 +432,18 @@ export const LocalFsAdapter = {
       return false;
     }
   },
+
+  /**
+   * 将相对 ExternalStorage 的路径转为绝对路径（供 uploadFromLocal/uploadDirectoryFromLocal 使用）。
+   * Filesystem.getUri 返回形如 "file:///storage/emulated/0/path" 的 URI，剥离 file:// 前缀即绝对路径。
+   */
+  async getAbsolutePath(relativePath: string): Promise<string> {
+    const result = await Filesystem.getUri({
+      path: relativePath || '.',
+      directory: Directory.ExternalStorage,
+    });
+    return result.uri.replace(/^file:\/\//, '');
+  },
 } as const;
 
 export { joinPath, basename, dirname };

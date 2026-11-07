@@ -392,6 +392,7 @@ export function ComponentGalleryPage() {
             onEnterDirectory={() => undefined}
             onRowActivate={() => undefined}
             onClearSearch={() => setStressSearch('')}
+            onSortChange={() => undefined}
           />
         </div>
       </Card>

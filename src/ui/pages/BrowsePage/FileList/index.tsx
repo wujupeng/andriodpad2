@@ -8,9 +8,10 @@ import { useEffect, useMemo } from 'react';
 import { SkeletonList } from '../../../components/SkeletonList';
 import { EmptyState } from '../../../components/EmptyState';
 import { useVirtualList } from '../../../hooks/useVirtualList';
-import { FileRow } from '../FileRow';
 import { TileRow } from '../TileRow';
 import { IconGrid } from '../IconGrid';
+import { ColumnHeader } from '../ColumnHeader';
+import { DetailRow } from '../DetailRow';
 import { VIEW_MODE_CONFIG } from '../viewModeConfig';
 import { sortedAndFilteredFiles } from '../../../../state/browseStore';
 import type { SmbFileEntry } from '../../../../adapter/smb/SmbPlugin';
@@ -29,6 +30,7 @@ export interface FileListProps {
   onEnterDirectory(path: string): void;
   onRowActivate(path: string): void;
   onClearSearch(): void;
+  onSortChange: (sort: { field: 'name' | 'size' | 'lastModified' | 'type'; ascending: boolean }) => void;
 }
 
 export function FileList({
@@ -43,6 +45,7 @@ export function FileList({
   onEnterDirectory,
   onRowActivate,
   onClearSearch,
+  onSortChange,
 }: FileListProps) {
   const visible = useMemo(
     () => sortedAndFilteredFiles(files, sort, searchQuery),
@@ -96,7 +99,34 @@ export function FileList({
     );
   }
 
-  const RowComponent = viewMode === 'tile' ? TileRow : FileRow;
+  if (viewMode === 'detail') {
+    return (
+      <div className={styles.scrollContainer} onScroll={virtual.onScroll} data-file-scroll="">
+        <ColumnHeader sort={sort} onSortChange={onSortChange} />
+        <div className={styles.spacer} style={{ height: virtual.totalHeight }}>
+          <div
+            className={styles.window}
+            style={{ transform: `translateY(${virtual.offsetY}px)` }}
+          >
+            {virtual.visibleItems.map(({ item }, i) => (
+              <DetailRow
+                key={item.path}
+                file={item}
+                searchQuery={searchQuery}
+                selected={selection.has(item.path)}
+                selectionMode={selectionMode}
+                onOpen={onOpen}
+                onEnterDirectory={onEnterDirectory}
+                onRowActivate={onRowActivate}
+                dividerInset
+                hideDivider={i === virtual.visibleItems.length - 1}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.scrollContainer} onScroll={virtual.onScroll} data-file-scroll="">
@@ -105,8 +135,8 @@ export function FileList({
           className={styles.window}
           style={{ transform: `translateY(${virtual.offsetY}px)` }}
         >
-          {virtual.visibleItems.map(({ item }) => (
-            <RowComponent
+          {virtual.visibleItems.map(({ item }, i) => (
+            <TileRow
               key={item.path}
               file={item}
               searchQuery={searchQuery}
@@ -115,6 +145,8 @@ export function FileList({
               onOpen={onOpen}
               onEnterDirectory={onEnterDirectory}
               onRowActivate={onRowActivate}
+              dividerInset
+              hideDivider={i === virtual.visibleItems.length - 1}
             />
           ))}
         </div>

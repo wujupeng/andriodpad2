@@ -24,6 +24,8 @@ export interface FileRowProps {
   onEnterDirectory(path: string): void;
   /** 长按激活（非多选态=进入多选并选中首项；多选态=切换选中） */
   onRowActivate(path: string): void;
+  dividerInset?: boolean;
+  hideDivider?: boolean;
 }
 
 /** 文件名搜索高亮（大小写不敏感分段，匹配段 mark 语义） */
@@ -65,6 +67,8 @@ function FileRowImpl({
   onOpen,
   onEnterDirectory,
   onRowActivate,
+  dividerInset = false,
+  hideDivider = false,
 }: FileRowProps) {
   const { ref } = useLongPress<HTMLDivElement>({
     onLongPress: () => onRowActivate(file.path),
@@ -94,6 +98,8 @@ function FileRowImpl({
         selected={selected}
         selectionMode={selectionMode}
         onPress={selectionMode ? () => onRowActivate(file.path) : undefined}
+        dividerInset={dividerInset}
+        hideDivider={hideDivider}
       />
     </div>
   );

@@ -1,12 +1,14 @@
 /**
- * C-03 ListRow（design.md 2.3.2）
+ * C-03 ListRow（design.md 2.3.2，v2.0.0 iOS 风升级）
  * 三段布局（40×40 图标区 + title/subtitle 两行 + trailing 辅助区）；
  * 选中态：brand-50 背景 + 左缘 3px brand-500 条；多选态：图标区换 24px 复选框。
  * 行高基准 64px（虚拟化固定行高依据），字体缩放防破版用 min-height。
+ * v2.0.0 新增：按压缩放反馈 scale(0.98) + 左缩进分隔线（dividerInset/hideDivider）。
  */
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import styles from './style.module.css';
+import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 
 export interface ListRowProps {
   icon?: ReactNode;
@@ -18,6 +20,8 @@ export interface ListRowProps {
   selectionMode?: boolean;
   onPress?: () => void;
   onLongPress?: () => void;
+  dividerInset?: boolean;
+  hideDivider?: boolean;
 }
 
 export function ListRow({
@@ -29,8 +33,11 @@ export function ListRow({
   selectionMode = false,
   onPress,
   onLongPress,
+  dividerInset = false,
+  hideDivider = false,
 }: ListRowProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const haptic = useHapticFeedback();
 
   useEffect(() => {
     const el = rootRef.current;
@@ -39,6 +46,7 @@ export function ListRow({
     const start = () => {
       timer = window.setTimeout(() => {
         timer = undefined;
+        haptic.trigger();
         onLongPress();
       }, 500);
     };
@@ -59,12 +67,14 @@ export function ListRow({
       el.removeEventListener('pointercancel', cancel);
       el.removeEventListener('pointermove', cancel);
     };
-  }, [onLongPress]);
+  }, [onLongPress, haptic.trigger]);
 
   const cls = [
     styles.row,
     selected ? styles['row--selected'] : '',
     onPress ? styles['row--pressable'] : '',
+    dividerInset ? styles['row--inset-divider'] : '',
+    hideDivider ? styles['row--hide-divider'] : '',
   ]
     .filter(Boolean)
     .join(' ');

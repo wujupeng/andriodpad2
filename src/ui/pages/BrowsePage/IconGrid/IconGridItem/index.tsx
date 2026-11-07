@@ -21,6 +21,7 @@ export interface IconGridItemProps {
   onOpen(entry: SmbFileEntry): void;
   onEnterDirectory(path: string): void;
   onRowActivate(path: string): void;
+  viewMode?: 'largeIcon' | 'mediumIcon' | 'smallIcon';
 }
 
 function HighlightedName({ name, query }: { name: string; query: string }) {
@@ -62,6 +63,7 @@ function IconGridItemImpl({
   onOpen,
   onEnterDirectory,
   onRowActivate,
+  viewMode,
 }: IconGridItemProps) {
   const { ref } = useLongPress<HTMLDivElement>({
     onLongPress: () => onRowActivate(file.path),
@@ -77,6 +79,7 @@ function IconGridItemImpl({
       ref={ref}
       className={`${styles.item} ${selected ? styles['item--selected'] : ''}`}
       data-icon-grid-item=""
+      data-view-mode={viewMode}
     >
       <div className={styles.iconArea}>
         {selectionMode ? (

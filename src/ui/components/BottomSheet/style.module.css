@@ -31,6 +31,7 @@
   box-shadow: var(--pad2-shadow-lg);
   padding: var(--pad2-space-2) var(--pad2-space-4) var(--pad2-space-4);
   animation: sheet-in var(--pad2-duration-slow) var(--pad2-easing-decelerate);
+  will-change: transform;
 }
 
 @keyframes sheet-in {

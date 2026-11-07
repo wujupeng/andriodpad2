@@ -1,0 +1,42 @@
+.container {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pad2-space-1);
+  border-radius: var(--pad2-radius-full);
+  background: var(--pad2-color-bg-surface-alt);
+  padding: 2px;
+  border: 1px solid var(--pad2-color-border);
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pad2-space-1);
+  min-height: var(--pad2-size-segment-height);
+  padding: 0 var(--pad2-space-3);
+  border: none;
+  border-radius: var(--pad2-radius-full);
+  background: transparent;
+  color: var(--pad2-color-text-secondary);
+  font-size: var(--pad2-font-size-caption);
+  font-weight: var(--pad2-font-weight-medium);
+  cursor: pointer;
+  transition: background var(--pad2-duration-fast) var(--pad2-easing-standard),
+    color var(--pad2-duration-fast) var(--pad2-easing-standard);
+}
+
+.segmentActive {
+  background: var(--pad2-color-brand-500);
+  color: var(--pad2-color-bg-surface);
+  font-weight: var(--pad2-font-weight-semibold);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--pad2-color-brand-500);
+  outline-offset: 1px;
+}
+
+.segmentLabel {
+  white-space: nowrap;
+}

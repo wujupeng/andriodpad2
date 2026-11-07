@@ -1,4 +1,4 @@
-/* C-03 ListRow（行高基准 64px；防破版 min-height） */
+/* C-03 ListRow（v2.0.0 iOS 风：按压缩放反馈 + 左缩进分隔线；行高基准 64px） */
 
 .row {
   position: relative;
@@ -13,11 +13,14 @@
 
 .row--pressable {
   cursor: pointer;
-  transition: background var(--pad2-duration-fast) var(--pad2-easing-standard);
+  transition: transform var(--pad2-duration-fast) var(--pad2-easing-standard),
+    background var(--pad2-duration-fast) var(--pad2-easing-standard);
+  will-change: transform;
 }
 
 .row--pressable:active {
   background: var(--pad2-color-bg-hover);
+  transform: scale(0.98);
 }
 
 .row--selected {
@@ -33,6 +36,22 @@
   width: 3px;
   border-radius: var(--pad2-radius-full);
   background: var(--pad2-color-brand-500);
+}
+
+/* iOS 风左缩进分隔线（left 64px = icon 40 + gap 12 + padding 12） */
+.row--inset-divider::after {
+  content: '';
+  position: absolute;
+  left: 64px;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--pad2-color-divider);
+}
+
+.row--inset-divider:last-child::after,
+.row--hide-divider::after {
+  display: none;
 }
 
 .row__icon {

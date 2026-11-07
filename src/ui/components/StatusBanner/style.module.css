@@ -25,6 +25,15 @@
   }
 }
 
+/* v2.0.0 placement 修饰符 */
+.banner--topbar {
+  border-radius: 0 0 var(--pad2-radius-sm) var(--pad2-radius-sm);
+}
+
+.banner--inset {
+  border-radius: var(--pad2-radius-md);
+}
+
 .banner__bar {
   position: absolute;
   left: 0;

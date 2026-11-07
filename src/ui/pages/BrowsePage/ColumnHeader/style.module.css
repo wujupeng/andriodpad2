@@ -1,0 +1,53 @@
+.header {
+  display: grid;
+  grid-template-columns: 1fr var(--pad2-size-col-width-date) var(--pad2-size-col-width-size) var(--pad2-size-col-width-kind);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--pad2-color-bg-surface);
+  border-bottom: 1px solid var(--pad2-color-divider);
+  min-height: var(--pad2-size-col-header-height);
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  gap: var(--pad2-space-1);
+  min-height: var(--pad2-size-touch-min);
+  padding: 0 var(--pad2-space-3);
+  border: none;
+  background: transparent;
+  color: var(--pad2-color-text-secondary);
+  font-size: var(--pad2-font-size-caption);
+  font-weight: var(--pad2-font-weight-medium);
+  cursor: pointer;
+  user-select: none;
+}
+
+.cellLeft {
+  justify-content: flex-start;
+  min-width: var(--pad2-size-col-name-min);
+}
+
+.cellRight {
+  justify-content: flex-end;
+}
+
+.cell:focus-visible {
+  outline: 2px solid var(--pad2-color-brand-500);
+  outline-offset: -2px;
+}
+
+.cell:hover {
+  color: var(--pad2-color-text-primary);
+}
+
+.label {
+  white-space: nowrap;
+}
+
+.sortIndicator {
+  font-size: var(--pad2-font-size-caption);
+  color: var(--pad2-color-brand-500);
+  font-weight: var(--pad2-font-weight-semibold);
+}

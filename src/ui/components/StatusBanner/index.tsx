@@ -1,6 +1,7 @@
 /**
- * C-05 StatusBanner（design.md 2.3.2 + 2.5.2）
+ * C-05 StatusBanner（design.md 2.3.2 + 2.5.2，v2.0.0 iOS 风升级）
  * 全宽横幅、min-height 48px、左缘 4px 语义色条 + 20px 填充图标 + 标题 + 描述 + 操作按钮区。
+ * v2.0.0 新增 placement prop：topbar（顶部全宽底圆角）/ inset（卡片内嵌 md 圆角，默认）。
  * 安全约束（spec 5.7.1-R5、spec 5.7.3 异常 2）：
  * danger/warning 类不提供任何自动消失行为——组件无 setTimeout/TTL，
  * 移除条件由父级 store 持久性策略控制。
@@ -25,6 +26,7 @@ export interface StatusBannerProps {
   description?: string;
   actions?: BannerAction[];
   rootDataAttrs?: Record<string, string | boolean>;
+  placement?: 'topbar' | 'inset';
 }
 
 export function StatusBanner({
@@ -34,11 +36,12 @@ export function StatusBanner({
   description,
   actions,
   rootDataAttrs,
+  placement = 'inset',
 }: StatusBannerProps) {
   const visibleActions = actions?.slice(0, 2) ?? [];
   return (
     <section
-      className={`${styles.banner} ${styles[`banner--${semantic}`]}`}
+      className={`${styles.banner} ${styles[`banner--${semantic}`]} ${styles[`banner--${placement}`]}`}
       role="status"
       {...(rootDataAttrs ?? {})}
     >

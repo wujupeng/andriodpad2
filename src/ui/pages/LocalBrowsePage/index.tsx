@@ -23,6 +23,8 @@ import { FileList } from '../BrowsePage/FileList';
 import { MultiSelectBar } from '../BrowsePage/MultiSelectBar';
 import { OperationProgressPanel } from '../BrowsePage/OperationProgressPanel';
 import { FileActionSheet } from '../FileActionSheet';
+import { RenameDialog } from '../FileActionSheet/RenameDialog';
+import { LocalFsAdapter } from '../../../adapter/local/LocalFsAdapter';
 import type { OperationTask } from '../../../state/operationStore';
 import styles from '../BrowsePage/style.module.css';
 
@@ -63,6 +65,8 @@ export function LocalBrowsePage() {
 
   const [pendingFiles, setPendingFiles] = useState<SmbFileEntry[]>([]);
   const [loadedOnce, setLoadedOnce] = useState(false);
+  const [newFolderOpen, setNewFolderOpen] = useState(false);
+  const [newFolderError, setNewFolderError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loadedOnce) {
@@ -127,6 +131,20 @@ export function LocalBrowsePage() {
     }
   }, []);
 
+  const handleCreateFolder = useCallback(
+    async (name: string) => {
+      setNewFolderError(null);
+      try {
+        await LocalFsAdapter.createDirectory(currentPath, name);
+        setNewFolderOpen(false);
+        await refresh();
+      } catch (e) {
+        setNewFolderError(e instanceof Error ? e.message : '新建文件夹失败');
+      }
+    },
+    [currentPath, refresh],
+  );
+
   return (
     <div className={styles.page}>
       <div className={styles.toolbar}>
@@ -137,6 +155,17 @@ export function LocalBrowsePage() {
           <SearchField value={searchQuery} onChange={setSearchQuery} />
           <SortMenu sort={sort as BrowseSort} onChange={setSort} />
           <ViewModeMenu viewMode={viewMode} onChange={setViewMode} />
+          <button
+            type="button"
+            className={styles.multiselectTrigger}
+            aria-label="新建文件夹"
+            onClick={() => {
+              setNewFolderError(null);
+              setNewFolderOpen(true);
+            }}
+          >
+            <Icon name="icon-plus" size={20} />
+          </button>
           <button
             type="button"
             className={styles.multiselectTrigger}
@@ -171,6 +200,7 @@ export function LocalBrowsePage() {
           onEnterDirectory={(path) => void enterDirectory(path)}
           onRowActivate={handleRowActivate}
           onClearSearch={() => setSearchQuery('')}
+          onSortChange={setSort}
           viewMode={viewMode}
         />
       </div>
@@ -192,6 +222,27 @@ export function LocalBrowsePage() {
         open={pendingFiles.length > 0}
         onDismiss={() => setPendingFiles([])}
       />
+      <RenameDialog
+        currentName=""
+        existingNames={siblingNames}
+        open={newFolderOpen}
+        title="新建文件夹"
+        confirmLabel="创建"
+        fieldLabel="文件夹名称"
+        hideOriginalHint
+        onConfirm={handleCreateFolder}
+        onDismiss={() => setNewFolderOpen(false)}
+      />
+      {newFolderError && (
+        <StatusBanner
+          semantic="danger"
+          icon="icon-x-circle"
+          title={`新建文件夹失败：${newFolderError}`}
+          actions={[
+            { label: '知道了', variant: 'text', onPress: () => setNewFolderError(null) },
+          ]}
+        />
+      )}
     </div>
   );
 }

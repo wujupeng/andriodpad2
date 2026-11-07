@@ -1,0 +1,111 @@
+.rowFixed {
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr var(--pad2-size-col-width-date) var(--pad2-size-col-width-size) var(--pad2-size-col-width-kind);
+  height: 64px;
+  align-items: center;
+  background: var(--pad2-color-bg-surface);
+  position: relative;
+  cursor: pointer;
+  transition: background var(--pad2-duration-fast) var(--pad2-easing-standard);
+}
+
+.row:active {
+  transform: scale(0.998);
+}
+
+.rowSelected {
+  background: var(--pad2-color-brand-50);
+}
+
+.rowSelected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--pad2-color-brand-500);
+  z-index: 1;
+}
+
+.rowInsetDivider::after {
+  content: '';
+  position: absolute;
+  left: 64px;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--pad2-color-divider);
+}
+
+.rowHideDivider::after {
+  display: none;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--pad2-space-3);
+  min-width: 0;
+}
+
+.cellName {
+  gap: var(--pad2-space-2);
+  min-width: var(--pad2-size-col-name-min);
+}
+
+.cellRight {
+  justify-content: flex-end;
+}
+
+.cellText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--pad2-color-text-secondary);
+  font-size: var(--pad2-font-size-caption);
+}
+
+.nameText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--pad2-color-text-primary);
+  font-size: var(--pad2-font-size-body);
+}
+
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.markHighlight {
+  background: var(--pad2-color-brand-50);
+  color: var(--pad2-color-brand-700);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--pad2-color-text-tertiary);
+  border-radius: var(--pad2-radius-sm);
+  flex-shrink: 0;
+  color: var(--pad2-color-bg-surface);
+}
+
+.checkOn {
+  border-color: var(--pad2-color-brand-500);
+  background: var(--pad2-color-brand-500);
+}

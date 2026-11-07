@@ -45,7 +45,7 @@ export function SettingsPage() {
     <div className={styles.page}>
       <section className={styles.section}>
         <h2 className={styles.section__title}>开发者选项</h2>
-        <Card>
+        <Card insetDivider>
           <ListRow
             icon={<Icon name="icon-shield" size={24} />}
             title="M2 技术验证"
@@ -57,7 +57,7 @@ export function SettingsPage() {
       </section>
       <section className={styles.section}>
         <h2 className={styles.section__title}>文件编辑</h2>
-        <Card>
+        <Card insetDivider>
           <ListRow
             icon={<Icon name="icon-shield" size={24} />}
             title="写回服务器"
@@ -69,7 +69,7 @@ export function SettingsPage() {
       </section>
       <section className={styles.section}>
         <h2 className={styles.section__title}>关于</h2>
-        <Card>
+        <Card insetDivider>
           <ListRow
             icon={<Icon name="icon-check-circle" size={24} />}
             title="版本"

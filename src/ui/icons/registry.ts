@@ -23,11 +23,15 @@ export type IconName =
   | 'icon-settings'
   | 'icon-plus'
   | 'icon-chevron-right'
+  | 'icon-chevron-left'
   | 'icon-arrow-left'
+  | 'icon-grid'
+  | 'icon-list'
   | 'icon-close'
   | 'icon-eye'
   | 'icon-eye-off'
   | 'icon-more'
+  | 'icon-check'
   /* 状态（8，填充型） */
   | 'icon-check-circle'
   | 'icon-alert-triangle'
@@ -174,13 +178,41 @@ export const iconRegistry: Readonly<Record<IconName, IconDef>> = {
     variant: 'line',
     strokes: ['M9 6l6 6-6 6'],
   },
+  'icon-chevron-left': {
+    variant: 'line',
+    strokes: ['M15 6l-6 6 6 6'],
+  },
   'icon-arrow-left': {
     variant: 'line',
     strokes: ['M19 12H5', 'M12 19l-7-7 7-7'],
   },
+  'icon-grid': {
+    variant: 'line',
+    strokes: [
+      'M3 3h7v7H3z',
+      'M14 3h7v7h-7z',
+      'M3 14h7v7H3z',
+      'M14 14h7v7h-7z',
+    ],
+  },
+  'icon-list': {
+    variant: 'line',
+    strokes: [
+      'M8 6h13',
+      'M8 12h13',
+      'M8 18h13',
+      'M3 6h.01',
+      'M3 12h.01',
+      'M3 18h.01',
+    ],
+  },
   'icon-close': {
     variant: 'line',
     strokes: ['M6 6l12 12', 'M18 6L6 18'],
+  },
+  'icon-check': {
+    variant: 'line',
+    strokes: ['M20 6L9 17l-5-5'],
   },
   'icon-eye': {
     variant: 'line',

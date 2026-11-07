@@ -49,6 +49,34 @@
   background: var(--pad2-color-bg-hover);
 }
 
+.navBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--pad2-size-touch-min);
+  min-height: var(--pad2-size-touch-min);
+  border: none;
+  background: transparent;
+  color: var(--pad2-color-text-secondary);
+  cursor: pointer;
+  border-radius: var(--pad2-radius-md);
+  flex-shrink: 0;
+}
+
+.navBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.navBtn:not(:disabled):hover {
+  background: var(--pad2-color-bg-hover);
+}
+
+.navBtn:focus-visible {
+  outline: 2px solid var(--pad2-color-brand-500);
+  outline-offset: 1px;
+}
+
 .listArea {
   flex: 1;
   min-height: 0;

@@ -26,6 +26,9 @@ import type { SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
 import { SearchField } from './SearchField';
 import { SortMenu } from './SortMenu';
 import { ViewModeMenu } from './ViewModeMenu';
+import { SegmentedControl } from '../../components/SegmentedControl';
+import { BottomPathBar } from './BottomPathBar';
+import { useBrowseHistory } from '../../hooks/useBrowseHistory';
 import { SessionStatusStrip } from './SessionStatusStrip';
 import { StatusBanner } from '../../components/StatusBanner';
 import { FileList } from './FileList';
@@ -102,6 +105,7 @@ export function BrowsePage() {
     },
     [activeProfileId],
   );
+  const { canGoBack, canGoForward, goBack, goForward } = useBrowseHistory(currentPath, enterDirectory);
   const refresh = useCallback(() => {
     if (!activeProfileId) return;
     void useBrowseContextStore.getState().refresh(activeProfileId);
@@ -255,11 +259,38 @@ export function BrowsePage() {
     <div className={styles.page}>
       <div className={styles.toolbar}>
         <div className={styles.toolbarNav}>
+          <button
+            type="button"
+            className={styles.navBtn}
+            disabled={!canGoBack}
+            onClick={goBack}
+            aria-label="后退"
+          >
+            <Icon name="icon-chevron-left" size={20} />
+          </button>
+          <button
+            type="button"
+            className={styles.navBtn}
+            disabled={!canGoForward}
+            onClick={goForward}
+            aria-label="前进"
+          >
+            <Icon name="icon-chevron-right" size={20} />
+          </button>
           <Breadcrumb segments={segments} onNavigate={handleNavigate} />
         </div>
         <div className={styles.toolbarActions}>
           <SearchField value={searchQuery} onChange={setSearchQuery} />
           <SortMenu sort={sort} onChange={setSort} />
+          <SegmentedControl
+            options={[
+              { value: 'icon', label: '图标', icon: <Icon name="icon-grid" size={18} /> },
+              { value: 'list', label: '列表', icon: <Icon name="icon-list" size={18} /> },
+            ]}
+            value={viewMode === 'detail' ? 'list' : viewMode === 'tile' ? null : 'icon'}
+            onChange={(v) => setViewMode(v === 'icon' ? 'largeIcon' : 'detail')}
+            ariaLabel="视图切换"
+          />
           <ViewModeMenu viewMode={viewMode} onChange={setViewMode} />
           <button
             type="button"
@@ -298,8 +329,10 @@ export function BrowsePage() {
           onEnterDirectory={(path) => void enterDirectory(path)}
           onRowActivate={handleRowActivate}
           onClearSearch={() => setSearchQuery('')}
+          onSortChange={setSort}
           viewMode={viewMode}
         />
+        <BottomPathBar segments={segments} onNavigate={handleNavigate} />
       </div>
       {selectionMode && (
         <MultiSelectBar

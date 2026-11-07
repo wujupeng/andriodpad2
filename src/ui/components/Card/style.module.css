@@ -1,4 +1,4 @@
-/* C-02 Card */
+/* C-02 Card（v2.0.0 iOS 风：大圆角 + 多层柔和阴影 + 按压缩放反馈） */
 
 .card {
   background: var(--pad2-color-bg-surface);
@@ -9,11 +9,14 @@
 
 .card--interactive {
   cursor: pointer;
-  transition: background var(--pad2-duration-fast) var(--pad2-easing-standard);
+  transition: transform var(--pad2-duration-fast) var(--pad2-easing-standard),
+    background var(--pad2-duration-fast) var(--pad2-easing-standard);
+  will-change: transform;
 }
 
 .card--interactive:active {
   background: var(--pad2-color-bg-hover);
+  transform: scale(0.98);
 }
 
 .card__header {

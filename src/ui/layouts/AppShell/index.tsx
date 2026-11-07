@@ -118,7 +118,7 @@ export function AppShell() {
         />
         <div className={styles.viewportWrap}>
           <main className={styles.viewport}>
-            <div className={styles.viewport__grid}>{renderView(currentView)}</div>
+            <div key={currentView} className={`${styles.viewport__grid} page-enter`}>{renderView(currentView)}</div>
           </main>
           {shouldMaskMain && (
             <div

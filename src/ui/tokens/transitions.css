@@ -1,0 +1,46 @@
+/*
+ * PAD2 全局过渡动效（v2.0.0）
+ * 含 page-enter / list-item-enter keyframes + reduce-motion 降级。
+ * 通过 tokens.css @import 引入，不改 main.tsx。
+ */
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes list-item-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-enter var(--pad2-duration-page-transition) var(--pad2-easing-standard);
+}
+
+.list-item-enter {
+  animation: list-item-enter var(--pad2-duration-list-stagger) var(--pad2-easing-standard) both;
+}
+
+/* reduce-motion 降级：所有动画/过渡瞬时完成（状态指示器本来用 0ms 不受影响） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

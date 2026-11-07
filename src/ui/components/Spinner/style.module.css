@@ -1,0 +1,16 @@
+/* C-07 Spinner（v2.0.0 CSS 细线旋转，替代 Icon 方案） */
+
+.spinner {
+  display: inline-block;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spinner-rotate 1s linear infinite;
+  will-change: transform;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}

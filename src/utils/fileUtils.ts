@@ -51,5 +51,44 @@ function pad(n: number): string {
 }
 
 /** 扩展名 → 文件类型分类（10 类 FileKind，委托 fileTypeIcons 单一来源） */
+import { getFileKind } from '../ui/icons/fileTypeIcons';
 export { getFileKind as getFileType } from '../ui/icons/fileTypeIcons';
 export type { FileKind } from '../ui/icons/fileTypeIcons';
+/** 时间戳 → 绝对时间 YYYY/MM/DD HH:mm（用户时区），非有限数或 ≤0 返回 "—" */
+export function formatAbsoluteTimestamp(timestamp: number): string {
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return '—';
+  const d = new Date(timestamp);
+  const y = d.getFullYear();
+  const mo = pad(d.getMonth() + 1);
+  const da = pad(d.getDate());
+  const h = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${y}/${mo}/${da} ${h}:${mi}`;
+}
+
+const KIND_LABELS: Record<string, string> = {
+  folder: '文件夹',
+  sheet: 'Excel 工作表',
+  slides: '演示文稿',
+  image: '图片',
+  video: '视频',
+  audio: '音频',
+  archive: '压缩包',
+  apk: 'APK 安装包',
+  unknown: '文件',
+};
+
+const DOC_TEXT_EXTENSIONS = new Set(['txt', 'md']);
+
+/** 文件条目 → 中文类型描述（文件夹/文本文档/文档/Excel 工作表/...） */
+export function formatFileKind(file: { isDirectory: boolean; name: string }): string {
+  if (file.isDirectory) return '文件夹';
+  const ext = file.name.includes('.')
+    ? file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase()
+    : '';
+  const kind = getFileKind(ext);
+  if (kind === 'doc') {
+    return DOC_TEXT_EXTENSIONS.has(ext) ? '文本文档' : '文档';
+  }
+  return KIND_LABELS[kind] ?? '文件';
+}

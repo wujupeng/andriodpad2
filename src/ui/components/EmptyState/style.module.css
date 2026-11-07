@@ -1,4 +1,4 @@
-/* C-10 EmptyState */
+/* C-10 EmptyState（v2.0.0 图标最小 80px） */
 
 .empty {
   display: flex;
@@ -8,6 +8,14 @@
   gap: var(--pad2-space-2);
   padding: var(--pad2-space-8) var(--pad2-space-6);
   color: var(--pad2-color-text-tertiary);
+}
+
+.empty__icon {
+  min-width: 80px;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty__title {

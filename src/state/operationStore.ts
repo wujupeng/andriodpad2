@@ -256,17 +256,34 @@ const makeTransferExecutor = (kind: 'copy' | 'move', transferKind: TransferKind)
           await LocalFsAdapter.moveFile(params.sourcePath, params.destinationDir, params.destFileName, params.overwrite);
         }
         return;
-      case 'local-to-smb':
-        await SmbPlugin.uploadFromLocal({
-          localAbsolutePath: params.sourcePath,
-          destinationDir: params.destinationDir,
-          destFileName: params.destFileName,
-          overwrite: params.overwrite,
-        });
-        if (kind === 'move') {
-          await LocalFsAdapter.deleteFile(params.sourcePath);
+      case 'local-to-smb': {
+        const absPath = await LocalFsAdapter.getAbsolutePath(params.sourcePath);
+        const attr = await LocalFsAdapter.getFileAttributes(params.sourcePath);
+        if (attr.isDirectory) {
+          await SmbPlugin.uploadDirectoryFromLocal({
+            localAbsolutePath: absPath,
+            destinationDir: params.destinationDir,
+            overwrite: params.overwrite,
+          });
+          if (kind === 'move') {
+            const delResult = await LocalFsAdapter.deleteDirectory(params.sourcePath);
+            if (delResult.failures.length > 0) {
+              throw new Error(`[local:unknown] 部分删除失败：${delResult.failures.length} 项`);
+            }
+          }
+        } else {
+          await SmbPlugin.uploadFromLocal({
+            localAbsolutePath: absPath,
+            destinationDir: params.destinationDir,
+            destFileName: params.destFileName,
+            overwrite: params.overwrite,
+          });
+          if (kind === 'move') {
+            await LocalFsAdapter.deleteFile(params.sourcePath);
+          }
         }
         return;
+      }
       case 'smb-to-smb':
       default:
         if (kind === 'copy') await SmbPlugin.copyFile(params);

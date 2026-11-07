@@ -1,4 +1,4 @@
-/* 最近文件页（TASK-RF-04） */
+/* 最近文件页（TASK-RF-04，v2.0.0 iOS 风时间分组卡片） */
 
 .page {
   padding: 16px;
@@ -13,4 +13,20 @@
 .list {
   display: flex;
   flex-direction: column;
+  gap: var(--pad2-space-5);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad2-space-2);
+}
+
+.group__title {
+  font-size: var(--pad2-font-size-caption);
+  font-weight: var(--pad2-font-weight-semibold);
+  color: var(--pad2-color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-inline: var(--pad2-space-2);
 }
