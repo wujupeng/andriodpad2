@@ -4,13 +4,15 @@
  * TASK-LSO-23：SMB 离线连接标注不可选。
  * onConfirm 扩展第二参数 type（向后兼容，缺省 'smb'）。
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Dialog } from '../../../components/Dialog';
 import { ListRow } from '../../../components/ListRow';
 import { BaseButton } from '../../../components/BaseButton';
 import { Icon } from '../../../icons/Icon';
 import { operationPluginBridge, OPERATION_CAPABILITIES, LOCAL_CAPABILITIES } from '../../../../state/operationStore';
-import { useSmbConnectionStore } from '../../../../state/smbConnectionStore';
+import { useSmbMultiConnStore } from '../../../../state/smbMultiConnStore';
+import { useSmbProfilesStore } from '../../../../state/smbProfilesStore';
+import { resolveInitialPath } from '../../../../state/browseContextStore';
 import { LocalFsAdapter } from '../../../../adapter/local/LocalFsAdapter';
 import type { SmbFileEntry } from '../../../../adapter/smb/SmbPlugin';
 import styles from '../style.module.css';
@@ -50,36 +52,68 @@ export function DestinationPickerDialog({
   const [error, setError] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const localLoadTokenRef = useRef(0);
 
-  const smbConnected = useSmbConnectionStore((s) => s.state === 'connected');
+  const activeHandles = useSmbMultiConnStore((s) => s.activeHandles());
+  const smbConnected = activeHandles.length > 0;
+  const shareSelectorVisible = targetMode === 'smb' && activeHandles.length >= 2;
 
   useEffect(() => {
     if (open) {
-      setTargetMode('smb');
-      setCurrent(initialDirectory);
+      setTargetMode(sourceType === 'local' ? 'smb' : 'smb');
+      const hotId = useSmbMultiConnStore.getState().hotProfileId;
+      setSelectedProfileId(hotId);
+      const profile = hotId ? useSmbProfilesStore.getState().profiles.find((p) => p.id === hotId) : undefined;
+      setCurrent(resolveInitialPath(profile?.rootPath));
       setNewFolderName('');
       setError(null);
     }
-  }, [open, initialDirectory]);
+  }, [open, sourceType]);
 
   const loadDir = useCallback(async (path: string, mode: 'smb' | 'local') => {
+    const myToken = ++localLoadTokenRef.current;
     setLoading(true);
     setError(null);
     try {
       if (mode === 'local') {
         const result = await LocalFsAdapter.listDirectory(path);
+        if (myToken !== localLoadTokenRef.current) return;
         setDirectories(result.files.filter((f) => f.isDirectory) as SmbFileEntry[]);
       } else {
+        const multiConn = useSmbMultiConnStore.getState();
+        const handle = selectedProfileId ? multiConn.getHandle(selectedProfileId) : undefined;
+        if (handle && !handle.isHot && handle.state === 'connected') {
+          await multiConn.switchHotTo(selectedProfileId!);
+        }
+        if (myToken !== localLoadTokenRef.current) return;
         const result = await operationPluginBridge.listDirectory({ path: path || undefined });
+        if (myToken !== localLoadTokenRef.current) return;
         setDirectories(result.files.filter((f) => f.isDirectory));
       }
     } catch (e) {
+      if (myToken !== localLoadTokenRef.current) return;
       setError(e instanceof Error ? e.message : '目录读取失败');
       setDirectories([]);
     } finally {
-      setLoading(false);
+      if (myToken === localLoadTokenRef.current) {
+        setLoading(false);
+      }
     }
-  }, []);
+  }, [selectedProfileId]);
+
+  const handleSelectShare = useCallback(async (profileId: string) => {
+    const multiConn = useSmbMultiConnStore.getState();
+    const handle = multiConn.getHandle(profileId);
+    if (!handle || handle.state !== 'connected') return;
+    if (profileId === selectedProfileId) return;
+    if (!handle.isHot) {
+      await multiConn.switchHotTo(profileId);
+    }
+    setSelectedProfileId(profileId);
+    const profile = useSmbProfilesStore.getState().profiles.find((p) => p.id === profileId);
+    setCurrent(resolveInitialPath(profile?.rootPath));
+  }, [selectedProfileId]);
 
   useEffect(() => {
     if (open) void loadDir(current, targetMode);
@@ -130,7 +164,8 @@ export function DestinationPickerDialog({
             disabled={!smbConnected}
             onPress={() => {
               setTargetMode('smb');
-              setCurrent(initialDirectory);
+              const profile = selectedProfileId ? useSmbProfilesStore.getState().profiles.find((p) => p.id === selectedProfileId) : undefined;
+              setCurrent(resolveInitialPath(profile?.rootPath));
             }}
           >
             SMB 共享
@@ -146,6 +181,28 @@ export function DestinationPickerDialog({
             本地存储
           </BaseButton>
         </div>
+        {shareSelectorVisible && (
+          <div className={styles.shareSelector}>
+            {activeHandles.map((h) => {
+              const profile = useSmbProfilesStore.getState().profiles.find((p) => p.id === h.profileId);
+              const isActive = h.profileId === selectedProfileId;
+              const isDisabled = h.state !== 'connected';
+              const itemClass = [styles.shareSelectorItem, isActive ? styles['shareSelectorItem-active'] : '', isDisabled ? styles['shareSelectorItem-disabled'] : ''].join(' ').trim();
+              return (
+                <button
+                  key={h.profileId}
+                  className={itemClass}
+                  aria-current={isActive ? 'true' : undefined}
+                  disabled={isDisabled}
+                  onClick={() => void handleSelectShare(h.profileId)}
+                >
+                  <span className={styles.shareSelectorItemName}>{profile?.name ?? h.profileId}</span>
+                  {isDisabled && <span className={styles.shareSelectorItemStatus}>网络中断</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
         {/* TASK-LSO-23：SMB 离线标注 */}
         {targetMode === 'smb' && !smbConnected && (
           <p className={styles.pickerError}>SMB 连接离线，无法选择为目标。请先连接或切换到本地存储。</p>
