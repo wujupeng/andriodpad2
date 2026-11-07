@@ -1,8 +1,14 @@
 # PAD2 文件管理器
 
-> 安卓平板 SMB 文件管理器——连接 Windows Server / Linux Samba 共享，浏览目录、管理文件、WPS 编辑写回。
+> 安卓平板 SMB 文件管理器——iPadOS/Finder 风格 UI，连接 Windows Server / Linux Samba 共享，浏览目录、管理文件、WPS 编辑写回。
 
 ## 截图
+
+### iPadOS/Finder 风格 UI（v1.12.2）
+
+| 图标视图 | 详情视图（四列） |
+|:---:|:---:|
+| ![图标视图](docs/finder_icon_v1.12.2.png) | ![详情视图](docs/finder_detail_v1.12.2.png) |
 
 ### 工作台与连接
 
@@ -32,6 +38,16 @@
 
 ## 功能特性
 
+### iPadOS/Finder 风格 UI（v1.12.0+）
+- **设计令牌系统**：tokens.css v3.1.0，80 浅色 / 40 深色键名对齐，零裸色值
+- **Finder 详情视图**：四列布局（名称 / 修改日期 / 大小 / 种类），列头吸顶 + 点击排序 + aria-sort 语义
+- **SegmentedControl**：图标 / 列表视图分段切换，iPadOS 风格
+- **底部路径栏**：BottomPathBar 显示当前路径，面包屑导航
+- **前进后退导航**：useBrowseHistory 历史栈，前进/后退按钮 + disabled 态
+- **毛玻璃侧栏**：SideNav backdrop-filter blur + 半透明背景（@supports 降级）
+- **大图标视图**：72px 图标 + 128px 行高，圆角 lg
+- **深色模式**：自动跟随系统 prefers-color-scheme
+
 ### 连接管理
 - **多服务器配置**：保存多个 SMB 连接配置（Windows Server / Linux Samba），冷启动后一键重连
 - **guest/空密码支持**：支持 guest 匿名访问场景（如 Windows Server guest 共享）
@@ -45,6 +61,7 @@
 - **排序**：按名称/大小/修改时间/类型排序，目录置顶
 - **虚拟列表**：5000+ 文件流畅滚动（虚拟化渲染）
 - **长按多选**：长按文件进入多选模式，批量操作
+- **五种视图模式**：大图标 / 中图标 / 小图标 / 平铺 / 详情
 
 ### 文件操作
 - **复制**：服务器端复制，SHA-256 校验目标完整性
@@ -66,6 +83,12 @@
 - **断网恢复**：wifi 恢复后重连+目录刷新含服务器最新文件
 - **只读保护**：只读属性文件删除被服务端拒绝（smbclient 与 SMBJ 行为一致）
 
+### 自动更新
+- **SMB 元数据检查**：从 SMB 共享读取 update.json，SHA-256 校验 APK 完整性
+- **防降级机制**：manifest.versionCode > current.versionCode 才提示更新
+- **断点续传**：下载支持断点续传，原子 tmp→apk 重命名
+- **诚实提示**：安装须用户手动确认，无静默安装
+
 ---
 
 ## 快速开始
@@ -77,9 +100,9 @@
 
 ### 安装
 ```bash
-adb install -r pad2-p003-s6-05-fix.apk
+adb install -t -r pad2-v20-release.apk
 ```
-> 荣耀设备安装时需在弹窗中勾选确认复选框→"继续安装"。
+> 荣耀设备安装时需在弹窗中勾选确认复选框→"继续安装"。`-t` 允许测试包安装。
 
 ### 配置连接
 1. 打开 App → 工作台 → "添加连接"
@@ -106,9 +129,10 @@ adb install -r pad2-p003-s6-05-fix.apk
 | 维度 | 已验证范围 |
 |---|---|
 | SMB 服务端 | Windows Server（SMB 3.1.1，guest/空密码）+ Linux Samba（pad2gate3 账号） |
-| 设备 | 荣耀 NDL2_W09 / Android 16 |
+| 设备 | 荣耀 NDL2-W00 / Android 16 |
 | WPS | 14.25.0（cn.wps.moffice_eng） |
 | 文件格式 | .xlsx / .xls 编辑写回（三方 SHA-256 + 内容级核验） |
+| UI 令牌 | tokens.css v3.1.0（80 浅色 / 40 深色键名对齐，零裸色值） |
 
 ### 未验证环境（不在兼容性承诺内）
 - NAS SMB 服务端
@@ -138,10 +162,11 @@ adb install -r pad2-p003-s6-05-fix.apk
 - **SMB 协议**：SMBJ 0.12.1（Java SMB2/3 客户端）
 - **Android 原生**：Java（SmbClient / SmbPlugin / WpsDeliveryHandler）
 - **加密**：Web Crypto API（AES-GCM）+ Capacitor Preferences（持久化）
+- **设计令牌**：tokens.css v3.1.0（CSS 自定义属性，浅色/深色双主题）
 
 ### 架构
 ```
-UI 组件（React）
+UI 组件（React + CSS Modules + tokens.css）
     ↓ 不直接 import SmbPlugin
 Store 层（Zustand：smbConnectionStore / smbProfilesStore / browseStore / operationStore / editSessionStore）
     ↓ 唯一调用入口
@@ -162,16 +187,17 @@ Android 原生（SmbPlugin.java → SmbClient.java → SMBJ）
 - **S6-04-RC-VERIFY**：PASS（发布候选验证六步全 PASS）
 - **S6-05-FIX**：PASS（凭据泄露修复+release 构建链+T6 零泄露+T7 RC 全量 PASS）
 - **S6-05-FINAL-APPROVAL**：PASS（生产发布门 OPEN）
+- **UI Finder 调整**：PASS（tokens v3.1.0 + tsc strict + 令牌对齐 + 零裸色值 + CDP 运行时验证 9 项）
 
 ### 当前 APK
-- **文件**：`pad2-p003-s6-05-fix.apk`
-- **SHA-256**：`d6d75d2028bae7600ecf388ea8602c0001d9d36108e93d14617a71d823f099e8`
+- **文件**：`pad2-v20-release.apk`
+- **SHA-256**：`5e2a66e83fbfb72db5069c18c2eaa788005c0d4b158f476438c18f9fae23194c`
 - **构建**：release（非 DEBUGGABLE）
 - **签名**：v1+v2（debug keystore 受控部署密钥——正式发布须换发布密钥）
-- **版本**：1.0（versionCode=1，minSdk=26，targetSdk=36）
+- **版本**：1.12.2（versionCode=20，minSdk=26，targetSdk=36）
 
 ### 部署边界
-- **受控部署范围**：Windows Server SMB + 荣耀 NDL2_W09 + Android 16 + WPS 14.25.0
+- **受控部署范围**：Windows Server SMB + 荣耀 NDL2-W00 + Android 16 + WPS 14.25.0
 - **生产发布门**：OPEN（PM 批准）
 - **正式生产部署**：待 PM 单独授权（TASK-S6-06 受控部署执行方案已编制）
 
@@ -181,6 +207,7 @@ Android 原生（SmbPlugin.java → SmbClient.java → SMBJ）
 - **注意**：跨轨回滚（release→debug）签名不同须先卸载，卸载重置 All files access 须重新授予
 
 ### 项目文档
+- **UI Finder 调整规格**：`.codeartsdoer/specs/ui_finder_adjustment/`（spec.md + design.md + tasks.md）
 - 设计规格：`docs/p003-ui/spec.md` + `docs/p003-ui/design.md`
 - 任务清单：`docs/p003-ui/tasks.md`
 - 验证报告：`docs/p003-ui/s6-05-fix-verification.md` + `docs/p003-ui/s6-05-final-approval.md`
