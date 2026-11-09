@@ -1,0 +1,32 @@
+.container {
+  padding: var(--pad2-space-4);
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.favoriteItem {
+  cursor: pointer;
+}
+
+.removeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--pad2-color-text-tertiary);
+  cursor: pointer;
+  border-radius: var(--pad2-radius-sm);
+  transition: color var(--pad2-motion-duration-fast) ease;
+}
+
+.removeBtn:hover {
+  color: var(--pad2-color-brand-500);
+}
+
+.removeBtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--pad2-color-brand-50);
+}

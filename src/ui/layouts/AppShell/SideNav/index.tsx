@@ -24,6 +24,7 @@ interface SideNavProps {
 const MAIN_NAV: { view: ViewId; icon: Parameters<typeof Icon>[0]['name']; label: string }[] = [
   { view: 'home', icon: 'icon-hard-drive', label: '工作台' },
   { view: 'recent', icon: 'icon-clock', label: '最近文件' },
+  { view: 'favorites', icon: 'icon-star', label: '收藏夹' },
   { view: 'settings', icon: 'icon-settings', label: '设置' },
 ];
 

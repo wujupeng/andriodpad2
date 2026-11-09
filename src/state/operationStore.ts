@@ -29,7 +29,7 @@ import SmbPlugin from '../adapter/smb/SmbPlugin';
 import { LocalFsAdapter } from '../adapter/local/LocalFsAdapter';
 import { mapSmbError } from '../utils/smbErrorMapper';
 import { useSmbConnectionStore } from './smbConnectionStore';
-import { READ_ONLY_NOTICES } from './readOnlyMode';
+import { READ_ONLY_NOTICES, RENAME_ALLOWED_IN_READONLY } from './readOnlyMode';
 import { WRITE_PERMISSION_MATRIX } from './writePermission';
 import { isWritebackGloballyEnabled } from './writebackConfig';
 
@@ -147,8 +147,8 @@ export const OPERATION_CAPABILITIES: Readonly<{
   copy: false,
   // AU-005 只读模式：远端移动为远端写操作，置 false（R-OPS-01）
   move: false,
-  // AU-005 只读模式：重命名为远端写操作，置 false（R-OPS-01）
-  rename: false,
+  // AU-005 只读模式：重命名在只读模式下单独放行（spec 5.1.1-3，SmbClient.renameFile 已支持目录）
+  rename: RENAME_ALLOWED_IN_READONLY,
   // AU-005 只读模式：远端删除为远端写操作，置 false（R-OPS-01）
   deleteRemote: false,
   // 既有事实：本地单文件删除无方法，保持 false（R-OPS-02）

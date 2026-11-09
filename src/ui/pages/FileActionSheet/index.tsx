@@ -27,6 +27,8 @@ import type { TransferOptions } from '../../../state/operationStore';
 import { useSmbConnectionStore } from '../../../state/smbConnectionStore';
 import { useEditSessionStore } from '../../../state/editSessionStore';
 import { useBrowseStore } from '../../../state/browseStore';
+import { useFavoriteStore } from '../../../state/favoriteStore';
+import SmbPlugin from '../../../adapter/smb/SmbPlugin';
 import type { SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
 import { LocalFsAdapter } from '../../../adapter/local/LocalFsAdapter';
 import { ReadOnlyNotice } from '../../components/ReadOnlyNotice';
@@ -138,7 +140,7 @@ export function FileActionSheet({
   );
 
   const handleAction = useCallback(
-    (action: FileActionId) => {
+    async (action: FileActionId) => {
       const state = availability[action];
       if (!state.enabled) return;
       switch (action) {
@@ -163,9 +165,50 @@ export function FileActionSheet({
         case 'info':
           setView('info');
           break;
+        case 'addToDesktop': {
+          const target = entries[0];
+          if (!target || !activeProfileId) break;
+          try {
+            const { available } = await SmbPlugin.isShortcutAvailable();
+            if (!available) {
+              setStatusMessage({ semantic: 'warning', text: '当前系统版本不支持桌面快捷方式' });
+              break;
+            }
+            const shortcutId = `smb:${activeProfileId}:${target.path}`;
+            const result = await SmbPlugin.createDesktopShortcut({
+              id: shortcutId,
+              label: target.name,
+              profileId: activeProfileId,
+              path: target.path,
+            });
+            if (result.success) {
+              setStatusMessage({ semantic: 'success', text: '已添加到桌面' });
+            } else {
+              setStatusMessage({ semantic: 'danger', text: '添加失败' });
+            }
+          } catch (e) {
+            setStatusMessage({ semantic: 'danger', text: `添加失败：${e instanceof Error ? e.message : '未知错误'}` });
+          }
+          break;
+        }
+        case 'favorite': {
+          const target = entries[0];
+          if (!target) break;
+          useFavoriteStore.getState().addFavorite({
+            name: target.name,
+            path: target.path,
+            sourceType: source === 'local' ? 'local' : 'smb',
+            profileId: source === 'remote' ? activeProfileId ?? undefined : undefined,
+            isDirectory: target.isDirectory,
+          });
+          setStatusMessage({ semantic: 'success', text: '已添加到收藏夹' });
+          break;
+        }
+        case 'unfavorite':
+          break;
       }
     },
-    [availability, handleOpenOrEdit],
+    [availability, handleOpenOrEdit, entries, source, activeProfileId],
   );
 
   /** 目标目录确认 → 冲突预判（入队前 listDirectory 目标目录）→ 入队/弹 ConflictDialog。
@@ -272,10 +315,14 @@ export function FileActionSheet({
     (newName: string) => {
       const target = entries[0];
       if (!target) return;
-      void useOperationStore.getState().executeRename(target.path, newName);
+      void useOperationStore.getState().executeRename(target.path, newName).then(() => {
+        if (source === 'remote') {
+          void useBrowseStore.getState().refresh();
+        }
+      });
       closeAll();
     },
-    [entries, closeAll],
+    [entries, closeAll, source],
   );
 
   const handleDeleteConfirm = useCallback(() => {

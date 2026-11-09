@@ -12,6 +12,13 @@ import { isWritebackGloballyEnabled } from './writebackConfig.ts';
 /** 只读模式标志（配置驱动，TASK-WB-02；REQ-REL-01、REQ-P4-04） */
 export const READ_ONLY_MODE = !isWritebackGloballyEnabled();
 
+/**
+ * 只读模式下文件夹重命名单独放行（spec 5.1.1-3）。
+ * SMB2 SET_INFO FileRename 对目录原生生效，重命名不涉及数据内容写入，
+ * 故在只读模式下安全放行。copy/move/delete 仍保持禁用。
+ */
+export const RENAME_ALLOWED_IN_READONLY = true;
+
 /** 只读模式动态检查（配置加载后实时反映，推荐新代码使用此函数） */
 export function isReadOnlyMode(): boolean {
   return !isWritebackGloballyEnabled();

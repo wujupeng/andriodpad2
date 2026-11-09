@@ -165,6 +165,20 @@ export interface SmbPluginInterface {
     totalBytes: number;
     failures: { path: string; reason: string }[];
   }>;
+
+  /** 创建桌面快捷方式（spec 5.2，ShortcutManager API 25+） */
+  createDesktopShortcut(options: {
+    id: string;
+    label: string;
+    profileId: string;
+    path: string;
+  }): Promise<{ success: boolean }>;
+
+  /** 移除桌面快捷方式 */
+  removeDesktopShortcut(options: { id: string }): Promise<{ success: boolean }>;
+
+  /** 检查快捷方式功能是否可用（API<25 降级） */
+  isShortcutAvailable(): Promise<{ available: boolean }>;
 }
 
 const SmbPlugin = registerPlugin<SmbPluginInterface>('SmbPlugin');

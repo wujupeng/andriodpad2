@@ -24,6 +24,7 @@ import { BrowsePage } from '../../pages/BrowsePage';
 import { LocalBrowsePage } from '../../pages/LocalBrowsePage';
 import { RecentFilesPage } from '../../pages/RecentFilesPage';
 import { EditSessionPage } from '../../pages/EditSessionPage';
+import { FavoritesPage } from '../../pages/FavoritesPage';
 import { EmptyState } from '../../components/EmptyState';
 import styles from './style.module.css';
 
@@ -38,6 +39,7 @@ export const VIEW_TITLES: Record<ViewId, string> = {
   settings: '设置',
   'm2-verification': 'M2 技术验证',
   'component-gallery': '组件演示',
+  favorites: '收藏夹',
 };
 
 /** ViewPort 页面渲染表：未实现页面以 EmptyState 占位（后续阶段逐页替换） */
@@ -61,6 +63,8 @@ function renderView(view: ViewId): ReactNode {
       return <ComponentGalleryPage />;
     case 'm2-verification':
       return <M2VerificationPage />;
+    case 'favorites':
+      return <FavoritesPage />;
     default:
       return (
         <EmptyState

@@ -17,7 +17,8 @@ export type ViewId =
   | 'edit-session'
   | 'settings'
   | 'm2-verification'
-  | 'component-gallery';
+  | 'component-gallery'
+  | 'favorites';
 
 export interface NavigationState {
   currentView: ViewId;

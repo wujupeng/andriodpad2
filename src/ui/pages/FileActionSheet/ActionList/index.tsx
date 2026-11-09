@@ -26,6 +26,8 @@ const SINGLE_ITEMS: MenuItem[] = [
   { id: 'copy', icon: 'icon-copy', title: '复制', subtitle: '复制到…' },
   { id: 'move', icon: 'icon-move', title: '移动', subtitle: '移动到…' },
   { id: 'rename', icon: 'icon-rename', title: '重命名', subtitle: '重命名' },
+  { id: 'addToDesktop', icon: 'icon-shortcut', title: '添加到桌面', subtitle: '创建桌面快捷方式' },
+  { id: 'favorite', icon: 'icon-star', title: '添加为收藏', subtitle: '加入收藏夹' },
   { id: 'info', icon: 'icon-info', title: '属性', subtitle: '大小/时间/路径' },
 ];
 

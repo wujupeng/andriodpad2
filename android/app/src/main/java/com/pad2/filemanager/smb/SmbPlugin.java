@@ -15,6 +15,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 
+import android.content.Intent;
+
 @CapacitorPlugin(name = "SmbPlugin")
 public class SmbPlugin extends Plugin {
 
@@ -25,6 +27,14 @@ public class SmbPlugin extends Plugin {
     public void load() {
         smbClient = new SmbClient();
         wpsHandler = new WpsDeliveryHandler(getContext(), smbClient);
+
+        Intent intent = getActivity().getIntent();
+        if (intent != null && intent.hasExtra("shortcut_profile_id")) {
+            JSObject params = new JSObject();
+            params.put("profileId", intent.getStringExtra("shortcut_profile_id"));
+            params.put("path", intent.getStringExtra("shortcut_path"));
+            notifyListeners("shortcutLaunched", params);
+        }
     }
 
     @PluginMethod
@@ -489,5 +499,49 @@ public class SmbPlugin extends Plugin {
             hex.append(String.format("%02x", b));
         }
         return hex.toString();
+    }
+
+    @PluginMethod
+    public void createDesktopShortcut(PluginCall call) {
+        String shortcutId = call.getString("id", "");
+        String label = call.getString("label", "");
+        String profileId = call.getString("profileId", "");
+        String path = call.getString("path", "");
+
+        if (shortcutId.isEmpty() || label.isEmpty()) {
+            call.reject("id and label are required");
+            return;
+        }
+
+        boolean success = ShortcutHelper.createShortcut(getContext(), shortcutId, label, profileId, path);
+        JSObject result = new JSObject();
+        result.put("success", success);
+        if (success) {
+            call.resolve(result);
+        } else {
+            call.reject("Failed to create shortcut");
+        }
+    }
+
+    @PluginMethod
+    public void removeDesktopShortcut(PluginCall call) {
+        String shortcutId = call.getString("id", "");
+        if (shortcutId.isEmpty()) {
+            call.reject("id is required");
+            return;
+        }
+
+        boolean success = ShortcutHelper.removeShortcut(getContext(), shortcutId);
+        JSObject result = new JSObject();
+        result.put("success", success);
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void isShortcutAvailable(PluginCall call) {
+        boolean available = ShortcutHelper.isAvailable(getContext());
+        JSObject result = new JSObject();
+        result.put("available", available);
+        call.resolve(result);
     }
 }

@@ -17,7 +17,7 @@ import { OPERATION_CAPABILITIES, LOCAL_CAPABILITIES } from '../../../state/opera
 import { operationPluginBridge } from '../../../state/operationStore';
 import { READ_ONLY_NOTICES } from '../../../state/readOnlyMode';
 
-export type FileActionId = 'open' | 'edit' | 'copy' | 'move' | 'rename' | 'delete' | 'info';
+export type FileActionId = 'open' | 'edit' | 'copy' | 'move' | 'rename' | 'delete' | 'info' | 'addToDesktop' | 'favorite' | 'unfavorite';
 
 export interface ActionAvailability {
   enabled: boolean;
@@ -98,7 +98,7 @@ export function useActionAvailability({
       rename:
         source === 'local'
           ? { enabled: LOCAL_CAPABILITIES.rename }
-          : anyDirectory
+          : anyDirectory && entries.length > 1
             ? { enabled: false, reason: '暂不支持文件夹操作' }
             : notAvailable(OPERATION_CAPABILITIES.rename, READ_ONLY_NOTICES.greyedReason),
       delete:
@@ -109,6 +109,16 @@ export function useActionAvailability({
             : notAvailable(OPERATION_CAPABILITIES.deleteRemote, READ_ONLY_NOTICES.greyedReason),
       // 属性：目录与文件均可用（getFileAttributes 前端方法已暴露）
       info: connected ? { enabled: true } : { enabled: false, reason: '未连接' },
+      // 添加到桌面快捷方式：单选时可用（Phase 7 完善 API<26 降级判定）
+      addToDesktop: entries.length === 1
+        ? connected ? { enabled: true } : { enabled: false, reason: '未连接' }
+        : { enabled: false, reason: '仅支持单项操作' },
+      // 添加为收藏：单选时可用
+      favorite: entries.length === 1
+        ? { enabled: true }
+        : { enabled: false, reason: '仅支持单项操作' },
+      // 取消收藏：仅在已收藏时可用（Phase 7 接入 favoriteStore 判定）
+      unfavorite: { enabled: false, reason: '未收藏' },
     };
   }, [entries, connectionState, source, wpsState]);
 }

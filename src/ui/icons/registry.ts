@@ -60,7 +60,11 @@ export type IconName =
   | 'icon-file-audio'
   | 'icon-file-archive'
   | 'icon-file-apk'
-  | 'icon-file-unknown';
+  | 'icon-file-unknown'
+  /* 文件夹操作（3） */
+  | 'icon-shortcut'
+  | 'icon-star'
+  | 'icon-star-filled';
 
 export interface StrokeCircle {
   cx: number;
@@ -385,5 +389,20 @@ export const iconRegistry: Readonly<Record<IconName, IconDef>> = {
     variant: 'line',
     path: FILE_OUTLINE,
     strokes: [FILE_FOLD, 'M11.5 14a2.5 2.5 0 1 1 5 0c0 1.5-2.5 1.8-2.5 3.4', 'M14 20.4h.01'],
+  },
+  /* ===== 文件夹操作图标 ===== */
+  'icon-shortcut': {
+    variant: 'line',
+    path: 'M13 9h6a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1h2',
+    strokes: ['M10 9V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-2', 'M14 6l3 3-3 3'],
+  },
+  'icon-star': {
+    variant: 'line',
+    path: 'M12 3l2.7 5.7 6.3.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.3-.9L12 3z',
+  },
+  'icon-star-filled': {
+    variant: 'fill',
+    path: 'M12 3l2.7 5.7 6.3.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.3-.9L12 3z',
+    contrastPaths: ['M12 5.5l1.9 4 4.4.6-3.2 3.1.8 4.3L12 15.5l-3.9 2 .8-4.3-3.2-3.1 4.4-.6L12 5.5z'],
   },
 };
