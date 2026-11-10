@@ -24,6 +24,7 @@ export type LocalFsErrorCategory =
   | 'not_found'
   | 'permission_denied'
   | 'conflict'
+  | 'disk_full'
   | 'unknown';
 
 export interface LocalFsError {

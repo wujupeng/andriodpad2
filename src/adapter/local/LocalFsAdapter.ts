@@ -52,6 +52,8 @@ function mapLocalError(error: unknown): LocalFsError {
     category = 'permission_denied';
   } else if (lower.includes('exist') || lower.includes('eexist') || lower.includes('already')) {
     category = 'conflict';
+  } else if (lower.includes('enospc') || lower.includes('disk full') || lower.includes('no space')) {
+    category = 'disk_full';
   } else {
     category = 'unknown';
   }

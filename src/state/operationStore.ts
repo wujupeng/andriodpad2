@@ -249,13 +249,23 @@ const makeTransferExecutor = (kind: 'copy' | 'move', transferKind: TransferKind)
       overwrite: target.overwrite ?? false,
     };
     switch (transferKind) {
-      case 'local-to-local':
-        if (kind === 'copy') {
-          await LocalFsAdapter.copyFile(params.sourcePath, params.destinationDir, params.destFileName, params.overwrite);
+      case 'local-to-local': {
+        const attr = await LocalFsAdapter.getFileAttributes(params.sourcePath);
+        if (attr.isDirectory) {
+          if (kind === 'copy') {
+            await LocalFsAdapter.copyDirectory(params.sourcePath, params.destinationDir, params.destFileName, params.overwrite);
+          } else {
+            await LocalFsAdapter.moveDirectory(params.sourcePath, params.destinationDir, params.destFileName, params.overwrite);
+          }
         } else {
-          await LocalFsAdapter.moveFile(params.sourcePath, params.destinationDir, params.destFileName, params.overwrite);
+          if (kind === 'copy') {
+            await LocalFsAdapter.copyFile(params.sourcePath, params.destinationDir, params.destFileName, params.overwrite);
+          } else {
+            await LocalFsAdapter.moveFile(params.sourcePath, params.destinationDir, params.destFileName, params.overwrite);
+          }
         }
         return;
+      }
       case 'local-to-smb': {
         const absPath = await LocalFsAdapter.getAbsolutePath(params.sourcePath);
         const attr = await LocalFsAdapter.getFileAttributes(params.sourcePath);

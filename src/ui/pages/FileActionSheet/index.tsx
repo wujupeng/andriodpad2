@@ -27,6 +27,7 @@ import type { TransferOptions } from '../../../state/operationStore';
 import { useSmbConnectionStore } from '../../../state/smbConnectionStore';
 import { useEditSessionStore } from '../../../state/editSessionStore';
 import { useBrowseStore } from '../../../state/browseStore';
+import { useLocalBrowseStore } from '../../../state/localBrowseStore';
 import { useFavoriteStore } from '../../../state/favoriteStore';
 import SmbPlugin from '../../../adapter/smb/SmbPlugin';
 import type { SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
@@ -315,11 +316,15 @@ export function FileActionSheet({
     (newName: string) => {
       const target = entries[0];
       if (!target) return;
-      void useOperationStore.getState().executeRename(target.path, newName).then(() => {
-        if (source === 'remote') {
+      if (source === 'local') {
+        void LocalFsAdapter.renameFile(target.path, newName).then(() => {
+          void useLocalBrowseStore.getState().refresh();
+        });
+      } else {
+        void useOperationStore.getState().executeRename(target.path, newName).then(() => {
           void useBrowseStore.getState().refresh();
-        }
-      });
+        });
+      }
       closeAll();
     },
     [entries, closeAll, source],
@@ -375,6 +380,7 @@ export function FileActionSheet({
         source={source}
         names={entries.map((e) => e.name)}
         sharePath={source === 'remote' ? currentPath : undefined}
+        isFolder={entries.some((e) => e.isDirectory)}
         open={open && view === 'delete'}
         onConfirm={handleDeleteConfirm}
         onDismiss={() => setView('menu')}

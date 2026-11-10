@@ -7,7 +7,7 @@
  * 无 SessionStatusStrip/WritebackUnavailableBanner（本地无连接状态机）。
  * 文件夹可进入（R-LSO-01 核心缺陷修复）；增删改查经 FileActionSheet（source='local'）。
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Breadcrumb } from '../../components/Breadcrumb';
 import { Icon } from '../../icons/Icon';
 import { useLocalBrowseStore, sortedAndFilteredLocalFiles } from '../../../state/localBrowseStore';
@@ -74,6 +74,18 @@ export function LocalBrowsePage() {
       void enterDirectory('');
     }
   }, [loadedOnce, enterDirectory]);
+
+  const activeTask = useOperationStore((s) => s.activeTask);
+  const lastRefreshedTaskId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!activeTask) return;
+    const { id, status } = activeTask;
+    if (lastRefreshedTaskId.current === id) return;
+    if (status === 'success' || status === 'partial_failed' || status === 'cancelled') {
+      lastRefreshedTaskId.current = id;
+      void refresh();
+    }
+  }, [activeTask, refresh]);
 
   const siblingNames = useMemo(() => files.map((f) => f.name), [files]);
   const segments = useMemo(() => buildLocalSegments(currentPath), [currentPath]);

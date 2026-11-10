@@ -18,6 +18,8 @@ export interface DeleteConfirmDialogProps {
   names: string[];
   /** 目标所在共享路径（TASK-S5-05 PM 要求：确认框须清楚显示文件名+所在共享路径） */
   sharePath?: string;
+  /** 是否为文件夹（本地文件夹递归硬删除语义提示，GAP-LFO-04） */
+  isFolder?: boolean;
   open: boolean;
   onConfirm(): void;
   onDismiss(): void;
@@ -27,6 +29,7 @@ export function DeleteConfirmDialog({
   source,
   names,
   sharePath,
+  isFolder,
   open,
   onConfirm,
   onDismiss,
@@ -45,7 +48,27 @@ export function DeleteConfirmDialog({
   const pathLine = sharePath ? `（位于共享：${sharePath || '根目录'}）` : '';
 
   if (source === 'local') {
-    // 本地删除：回收站语义（可恢复，secondary 措辞与按钮）
+    if (isFolder) {
+      return (
+        <Dialog
+          title="删除文件夹"
+          danger
+          confirmLabel="删除"
+          confirmVariant="danger"
+          onConfirm={onConfirm}
+          onDismiss={onDismiss}
+        >
+          <div className={styles.deleteBodyDanger}>
+            <p className={styles.deleteDangerText}>
+              <span className={styles.dangerIcon}>
+                <Icon name="icon-delete" size={18} />
+              </span>
+              将删除文件夹{targetLabel}及其下所有内容，此操作不可恢复。确定删除吗？
+            </p>
+          </div>
+        </Dialog>
+      );
+    }
     return (
       <Dialog
         title="删除到回收站"
