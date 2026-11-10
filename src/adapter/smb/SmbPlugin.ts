@@ -179,6 +179,13 @@ export interface SmbPluginInterface {
 
   /** 检查快捷方式功能是否可用（API<25 降级） */
   isShortcutAvailable(): Promise<{ available: boolean }>;
+
+  /** 创建本地文件桌面快捷方式（sourceType=local，无需 profileId） */
+  createLocalDesktopShortcut(options: {
+    id: string;
+    label: string;
+    path: string;
+  }): Promise<{ success: boolean }>;
 }
 
 const SmbPlugin = registerPlugin<SmbPluginInterface>('SmbPlugin');

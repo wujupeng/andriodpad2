@@ -11,6 +11,7 @@
  * 点击分发时兜底复核，避免网络/桥接抖动误伤）。
  */
 import { useEffect, useMemo, useState } from 'react';
+import SmbPlugin from '../../../adapter/smb/SmbPlugin';
 import type { SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
 import type { SmbConnectionState } from '../../../state/smbConnectionStore';
 import { OPERATION_CAPABILITIES, LOCAL_CAPABILITIES } from '../../../state/operationStore';
@@ -35,6 +36,7 @@ export interface UseActionAvailabilityInput {
 }
 
 type WpsCheckState = 'checking' | 'installed' | 'not-installed' | 'unknown';
+type ShortcutCheckState = 'checking' | 'available' | 'unavailable' | 'unknown';
 
 export function useActionAvailability({
   entries,
@@ -42,6 +44,7 @@ export function useActionAvailability({
   source,
 }: UseActionAvailabilityInput): ActionAvailabilityMap {
   const [wpsState, setWpsState] = useState<WpsCheckState>('checking');
+  const [shortcutState, setShortcutState] = useState<ShortcutCheckState>('checking');
 
   useEffect(() => {
     let disposed = false;
@@ -56,6 +59,23 @@ export function useActionAvailability({
         if (disposed) return;
         // 预检桥接失败（web 环境无插件实现等）：unknown 不禁用，点击分发时兜底复核
         setWpsState('unknown');
+      });
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    setShortcutState('checking');
+    SmbPlugin.isShortcutAvailable()
+      .then((result) => {
+        if (disposed) return;
+        setShortcutState(result.available ? 'available' : 'unavailable');
+      })
+      .catch(() => {
+        if (disposed) return;
+        setShortcutState('unknown');
       });
     return () => {
       disposed = true;
@@ -109,9 +129,15 @@ export function useActionAvailability({
             : notAvailable(OPERATION_CAPABILITIES.deleteRemote, READ_ONLY_NOTICES.greyedReason),
       // 属性：目录与文件均可用（getFileAttributes 前端方法已暴露）
       info: connected ? { enabled: true } : { enabled: false, reason: '未连接' },
-      // 添加到桌面快捷方式：单选时可用（Phase 7 完善 API<26 降级判定）
+      // 添加到桌面快捷方式：单选时可用，按 source 分支解耦 SMB 连接
       addToDesktop: entries.length === 1
-        ? connected ? { enabled: true } : { enabled: false, reason: '未连接' }
+        ? shortcutState === 'unavailable'
+          ? { enabled: false, reason: '当前系统版本不支持桌面快捷方式' }
+          : source === 'local'
+            ? { enabled: true }
+            : connected
+              ? { enabled: true }
+              : { enabled: false, reason: '未连接' }
         : { enabled: false, reason: '仅支持单项操作' },
       // 添加为收藏：单选时可用
       favorite: entries.length === 1
@@ -120,5 +146,5 @@ export function useActionAvailability({
       // 取消收藏：仅在已收藏时可用（Phase 7 接入 favoriteStore 判定）
       unfavorite: { enabled: false, reason: '未收藏' },
     };
-  }, [entries, connectionState, source, wpsState]);
+  }, [entries, connectionState, source, wpsState, shortcutState]);
 }

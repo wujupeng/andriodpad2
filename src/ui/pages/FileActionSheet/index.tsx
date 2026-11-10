@@ -168,24 +168,40 @@ export function FileActionSheet({
           break;
         case 'addToDesktop': {
           const target = entries[0];
-          if (!target || !activeProfileId) break;
+          if (!target) break;
+          if (source === 'remote' && !activeProfileId) break;
           try {
             const { available } = await SmbPlugin.isShortcutAvailable();
             if (!available) {
               setStatusMessage({ semantic: 'warning', text: '当前系统版本不支持桌面快捷方式' });
               break;
             }
-            const shortcutId = `smb:${activeProfileId}:${target.path}`;
-            const result = await SmbPlugin.createDesktopShortcut({
-              id: shortcutId,
-              label: target.name,
-              profileId: activeProfileId,
-              path: target.path,
-            });
-            if (result.success) {
-              setStatusMessage({ semantic: 'success', text: '已添加到桌面' });
+            if (source === 'local') {
+              const shortcutId = `local:${target.path}`;
+              const result = await SmbPlugin.createLocalDesktopShortcut({
+                id: shortcutId,
+                label: target.name,
+                path: target.path,
+              });
+              if (result.success) {
+                setStatusMessage({ semantic: 'success', text: '已添加到桌面' });
+              } else {
+                setStatusMessage({ semantic: 'danger', text: '添加失败' });
+              }
             } else {
-              setStatusMessage({ semantic: 'danger', text: '添加失败' });
+              const profileId = activeProfileId!;
+              const shortcutId = `smb:${profileId}:${target.path}`;
+              const result = await SmbPlugin.createDesktopShortcut({
+                id: shortcutId,
+                label: target.name,
+                profileId,
+                path: target.path,
+              });
+              if (result.success) {
+                setStatusMessage({ semantic: 'success', text: '已添加到桌面' });
+              } else {
+                setStatusMessage({ semantic: 'danger', text: '添加失败' });
+              }
             }
           } catch (e) {
             setStatusMessage({ semantic: 'danger', text: `添加失败：${e instanceof Error ? e.message : '未知错误'}` });

@@ -15,8 +15,12 @@ public class ShortcutHelper {
     private static final int MAX_SHORTCUTS = 4;
 
     public static boolean createShortcut(Context context, String id, String label, String profileId, String path) {
+        return createShortcutWithSource(context, id, label, profileId, path, "smb");
+    }
+
+    public static boolean createShortcutWithSource(Context context, String id, String label, String profileId, String path, String sourceType) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) {
-            Log.w(TAG, "ShortcutManager not available on API < 25");
+            Log.w(TAG, "ShortcutManager not available on API < 25, sourceType=" + sourceType);
             return false;
         }
 
@@ -35,6 +39,7 @@ public class ShortcutHelper {
         intent.setAction(Intent.ACTION_VIEW);
         intent.putExtra("shortcut_profile_id", profileId);
         intent.putExtra("shortcut_path", path);
+        intent.putExtra("shortcut_source_type", sourceType);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
         ShortcutInfo.Builder builder = new ShortcutInfo.Builder(context, id)
@@ -50,7 +55,7 @@ public class ShortcutHelper {
 
         try {
             shortcutManager.addDynamicShortcuts(Collections.singletonList(shortcut));
-            Log.i(TAG, "Shortcut created: " + id + " label=" + label);
+            Log.i(TAG, "Shortcut created: " + id + " label=" + label + " sourceType=" + sourceType);
             return true;
         } catch (Exception e) {
             Log.e(TAG, "Failed to create shortcut: " + e.getMessage());

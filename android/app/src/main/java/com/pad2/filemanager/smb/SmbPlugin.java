@@ -33,6 +33,10 @@ public class SmbPlugin extends Plugin {
             JSObject params = new JSObject();
             params.put("profileId", intent.getStringExtra("shortcut_profile_id"));
             params.put("path", intent.getStringExtra("shortcut_path"));
+            String sourceType = intent.getStringExtra("shortcut_source_type");
+            if (sourceType != null) {
+                params.put("sourceType", sourceType);
+            }
             notifyListeners("shortcutLaunched", params);
         }
     }
@@ -514,6 +518,27 @@ public class SmbPlugin extends Plugin {
         }
 
         boolean success = ShortcutHelper.createShortcut(getContext(), shortcutId, label, profileId, path);
+        JSObject result = new JSObject();
+        result.put("success", success);
+        if (success) {
+            call.resolve(result);
+        } else {
+            call.reject("Failed to create shortcut");
+        }
+    }
+
+    @PluginMethod
+    public void createLocalDesktopShortcut(PluginCall call) {
+        String shortcutId = call.getString("id", "");
+        String label = call.getString("label", "");
+        String path = call.getString("path", "");
+
+        if (shortcutId.isEmpty() || label.isEmpty()) {
+            call.reject("id and label are required");
+            return;
+        }
+
+        boolean success = ShortcutHelper.createShortcutWithSource(getContext(), shortcutId, label, "", path, "local");
         JSObject result = new JSObject();
         result.put("success", success);
         if (success) {
