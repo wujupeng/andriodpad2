@@ -75,17 +75,17 @@ export function LocalBrowsePage() {
     }
   }, [loadedOnce, enterDirectory]);
 
-  const activeTask = useOperationStore((s) => s.activeTask);
+  const recentTasks = useOperationStore((s) => s.recentTasks);
   const lastRefreshedTaskId = useRef<string | null>(null);
   useEffect(() => {
-    if (!activeTask) return;
-    const { id, status } = activeTask;
-    if (lastRefreshedTaskId.current === id) return;
-    if (status === 'success' || status === 'partial_failed' || status === 'cancelled') {
-      lastRefreshedTaskId.current = id;
+    const latest = recentTasks[0];
+    if (!latest) return;
+    if (lastRefreshedTaskId.current === latest.id) return;
+    if (latest.status === 'success' || latest.status === 'partial_failed' || latest.status === 'cancelled') {
+      lastRefreshedTaskId.current = latest.id;
       void refresh();
     }
-  }, [activeTask, refresh]);
+  }, [recentTasks, refresh]);
 
   const siblingNames = useMemo(() => files.map((f) => f.name), [files]);
   const segments = useMemo(() => buildLocalSegments(currentPath), [currentPath]);
