@@ -109,10 +109,14 @@ export function LocalBrowsePage() {
 
   const handleRowActivate = useCallback(
     (path: string) => {
-      if (selectionMode) toggleSelection(path);
-      else enterSelectionMode(path);
+      if (selectionMode) {
+        toggleSelection(path);
+      } else {
+        const file = files.find((f) => f.path === path);
+        if (file) setPendingFiles([file as SmbFileEntry]);
+      }
     },
-    [selectionMode, toggleSelection, enterSelectionMode],
+    [selectionMode, toggleSelection, files],
   );
 
   const handleBatchAction = useCallback(

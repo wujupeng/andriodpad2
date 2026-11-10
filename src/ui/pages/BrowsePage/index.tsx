@@ -210,11 +210,16 @@ export function BrowsePage() {
 
   const handleRowActivate = useCallback(
     (path: string) => {
-      // 长按/多选态点击：非多选 → 进入多选并选中首项；多选 → 切换选中（spec 5.4.1-R6）
-      if (selectionMode) toggleSelection(path);
-      else enterSelectionMode(path);
+      // 长按/多选态点击：非多选 → 直接打开操作菜单（含重命名/属性等全部操作）；
+      // 多选 → 切换选中（spec 5.4.1-R6）
+      if (selectionMode) {
+        toggleSelection(path);
+      } else {
+        const file = files.find((f) => f.path === path);
+        if (file) setPendingFiles([file]);
+      }
     },
-    [selectionMode, toggleSelection, enterSelectionMode],
+    [selectionMode, toggleSelection, files],
   );
 
   const handleBatchAction = useCallback(
