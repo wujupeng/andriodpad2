@@ -338,7 +338,7 @@ export function BrowsePage() {
         <MultiSelectBar
           selectedCount={selection.size}
           batchOperationsEnabled={
-            OPERATION_CAPABILITIES.copy || OPERATION_CAPABILITIES.move || OPERATION_CAPABILITIES.deleteRemote
+            OPERATION_CAPABILITIES.copy || OPERATION_CAPABILITIES.move || OPERATION_CAPABILITIES.deleteRemote || OPERATION_CAPABILITIES.rename
           }
           onCancel={exitSelectionMode}
           onBatchAction={handleBatchAction}
