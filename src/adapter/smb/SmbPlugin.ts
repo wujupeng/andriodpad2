@@ -1,4 +1,4 @@
-import { registerPlugin } from '@capacitor/core';
+import { registerPlugin, type PluginListenerHandle } from '@capacitor/core';
 
 export interface SmbConnectOptions {
   host: string;
@@ -186,6 +186,48 @@ export interface SmbPluginInterface {
     label: string;
     path: string;
   }): Promise<{ success: boolean }>;
+
+  /** TASK-S2L-NATIVE-01：SMB→本地单文件下载（流式读写+SHA-256 校验） */
+  downloadFileToLocal(options: {
+    sourcePath: string;
+    destinationDir: string;
+    destFileName?: string;
+    overwrite?: boolean;
+  }): Promise<{ success: boolean; bytesCopied: number; sha256: string }>;
+
+  /** TASK-S2L-NATIVE-02：SMB→本地文件夹递归下载（聚合 failures 清单，部分失败语义） */
+  downloadDirectoryToLocal(options: {
+    sourcePath: string;
+    destinationDir: string;
+    overwrite?: boolean;
+  }): Promise<{
+    success: boolean;
+    totalFiles: number;
+    totalBytes: number;
+    failures: { path: string; reason: string }[];
+  }>;
+
+  /** TASK-S2L-NATIVE-03：SMB 远端递归删除文件夹（移动删源用） */
+  deleteRemoteDirectory(options: { path: string }): Promise<{
+    success: boolean;
+    failures: { path: string; reason: string }[];
+  }>;
+
+  /** 桌面快捷方式启动事件（spec 5.1.1 规则 1-3） */
+  addListener(
+    eventName: 'shortcutLaunched',
+    listener: (data: ShortcutLaunchedEvent) => void,
+  ): Promise<PluginListenerHandle>;
+
+  /** 通知原生层前端监听器已就绪，触发冷启动缓存事件重放（spec 5.1.1 规则 3） */
+  notifyShortcutListenerReady(): Promise<void>;
+}
+
+/** 桌面快捷方式启动事件参数（spec 6.2 数据约束） */
+export interface ShortcutLaunchedEvent {
+  sourceType: 'smb' | 'local';
+  path: string;
+  profileId: string;
 }
 
 const SmbPlugin = registerPlugin<SmbPluginInterface>('SmbPlugin');

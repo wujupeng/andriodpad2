@@ -106,15 +106,15 @@ export function useActionAvailability({
       copy:
         source === 'local'
           ? { enabled: LOCAL_CAPABILITIES.copy }
-          : anyDirectory
-            ? { enabled: false, reason: '暂不支持文件夹操作' }
-            : notAvailable(OPERATION_CAPABILITIES.copy, READ_ONLY_NOTICES.greyedReason),
+          : connected
+            ? { enabled: true }
+            : { enabled: false, reason: '未连接' },
       move:
         source === 'local'
           ? { enabled: LOCAL_CAPABILITIES.move }
-          : anyDirectory
-            ? { enabled: false, reason: '暂不支持文件夹操作' }
-            : notAvailable(OPERATION_CAPABILITIES.move, READ_ONLY_NOTICES.greyedReason),
+          : connected
+            ? { enabled: true }
+            : { enabled: false, reason: '未连接' },
       rename:
         source === 'local'
           ? { enabled: LOCAL_CAPABILITIES.rename }

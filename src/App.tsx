@@ -4,8 +4,10 @@ import { AppShell } from './ui/layouts/AppShell';
 import { hydrateUiPrefs } from './state/uiPrefsStore';
 import { setupBackButtonNavigation, useNavigationStore } from './state/navigationStore';
 import { useLocalBrowseStore } from './state/localBrowseStore';
-import SmbPlugin from './adapter/smb/SmbPlugin';
+import SmbPlugin, { type ShortcutLaunchedEvent } from './adapter/smb/SmbPlugin';
 import { switchBrowse } from './orchestration/browse/switchBrowse';
+import { useBrowseContextStore } from './state/browseContextStore';
+import { mapSmbError } from './utils/smbErrorMapper';
 
 const PROTECTED_PREFIXES = ['/system', '/proc', '/data', '/sys', '/dev'];
 
@@ -23,7 +25,7 @@ function App() {
       if (disposed) remove();
       else removeListener = remove;
     });
-    void (SmbPlugin as any).addListener('shortcutLaunched', (data: { sourceType?: 'local' | 'smb'; path?: string; profileId?: string }) => {
+    const handleShortcutLaunched = (data: ShortcutLaunchedEvent) => {
       if (data.sourceType === 'local') {
         const path = data.path ?? '';
         if (!path || isProtectedPath(path)) return;
@@ -31,13 +33,21 @@ function App() {
         useNavigationStore.getState().push('browse-local');
         void useLocalBrowseStore.getState().enterDirectory(parentPath);
       } else {
-        if (data.profileId) {
+        if (!data.profileId) return;
+        const smbParentPath = data.path.includes('\\') ? data.path.slice(0, data.path.lastIndexOf('\\')) : '';
+        try {
           switchBrowse(data.profileId);
+          void useBrowseContextStore.getState().enterDirectory(data.profileId, smbParentPath);
+        } catch (error) {
+          const mapped = mapSmbError(error);
+          console.error(`[shortcutLaunched] SMB 导航失败 profileId=${data.profileId}: ${mapped.userMessage}`);
         }
       }
-    }).then((handle: { remove: () => void }) => {
+    };
+    void SmbPlugin.addListener('shortcutLaunched', handleShortcutLaunched).then((handle) => {
       if (disposed) handle.remove();
       else removeShortcutListener = () => handle.remove();
+      void SmbPlugin.notifyShortcutListenerReady();
     });
     return () => {
       disposed = true;

@@ -54,9 +54,14 @@ public class ShortcutHelper {
         ShortcutInfo shortcut = builder.build();
 
         try {
-            shortcutManager.addDynamicShortcuts(Collections.singletonList(shortcut));
-            Log.i(TAG, "Shortcut created: " + id + " label=" + label + " sourceType=" + sourceType);
-            return true;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                shortcutManager.requestPinShortcut(shortcut, null);
+                Log.i(TAG, "Pin shortcut requested: " + id + " label=" + label + " sourceType=" + sourceType);
+                return true;
+            } else {
+                Log.w(TAG, "requestPinShortcut not available on API < 26, sourceType=" + sourceType);
+                return false;
+            }
         } catch (Exception e) {
             Log.e(TAG, "Failed to create shortcut: " + e.getMessage());
             return false;
@@ -83,7 +88,7 @@ public class ShortcutHelper {
     }
 
     public static boolean isAvailable(Context context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return false;
         }
         ShortcutManager shortcutManager = (ShortcutManager) context.getSystemService(Context.SHORTCUT_SERVICE);

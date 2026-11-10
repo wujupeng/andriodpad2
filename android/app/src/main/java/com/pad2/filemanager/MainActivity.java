@@ -41,4 +41,17 @@ public class MainActivity extends BridgeActivity {
             }
         }
     }
+
+    @Override
+    public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        com.getcapacitor.PluginHandle handle = getBridge().getPlugin("SmbPlugin");
+        if (handle != null) {
+            ((SmbPlugin) handle.getInstance()).handleShortcutIntent(intent);
+        } else {
+            Log.w(TAG, "SmbPlugin not found, skipping shortcut handling");
+        }
+    }
+
 }

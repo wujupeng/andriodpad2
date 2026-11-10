@@ -9,36 +9,61 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 
 import android.content.Intent;
+import android.os.Environment;
+import android.util.Log;
 
 @CapacitorPlugin(name = "SmbPlugin")
 public class SmbPlugin extends Plugin {
 
     private SmbClient smbClient;
     private WpsDeliveryHandler wpsHandler;
+    private JSObject pendingShortcutEvent = null;
+    private boolean shortcutListenerReady = false;
 
     @Override
     public void load() {
         smbClient = new SmbClient();
         wpsHandler = new WpsDeliveryHandler(getContext(), smbClient);
+        handleShortcutIntent(getActivity().getIntent());
+    }
 
-        Intent intent = getActivity().getIntent();
-        if (intent != null && intent.hasExtra("shortcut_profile_id")) {
-            JSObject params = new JSObject();
-            params.put("profileId", intent.getStringExtra("shortcut_profile_id"));
-            params.put("path", intent.getStringExtra("shortcut_path"));
-            String sourceType = intent.getStringExtra("shortcut_source_type");
-            if (sourceType != null) {
-                params.put("sourceType", sourceType);
-            }
-            notifyListeners("shortcutLaunched", params);
+    public void handleShortcutIntent(Intent intent) {
+        if (intent == null || !intent.hasExtra("shortcut_profile_id")) return;
+        String profileId = intent.getStringExtra("shortcut_profile_id");
+        String path = intent.getStringExtra("shortcut_path");
+        String sourceType = intent.getStringExtra("shortcut_source_type");
+        if (path == null || path.isEmpty()) return;
+        JSObject params = new JSObject();
+        params.put("profileId", profileId != null ? profileId : "");
+        params.put("path", path);
+        if (sourceType != null && !sourceType.isEmpty()) {
+            params.put("sourceType", sourceType);
         }
+        Log.i("SmbPlugin", "handleShortcutIntent: sourceType=" + sourceType + " path=" + path + " profileId=" + profileId);
+        if (shortcutListenerReady) {
+            notifyListeners("shortcutLaunched", params);
+        } else {
+            pendingShortcutEvent = params;
+        }
+    }
+
+    @PluginMethod
+    public void notifyShortcutListenerReady(PluginCall call) {
+        shortcutListenerReady = true;
+        if (pendingShortcutEvent != null) {
+            notifyListeners("shortcutLaunched", pendingShortcutEvent);
+            pendingShortcutEvent = null;
+        }
+        call.resolve();
     }
 
     @PluginMethod
@@ -476,6 +501,233 @@ public class SmbPlugin extends Plugin {
                     failure.put("reason", e.getMessage());
                     failures.put(failure);
                 }
+            }
+        }
+    }
+
+    // ===== TASK-S2L-NATIVE-01：SMB→本地单文件下载（流式读写+SHA-256 校验）=====
+    @PluginMethod
+    public void downloadFileToLocal(PluginCall call) {
+        String sourcePath = call.getString("sourcePath", "");
+        String destinationDir = call.getString("destinationDir", "");
+        String destFileName = call.getString("destFileName");
+        Boolean overwrite = call.getBoolean("overwrite", false);
+
+        if (sourcePath.isEmpty()) {
+            call.reject("sourcePath is required");
+            return;
+        }
+
+        try {
+            String srcNormalized = sourcePath.replace("/", "\\");
+            String targetName = (destFileName != null && !destFileName.isEmpty())
+                ? destFileName
+                : srcNormalized.substring(srcNormalized.lastIndexOf('\\') + 1);
+
+            File localDir = new File(Environment.getExternalStorageDirectory(), destinationDir);
+            if (!localDir.exists()) localDir.mkdirs();
+            File localFile = new File(localDir, targetName);
+
+            if (!overwrite && localFile.exists()) {
+                call.reject("Target already exists: " + localFile.getAbsolutePath());
+                return;
+            }
+
+            InputStream is = smbClient.readFileStream(sourcePath);
+            long bytesCopied = 0;
+            try {
+                FileOutputStream fos = new FileOutputStream(localFile);
+                byte[] buf = new byte[64 * 1024];
+                int n;
+                try {
+                    while ((n = is.read(buf)) >= 0) {
+                        fos.write(buf, 0, n);
+                        bytesCopied += n;
+                    }
+                    fos.flush();
+                } finally {
+                    fos.close();
+                }
+            } finally {
+                is.close();
+            }
+
+            byte[] localData = readFileBytes(localFile);
+            String sha256 = computeSha256(localData);
+
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            ret.put("bytesCopied", bytesCopied);
+            ret.put("sha256", sha256);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Download file to local failed: " + e.getMessage());
+        }
+    }
+
+    // ===== TASK-S2L-NATIVE-02：SMB→本地文件夹递归下载（聚合 failures 清单）=====
+    @PluginMethod
+    public void downloadDirectoryToLocal(PluginCall call) {
+        String sourcePath = call.getString("sourcePath", "");
+        String destinationDir = call.getString("destinationDir", "");
+        Boolean overwrite = call.getBoolean("overwrite", false);
+
+        if (sourcePath.isEmpty()) {
+            call.reject("sourcePath is required");
+            return;
+        }
+
+        try {
+            String srcNormalized = sourcePath.replace("/", "\\");
+            int lastSep = srcNormalized.lastIndexOf('\\');
+            String folderName = lastSep >= 0 ? srcNormalized.substring(lastSep + 1) : srcNormalized;
+
+            File localRoot = new File(Environment.getExternalStorageDirectory(), destinationDir + "/" + folderName);
+            if (!overwrite && localRoot.exists()) {
+                call.reject("Target already exists: " + localRoot.getAbsolutePath());
+                return;
+            }
+            localRoot.mkdirs();
+
+            JSArray failures = new JSArray();
+            int[] counters = new int[2];
+            downloadDirectoryRecursive(sourcePath, localRoot, overwrite, failures, counters, 0);
+
+            JSObject ret = new JSObject();
+            ret.put("success", failures.length() == 0);
+            ret.put("totalFiles", counters[0]);
+            ret.put("totalBytes", counters[1]);
+            ret.put("failures", failures);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Download directory to local failed: " + e.getMessage());
+        }
+    }
+
+    private void downloadDirectoryRecursive(String smbSource, File localTarget,
+            Boolean overwrite, JSArray failures, int[] counters, int depth) throws IOException {
+        if (depth > 32) {
+            JSObject failure = new JSObject();
+            failure.put("path", smbSource);
+            failure.put("reason", "递归深度超限（>32 层）");
+            failures.put(failure);
+            return;
+        }
+
+        List<Map<String, Object>> children = smbClient.listDirectory(smbSource);
+        for (Map<String, Object> child : children) {
+            String childName = (String) child.get("name");
+            boolean isDir = (Boolean) child.get("isDirectory");
+            String childSmbPath = (String) child.get("path");
+
+            if (isDir) {
+                File childLocal = new File(localTarget, childName);
+                try {
+                    if (!childLocal.exists()) childLocal.mkdirs();
+                    downloadDirectoryRecursive(childSmbPath, childLocal, overwrite, failures, counters, depth + 1);
+                } catch (Exception e) {
+                    JSObject failure = new JSObject();
+                    failure.put("path", childSmbPath);
+                    failure.put("reason", e.getMessage());
+                    failures.put(failure);
+                }
+            } else {
+                try {
+                    File childLocal = new File(localTarget, childName);
+                    if (!overwrite && childLocal.exists()) {
+                        JSObject failure = new JSObject();
+                        failure.put("path", childSmbPath);
+                        failure.put("reason", "Target already exists: " + childLocal.getAbsolutePath());
+                        failures.put(failure);
+                        continue;
+                    }
+                    InputStream is = smbClient.readFileStream(childSmbPath);
+                    long bytes = 0;
+                    try {
+                        FileOutputStream fos = new FileOutputStream(childLocal);
+                        byte[] buf = new byte[64 * 1024];
+                        int n;
+                        try {
+                            while ((n = is.read(buf)) >= 0) {
+                                fos.write(buf, 0, n);
+                                bytes += n;
+                            }
+                            fos.flush();
+                        } finally {
+                            fos.close();
+                        }
+                    } finally {
+                        is.close();
+                    }
+                    counters[0] += 1;
+                    counters[1] += bytes;
+                } catch (Exception e) {
+                    JSObject failure = new JSObject();
+                    failure.put("path", childSmbPath);
+                    failure.put("reason", e.getMessage());
+                    failures.put(failure);
+                }
+            }
+        }
+    }
+
+    // ===== TASK-S2L-NATIVE-03：SMB 远端递归删除文件夹（移动删源用）=====
+    @PluginMethod
+    public void deleteRemoteDirectory(PluginCall call) {
+        String path = call.getString("path", "");
+        if (path.isEmpty()) {
+            call.reject("path is required");
+            return;
+        }
+
+        try {
+            JSArray failures = new JSArray();
+            deleteRemoteDirectoryRecursive(path, failures, 0);
+
+            try {
+                smbClient.deleteFile(path);
+            } catch (Exception e) {
+                JSObject failure = new JSObject();
+                failure.put("path", path);
+                failure.put("reason", e.getMessage());
+                failures.put(failure);
+            }
+
+            JSObject ret = new JSObject();
+            ret.put("success", failures.length() == 0);
+            ret.put("failures", failures);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Delete remote directory failed: " + e.getMessage());
+        }
+    }
+
+    private void deleteRemoteDirectoryRecursive(String smbPath, JSArray failures, int depth) throws IOException {
+        if (depth > 32) {
+            JSObject failure = new JSObject();
+            failure.put("path", smbPath);
+            failure.put("reason", "递归深度超限（>32 层）");
+            failures.put(failure);
+            return;
+        }
+
+        List<Map<String, Object>> children = smbClient.listDirectory(smbPath);
+        for (Map<String, Object> child : children) {
+            boolean isDir = (Boolean) child.get("isDirectory");
+            String childPath = (String) child.get("path");
+
+            try {
+                if (isDir) {
+                    deleteRemoteDirectoryRecursive(childPath, failures, depth + 1);
+                    smbClient.deleteFile(childPath);
+                } else {
+                    smbClient.deleteFile(childPath);
+                }
+            } catch (Exception e) {
+                JSObject failure = new JSObject();
+                failure.put("path", childPath);
+                failure.put("reason", e.getMessage());
+                failures.put(failure);
             }
         }
     }

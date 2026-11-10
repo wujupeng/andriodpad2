@@ -294,11 +294,48 @@ const makeTransferExecutor = (kind: 'copy' | 'move', transferKind: TransferKind)
         }
         return;
       }
+      case 'smb-to-local': {
+        let isDirectory = false;
+        try {
+          await SmbPlugin.listDirectory({ path: params.sourcePath });
+          isDirectory = true;
+        } catch {
+          isDirectory = false;
+        }
+        if (isDirectory) {
+          const result = await SmbPlugin.downloadDirectoryToLocal({
+            sourcePath: params.sourcePath,
+            destinationDir: params.destinationDir,
+            overwrite: params.overwrite,
+          });
+          if (!result.success) {
+            throw new Error(`部分下载失败：${result.failures.length} 项`);
+          }
+          if (kind === 'move') {
+            const delResult = await SmbPlugin.deleteRemoteDirectory({ path: params.sourcePath });
+            if (delResult.failures.length > 0) {
+              throw new Error(`已复制到本地但源删除失败：${delResult.failures.length} 项`);
+            }
+          }
+        } else {
+          await SmbPlugin.downloadFileToLocal({
+            sourcePath: params.sourcePath,
+            destinationDir: params.destinationDir,
+            destFileName: params.destFileName,
+            overwrite: params.overwrite,
+          });
+          if (kind === 'move') {
+            await SmbPlugin.deleteRemoteFile({ path: params.sourcePath });
+          }
+        }
+        return;
+      }
       case 'smb-to-smb':
-      default:
         if (kind === 'copy') await SmbPlugin.copyFile(params);
         else await SmbPlugin.moveFile(params);
         return;
+      default:
+        throw new Error('Unknown transfer kind: ' + transferKind);
     }
   };
 };
@@ -430,7 +467,7 @@ export const useOperationStore = create<OperationStoreState>()((set, get) => {
       const transferKind = resolveTransferKind(sourceType, destinationType);
       if (sourceType === 'local') {
         if (!LOCAL_CAPABILITIES.copy) throw new Error(READ_ONLY_NOTICES.greyedReason);
-      } else {
+      } else if (destinationType === 'smb') {
         if (!OPERATION_CAPABILITIES.copy) throw new Error(READ_ONLY_NOTICES.greyedReason);
       }
       await enqueue('copy', toTargets(paths, options), destination, makeTransferExecutor('copy', transferKind));
@@ -444,7 +481,7 @@ export const useOperationStore = create<OperationStoreState>()((set, get) => {
       const transferKind = resolveTransferKind(sourceType, destinationType);
       if (sourceType === 'local') {
         if (!LOCAL_CAPABILITIES.move) throw new Error(READ_ONLY_NOTICES.greyedReason);
-      } else {
+      } else if (destinationType === 'smb') {
         if (!OPERATION_CAPABILITIES.move) throw new Error(READ_ONLY_NOTICES.greyedReason);
       }
       await enqueue('move', toTargets(paths, options), destination, makeTransferExecutor('move', transferKind));
