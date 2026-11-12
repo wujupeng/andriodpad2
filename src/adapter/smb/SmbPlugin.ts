@@ -141,6 +141,8 @@ export interface SmbPluginInterface {
   cleanup(): Promise<void>;
   writeTextFile(options: { path: string; content: string }): Promise<{ success: boolean; path: string }>;
   ensureDirectory(options: { path: string }): Promise<{ success: boolean; path: string }>;
+  /** 新建文件夹（直接 mkdir；同名已存在则 reject） */
+  createDirectory(options: { path: string }): Promise<{ success: boolean; path: string }>;
   /** TASK-S5-03：远端复制（流式+临时文件+原子落位+SHA-256 校验；目标存在且未授权覆盖走 reject） */
   copyFile(options: {
     sourcePath: string;

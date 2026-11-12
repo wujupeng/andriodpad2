@@ -292,6 +292,25 @@ public class SmbPlugin extends Plugin {
         }
     }
 
+    /** 新建文件夹（直接 mkdir；同名已存在则抛错——区别于 ensureDirectory 的幂等语义） */
+    @PluginMethod
+    public void createDirectory(PluginCall call) {
+        String path = call.getString("path", "");
+        if (path.isEmpty()) {
+            call.reject("path is required");
+            return;
+        }
+        try {
+            smbClient.createDirectory(path);
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            ret.put("path", path);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Create directory failed: " + e.getMessage());
+        }
+    }
+
     // ===== TASK-S5-03：复制与移动桥接（s5-02 设计 §B-1；conflict 走 reject 传播，
     // 前端 smbErrorMapper 归 conflict 类 → ConflictDialog 决策/失败清单）=====
 

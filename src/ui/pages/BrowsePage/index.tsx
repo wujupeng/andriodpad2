@@ -22,7 +22,7 @@ import { useEditSessionStore } from '../../../state/editSessionStore';
 import { useOperationStore, OPERATION_CAPABILITIES } from '../../../state/operationStore';
 import { useUiPrefsStore } from '../../../state/uiPrefsStore';
 import { sortedAndFilteredFiles } from '../../../state/browseStore';
-import type { SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
+import SmbPlugin, { type SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
 import { SearchField } from './SearchField';
 import { SortMenu } from './SortMenu';
 import { ViewModeMenu } from './ViewModeMenu';
@@ -35,6 +35,7 @@ import { FileList } from './FileList';
 import { MultiSelectBar } from './MultiSelectBar';
 import { OperationProgressPanel } from './OperationProgressPanel';
 import { FileActionSheet } from '../FileActionSheet';
+import { RenameDialog } from '../FileActionSheet/RenameDialog';
 import { WritebackUnavailableBanner } from '../../components/WritebackUnavailableBanner';
 import type { OperationTask } from '../../../state/operationStore';
 import styles from './style.module.css';
@@ -134,6 +135,8 @@ export function BrowsePage() {
 
   /** FileActionSheet 上下文（单文件/批量共用，TASK-S4-05 正式菜单） */
   const [pendingFiles, setPendingFiles] = useState<SmbFileEntry[]>([]);
+  const [newFolderOpen, setNewFolderOpen] = useState(false);
+  const [newFolderError, setNewFolderError] = useState<string | null>(null);
 
   const handleDirectOpen = useCallback((file: SmbFileEntry) => {
     if (!activeProfileId) return;
@@ -234,6 +237,22 @@ export function BrowsePage() {
     [selection, files],
   );
 
+  /** 新建文件夹：构造共享根相对路径（'\' 分隔）调用 SmbPlugin.createDirectory */
+  const handleCreateFolder = useCallback(
+    async (name: string) => {
+      setNewFolderError(null);
+      try {
+        const targetPath = currentPath ? `${currentPath}\\${name}` : name;
+        await SmbPlugin.createDirectory({ path: targetPath });
+        setNewFolderOpen(false);
+        await refresh();
+      } catch (e) {
+        setNewFolderError(e instanceof Error ? e.message : '新建文件夹失败');
+      }
+    },
+    [currentPath, refresh],
+  );
+
   /** 进度面板重试：同 targets/destination 重新入队（TASK-S4-06） */
   const handleRetry = useCallback(
     (task: OperationTask) => {
@@ -300,6 +319,17 @@ export function BrowsePage() {
           <button
             type="button"
             className={styles.multiselectTrigger}
+            aria-label="新建文件夹"
+            onClick={() => {
+              setNewFolderError(null);
+              setNewFolderOpen(true);
+            }}
+          >
+            <Icon name="icon-plus" size={20} />
+          </button>
+          <button
+            type="button"
+            className={styles.multiselectTrigger}
             aria-label="多选"
             onClick={handleEnterSelectionMode}
           >
@@ -357,6 +387,27 @@ export function BrowsePage() {
         open={pendingFiles.length > 0}
         onDismiss={() => setPendingFiles([])}
       />
+      <RenameDialog
+        currentName=""
+        existingNames={siblingNames}
+        open={newFolderOpen}
+        title="新建文件夹"
+        confirmLabel="创建"
+        fieldLabel="文件夹名称"
+        hideOriginalHint
+        onConfirm={handleCreateFolder}
+        onDismiss={() => setNewFolderOpen(false)}
+      />
+      {newFolderError && (
+        <StatusBanner
+          semantic="danger"
+          icon="icon-x-circle"
+          title={`新建文件夹失败：${newFolderError}`}
+          actions={[
+            { label: '知道了', variant: 'text', onPress: () => setNewFolderError(null) },
+          ]}
+        />
+      )}
     </div>
   );
 }

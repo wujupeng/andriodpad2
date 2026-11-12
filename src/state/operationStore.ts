@@ -149,12 +149,12 @@ export const OPERATION_CAPABILITIES: Readonly<{
   move: false,
   // AU-005 只读模式：重命名在只读模式下单独放行（spec 5.1.1-3，SmbClient.renameFile 已支持目录）
   rename: RENAME_ALLOWED_IN_READONLY,
-  // AU-005 只读模式：远端删除为远端写操作，置 false（R-OPS-01）
-  deleteRemote: false,
+  // 远端删除已启用（文件 deleteRemoteFile / 目录 deleteRemoteDirectory 递归）
+  deleteRemote: true,
   // 既有事实：本地单文件删除无方法，保持 false（R-OPS-02）
   deleteLocal: false,
-  // AU-005 只读模式：新建文件夹为远端写操作，置 false（R-OPS-01）
-  createDirectory: false,
+  // 远端新建文件夹已启用（SmbPlugin.createDirectory，已存在则抛错）
+  createDirectory: true,
   // AU-006 新增：写回相关能力（按权限矩阵派生）
   writeback: isWritebackGloballyEnabled() && WRITE_PERMISSION_MATRIX.writeback,
   saveas: isWritebackGloballyEnabled() && WRITE_PERMISSION_MATRIX.saveas,
@@ -519,7 +519,16 @@ export const useOperationStore = create<OperationStoreState>()((set, get) => {
         return;
       }
       await enqueue('delete', toTargets(paths), undefined, async (target) => {
-        await SmbPlugin.deleteRemoteFile({ path: target.path });
+        // 先尝试按文件删除；若失败（目标是目录等）则走递归删除目录
+        try {
+          await SmbPlugin.deleteRemoteFile({ path: target.path });
+        } catch {
+          const result = await SmbPlugin.deleteRemoteDirectory({ path: target.path });
+          if (!result.success) {
+            const reasons = result.failures.map((f) => `${f.path}: ${f.reason}`).join('; ');
+            throw new Error(`删除失败：${reasons || '未知错误'}`);
+          }
+        }
       });
     },
 

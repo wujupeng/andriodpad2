@@ -127,9 +127,7 @@ export function useActionAvailability({
       delete:
         source === 'local'
           ? { enabled: LOCAL_CAPABILITIES.deleteLocal }
-          : anyDirectory
-            ? { enabled: false, reason: '暂不支持删除文件夹' }
-            : notAvailable(OPERATION_CAPABILITIES.deleteRemote, READ_ONLY_NOTICES.greyedReason),
+          : notAvailable(OPERATION_CAPABILITIES.deleteRemote, READ_ONLY_NOTICES.greyedReason),
       // 属性：目录与文件均可用（getFileAttributes 前端方法已暴露）
       info: connected ? { enabled: true } : { enabled: false, reason: '未连接' },
       // 添加到桌面快捷方式：单选时可用，按 source 分支解耦 SMB 连接
