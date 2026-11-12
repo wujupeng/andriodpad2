@@ -360,9 +360,9 @@ export function FileActionSheet({
           void useLocalBrowseStore.getState().refresh();
         });
       } else {
-        void useOperationStore.getState().executeRename(target.path, newName).then(() => {
-          void useBrowseStore.getState().refresh();
-        });
+        // 远端重命名：任务完成后由 BrowsePage 订阅 recentTasks 自动刷新列表
+        // （原 useBrowseStore.refresh() 为遗留单例 store，页面已改用 browseContextStore）
+        void useOperationStore.getState().executeRename(target.path, newName);
       }
       closeAll();
     },

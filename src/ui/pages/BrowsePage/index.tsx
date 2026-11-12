@@ -111,6 +111,25 @@ export function BrowsePage() {
     if (!activeProfileId) return;
     void useBrowseContextStore.getState().refresh(activeProfileId);
   }, [activeProfileId]);
+
+  // ===== 操作完成自动刷新（与 LocalBrowsePage 保持一致）=====
+  // 修复：SMB 删除/新建文件夹/重命名等远端操作完成后列表未刷新——已删除项残留，
+  // 形似"操作失败"。订阅 recentTasks，终态（success/partial_failed/cancelled）时刷新。
+  const recentTasks = useOperationStore((s) => s.recentTasks);
+  const lastRefreshedTaskId = useRef<string | null>(null);
+  useEffect(() => {
+    const latest = recentTasks[0];
+    if (!latest) return;
+    if (lastRefreshedTaskId.current === latest.id) return;
+    if (
+      latest.status === 'success' ||
+      latest.status === 'partial_failed' ||
+      latest.status === 'cancelled'
+    ) {
+      lastRefreshedTaskId.current = latest.id;
+      void refresh();
+    }
+  }, [recentTasks, refresh]);
   const setSort = useCallback(
     (s: BrowseSort) => {
       if (!activeProfileId) return;

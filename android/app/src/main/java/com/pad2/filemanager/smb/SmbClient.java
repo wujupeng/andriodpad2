@@ -252,6 +252,15 @@ public class SmbClient {
         diskShare.rm(normalizePath(path));
     }
 
+    /**
+     * 删除空目录（smbj 0.12.1 的 DiskShare.rm() 仅适用于文件，
+     * 目录删除须用 DiskShare.rmdir(path, false)，false 表示非递归、目录须为空）。
+     */
+    public void deleteDirectory(String path) throws IOException {
+        reconnectIfNeeded();
+        diskShare.rmdir(normalizePath(path), false);
+    }
+
 
     // ===== TASK-S5-03：复制与移动（s5-02-file-operations-design.md §B/§C）=====
 

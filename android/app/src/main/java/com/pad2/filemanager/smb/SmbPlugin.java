@@ -724,7 +724,7 @@ public class SmbPlugin extends Plugin {
             deleteRemoteDirectoryRecursive(path, failures, 0);
 
             try {
-                smbClient.deleteFile(path);
+                smbClient.deleteDirectory(path);
             } catch (Exception e) {
                 JSObject failure = new JSObject();
                 failure.put("path", path);
@@ -758,7 +758,7 @@ public class SmbPlugin extends Plugin {
             try {
                 if (isDir) {
                     deleteRemoteDirectoryRecursive(childPath, failures, depth + 1);
-                    smbClient.deleteFile(childPath);
+                    smbClient.deleteDirectory(childPath);
                 } else {
                     smbClient.deleteFile(childPath);
                 }
