@@ -436,15 +436,23 @@ export const LocalFsAdapter = {
   },
 
   /**
-   * 将相对 ExternalStorage 的路径转为绝对路径（供 uploadFromLocal/uploadDirectoryFromLocal 使用）。
-   * Filesystem.getUri 返回形如 "file:///storage/emulated/0/path" 的 URI，剥离 file:// 前缀即绝对路径。
+   * 将相对 ExternalStorage 的路径转为绝对路径（供 uploadFromLocal/uploadDirectoryFromLocal /
+   * openLocalFile 等原生 File IO 使用）。
+   * Filesystem.getUri 返回形如 "file:///storage/emulated/0/中文%20名.doc" 的 URI（已百分号编码），
+   * 剥离 file:// 后必须 decodeURIComponent 还原真实路径，否则原生 new File() 会把 %xx 当作字面字符
+   * 导致 "文件不存在"（本地→SMB 复制/移动 与 本地打开 WPS 均依赖此真实路径）。
    */
   async getAbsolutePath(relativePath: string): Promise<string> {
     const result = await Filesystem.getUri({
       path: relativePath || '.',
       directory: Directory.ExternalStorage,
     });
-    return result.uri.replace(/^file:\/\//, '');
+    const encoded = result.uri.replace(/^file:\/\//, '');
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      return encoded;
+    }
   },
 } as const;
 
