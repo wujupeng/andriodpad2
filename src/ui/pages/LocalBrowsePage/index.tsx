@@ -14,6 +14,7 @@ import { useLocalBrowseStore, sortedAndFilteredLocalFiles } from '../../../state
 import type { BrowseSort } from '../../../state/localBrowseStore';
 import { useOperationStore, LOCAL_CAPABILITIES } from '../../../state/operationStore';
 import { useUiPrefsStore } from '../../../state/uiPrefsStore';
+import SmbPlugin from '../../../adapter/smb/SmbPlugin';
 import type { SmbFileEntry } from '../../../adapter/smb/SmbPlugin';
 import { SearchField } from '../BrowsePage/SearchField';
 import { SortMenu } from '../BrowsePage/SortMenu';
@@ -67,6 +68,7 @@ export function LocalBrowsePage() {
   const [loadedOnce, setLoadedOnce] = useState(false);
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [newFolderError, setNewFolderError] = useState<string | null>(null);
+  const [openError, setOpenError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loadedOnce) {
@@ -147,6 +149,19 @@ export function LocalBrowsePage() {
     }
   }, []);
 
+  const handleOpenLocal = useCallback(async (file: SmbFileEntry) => {
+    setOpenError(null);
+    try {
+      const absolutePath = await LocalFsAdapter.getAbsolutePath(file.path);
+      const opened = await SmbPlugin.openLocalFile({ absolutePath });
+      if (!opened.intentLaunched) {
+        setOpenError(opened.error ?? '未找到可打开该文件的应用');
+      }
+    } catch (e) {
+      setOpenError(e instanceof Error ? e.message : '未知错误');
+    }
+  }, []);
+
   const handleCreateFolder = useCallback(
     async (name: string) => {
       setNewFolderError(null);
@@ -202,6 +217,16 @@ export function LocalBrowsePage() {
           ]}
         />
       )}
+      {openError && (
+        <StatusBanner
+          semantic="danger"
+          icon="icon-x-circle"
+          title={`无法打开：${openError}`}
+          actions={[
+            { label: '知道了', variant: 'text', onPress: () => setOpenError(null) },
+          ]}
+        />
+      )}
       <div className={styles.listArea}>
         <FileList
           files={files as SmbFileEntry[]}
@@ -210,9 +235,7 @@ export function LocalBrowsePage() {
           searchQuery={searchQuery}
           selection={selection}
           selectionMode={selectionMode}
-          onOpen={() => {
-            /* 本地文件打开暂不支持 WPS 编辑，仅通过操作菜单处理 */
-          }}
+          onOpen={(file) => void handleOpenLocal(file)}
           onEnterDirectory={(path) => void enterDirectory(path)}
           onRowActivate={handleRowActivate}
           onClearSearch={() => setSearchQuery('')}

@@ -239,7 +239,7 @@ public class SmbClient {
                 SMB2CreateDisposition.FILE_OPEN,
                 null
             );
-            file.rename(new java.io.File(path).getName(), true);
+            file.rename(normalizePath(path), true);
             file.close();
         } catch (Exception e) {
             try { deleteFile(tempPath); } catch (Exception ignored) {}
@@ -523,10 +523,17 @@ public class SmbClient {
         }
     }
 
+    /**
+     * 共享根相对路径规范化：统一分隔符为 '\' 并剥除全部前导分隔符。
+     * smbj 各 API（openFile/createDirectory/rm…）要求路径相对共享根，
+     * 前导 '/' 或 '\' 会构成非法项名（如目标选择器默认根目录 '/' 拼接出
+     * "/\\文件名" → STATUS_INVALID_PARAMETER）。
+     */
     private String normalizePath(String path) {
         if (path == null) return "";
-        if (path.startsWith("/")) path = path.substring(1);
-        return path.replace("/", "\\");
+        String p = path.replace("/", "\\");
+        while (p.startsWith("\\")) p = p.substring(1);
+        return p;
     }
 
     public String getHost() { return host; }

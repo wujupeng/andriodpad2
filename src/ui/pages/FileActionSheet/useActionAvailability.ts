@@ -90,12 +90,15 @@ export function useActionAvailability({
       connected ? { enabled: cap, reason: cap ? undefined : capReason } : { enabled: false, reason: '未连接' };
 
     // 打开/编辑：批量模式隐藏（ActionList 按批量分支渲染）；目录无此二项
+    // source='local'：本地文件经原生 openLocalFile 交给 WPS，不依赖 SMB 连接
     const wpsUnavailable: ActionAvailability =
       wpsState === 'not-installed'
         ? { enabled: false, reason: '设备上未安装 WPS Office' }
-        : connected
+        : source === 'local'
           ? { enabled: true }
-          : { enabled: false, reason: '未连接' };
+          : connected
+            ? { enabled: true }
+            : { enabled: false, reason: '未连接' };
 
     return {
       // 打开（预览）：目录无（目录点击本就直接进入，design.md 2.4.5）

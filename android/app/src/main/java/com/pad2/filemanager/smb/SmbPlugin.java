@@ -137,6 +137,26 @@ public class SmbPlugin extends Plugin {
         }
     }
 
+    /** 本地文件打开（FileProvider 授权交给 WPS/关联应用；本地文件无需 SMB 连接与回写） */
+    @PluginMethod
+    public void openLocalFile(PluginCall call) {
+        String absolutePath = call.getString("absolutePath", "");
+        if (absolutePath.isEmpty()) {
+            call.reject("absolutePath is required");
+            return;
+        }
+        try {
+            Map<String, Object> result = wpsHandler.openLocalFile(absolutePath);
+            JSObject ret = new JSObject();
+            for (Map.Entry<String, Object> entry : result.entrySet()) {
+                ret.put(entry.getKey(), entry.getValue());
+            }
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Open local file failed: " + e.getMessage());
+        }
+    }
+
     @PluginMethod
     public void checkLocalFileChanged(PluginCall call) {
         Map<String, Object> result = wpsHandler.checkLocalFileChanged();

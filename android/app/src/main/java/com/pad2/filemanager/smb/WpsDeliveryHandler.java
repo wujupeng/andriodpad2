@@ -189,6 +189,80 @@ public class WpsDeliveryHandler {
         return result;
     }
 
+    /**
+     * 打开本地文件（不经 SMB 缓存/会话/回写）：本地文件即原始文件，
+     * 由 WPS/关联应用就地打开（编辑保存由应用直接写回该文件），无需回写通道。
+     * 交付优先 FileProvider content:// （Android 7+ 已禁止 file:// 跨应用共享），
+     * 先 VIEW（只读打开）后退 EDIT。
+     */
+    public Map<String, Object> openLocalFile(String absolutePath) {
+        Map<String, Object> result = new HashMap<>();
+        File localFile = new File(absolutePath);
+        if (!localFile.exists() || !localFile.isFile()) {
+            result.put("intentLaunched", false);
+            result.put("error", "文件不存在：" + absolutePath);
+            result.put("errorType", "FILE_NOT_FOUND");
+            return result;
+        }
+
+        String fileName = localFile.getName();
+        String mimeType = FileAppResolver.getMimeTypeWithSniff(fileName, localFile);
+        result.put("mimeType", mimeType);
+
+        Map<String, Object> appInfo = appResolver.resolveApp(fileName, Uri.fromFile(localFile));
+        if (!(boolean) appInfo.getOrDefault("resolved", false)) {
+            result.put("intentLaunched", false);
+            result.put("error", appInfo.get("suggestion"));
+            result.put("errorType", "NO_APP");
+            return result;
+        }
+        result.put("appName", appInfo.get("appName"));
+        result.put("isWps", appInfo.getOrDefault("isWps", false));
+
+        String explicitPackage = null;
+        if (appInfo.containsKey("packageName") && (boolean) appInfo.getOrDefault("useExplicitPackage", false)) {
+            explicitPackage = (String) appInfo.get("packageName");
+        }
+
+        Uri uri;
+        try {
+            uri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", localFile);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to build FileProvider uri for local file", e);
+            result.put("intentLaunched", false);
+            result.put("error", "无法为该文件生成访问授权：" + e.getMessage());
+            result.put("errorType", "URI_FAILED");
+            return result;
+        }
+
+        String[] actions = { Intent.ACTION_VIEW, Intent.ACTION_EDIT };
+        for (String action : actions) {
+            try {
+                Intent intent = new Intent(action);
+                intent.setDataAndType(uri, mimeType);
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                if (explicitPackage != null) {
+                    intent.setPackage(explicitPackage);
+                }
+                context.startActivity(intent);
+                result.put("intentLaunched", true);
+                result.put("uriScheme", "content");
+                result.put("uri", uri.toString());
+                result.put("intentAction", Intent.ACTION_VIEW.equals(action) ? "ACTION_VIEW" : "ACTION_EDIT");
+                Log.i(TAG, "Local file delivered: " + absolutePath + " (" + action + ")");
+                return result;
+            } catch (Exception e) {
+                Log.w(TAG, "Local open failed (" + action + "), trying next", e);
+            }
+        }
+
+        result.put("intentLaunched", false);
+        result.put("error", "无法启动应用打开该文件（请确认已安装 WPS Office）");
+        result.put("errorType", "LAUNCH_FAILED");
+        return result;
+    }
+
     private void deliverViaFileUri(File localFile, String mimeType, Map<String, Object> appInfo,
                                    String remotePath, String localPath, String localFileName,
                                    String baselineHash, long baselineMtime, long remoteMtime,

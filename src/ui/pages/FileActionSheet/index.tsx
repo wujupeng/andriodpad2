@@ -115,7 +115,8 @@ export function FileActionSheet({
     [pendingTransfer, closeAll],
   );
 
-  /** 打开/编辑分发：isWpsInstalled 兜底复核 → editSessionStore.openFile（S5 前骨架） */
+  /** 打开/编辑分发：isWpsInstalled 兜底复核 → 本地走原生 openLocalFile（FileProvider
+   * 授权交给 WPS）/ 远端走 editSessionStore.openFile（SMB 缓存+回写会话） */
   const handleOpenOrEdit = useCallback(
     async (_action: 'open' | 'edit') => {
       try {
@@ -132,12 +133,34 @@ export function FileActionSheet({
         });
         return;
       }
-      if (!activeProfileId || entries.length !== 1) return;
+      if (entries.length !== 1) return;
       const target = entries[0];
+      if (source === 'local') {
+        if (target.isDirectory) return;
+        try {
+          const absolutePath = await LocalFsAdapter.getAbsolutePath(target.path);
+          const opened = await SmbPlugin.openLocalFile({ absolutePath });
+          if (!opened.intentLaunched) {
+            setStatusMessage({
+              semantic: 'danger',
+              text: `无法打开：${opened.error ?? '未找到可打开该文件的应用'}`,
+            });
+            return;
+          }
+          onDismiss();
+        } catch (e) {
+          setStatusMessage({
+            semantic: 'danger',
+            text: `无法打开：${e instanceof Error ? e.message : '未知错误'}`,
+          });
+        }
+        return;
+      }
+      if (!activeProfileId) return;
       await useEditSessionStore.getState().openFile(activeProfileId, target.path);
       onDismiss();
     },
-    [activeProfileId, entries],
+    [activeProfileId, entries, source, onDismiss],
   );
 
   const handleAction = useCallback(

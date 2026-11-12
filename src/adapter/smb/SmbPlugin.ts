@@ -111,12 +111,27 @@ export interface WpsInstallResult {
   packageName: string | null;
 }
 
+/** 本地文件打开结果（原生 openLocalFile：FileProvider 授权交给 WPS/关联应用） */
+export interface LocalOpenResult {
+  intentLaunched: boolean;
+  mimeType?: string;
+  appName?: string;
+  isWps?: boolean;
+  uriScheme?: string;
+  uri?: string;
+  intentAction?: string;
+  error?: string;
+  errorType?: string;
+}
+
 export interface SmbPluginInterface {
   connect(options: SmbConnectOptions): Promise<SmbConnectResult>;
   disconnect(): Promise<void>;
   isConnected(): Promise<{ connected: boolean }>;
   listDirectory(options: { path?: string }): Promise<SmbListResult>;
   openInWps(options: { path: string }): Promise<WpsOpenResult>;
+  /** 本地文件打开（FileProvider 授权交给 WPS/关联应用；无需 SMB 连接） */
+  openLocalFile(options: { absolutePath: string }): Promise<LocalOpenResult>;
   checkLocalFileChanged(): Promise<FileChangeResult>;
   foregroundCheck(): Promise<FileChangeResult>;
   resolveSaveAs(options: SaveAsResolveOptions): Promise<SaveAsResolveResult>;
